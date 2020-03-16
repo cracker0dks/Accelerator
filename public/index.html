@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Accelerator</title>
+
+    <!--- JS References -!-->
+    <script type="text/javascript" src="./js/libs/adapter.js"></script>
+    <script type="text/javascript" src="./js/libs/simple-peer.min.js"></script>
+    <script type="text/javascript" src="./js/libs/ezSFU.js"></script>
+    <script type="text/javascript" src="./js/libs/socket.io-2.3.0.js"></script>
+    <script type="text/javascript" src="./js/libs/purify.min.js"></script>
+
+    <script type="text/javascript" src="./js/connect.js"></script>
+
+    <!---JQuery -!-->
+    <script type="text/javascript" src="./js/libs/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="./js/libs/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="./js/libs/punch.min.js"></script>
+
+    <!--- Style and Frontend -!-->
+    <script type="text/javascript" src="./js/libs/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/libs/bootstrap-tour.min.js"></script>
+    <script type="text/javascript" src="./js/libs/ripples.min.js"></script>
+    <script type="text/javascript" src="./js/libs/emojify.min.js"></script>
+    <script type="text/javascript" src="./js/libs/nouislider.min.js"></script>
+    <script type="text/javascript" src="./js/libs/material.min.js"></script>
+    <script type="text/javascript" src="./js/libs/perfect-scrollbar.min.js"></script>
+    <script type="text/javascript" src="./js/libs/modal.js"></script>
+
+    <!--- Logic and Scripts -!-->
+    <script type="text/javascript" src="./js/langDb.js"></script>
+    <script type="text/javascript" src="./js/util.js"></script>
+    <script type="text/javascript" src="./js/uiEvents.js"></script>
+    <script type="text/javascript" src="./js/uiHelper.js"></script>
+
+    <!-- Addons and Plugins !-->
+    <script type="text/javascript" src="./js/whiteboard.js"></script>
+    <script type="text/javascript" src="./js/youtubeController.js"></script>
+    <script type="text/javascript" src="./js/tourGuid.js"></script>
+    <script type="text/javascript" src="./js/libs/jqColorPicker.min.js"></script>
+
+
+    <!--- CSS References -!-->
+    <link rel="stylesheet" href="./css/nouislider.min.css">
+    <link rel="stylesheet" href="./css/jquery-ui.min.css">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-tour.min.css">
+    <link rel="stylesheet" href="./css/ripples.min.css">
+    <link rel="stylesheet" href="./css/emojify.min.css">
+    <link rel="stylesheet" href="./css/emojify-emoticons.min.css">
+    <link rel="stylesheet" href="./css/font-awesome.min.css">
+    <link rel="stylesheet" href="./css/material.min.css">
+    <link rel="stylesheet" href="./css/perfect-scrollbar.min.css">
+    <link rel="stylesheet" href="./css/choosen.min.css">
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/Chart.min.css">
+
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' https://accelerator.reutlingen-university.de/ wss://accelerator.reutlingen-university.de/ https://www.youtube.com/; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://s.ytimg.com/">
+    <meta http-equiv="X-Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' https://accelerator.reutlingen-university.de/ wss://accelerator.reutlingen-university.de/ https://www.youtube.com/; script-src 'self' 'unsafe-eval' 'unsafe-inline https://s.ytimg.com/'">
+    <meta http-equiv="X-WebKit-CSP"
+        content="default-src 'self' 'unsafe-inline' https://accelerator.reutlingen-university.de/ wss://accelerator.reutlingen-university.de/ https://www.youtube.com/; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://s.ytimg.com/">
+</head>
+
+<body>
+    <!--- Login Page ---------------------------------------------------------------------------------------------------!-->
+    <div class="page" id="loginPage">
+        <div class="row">
+            <div class="col-xs-10 col-xs-offset-1 col-md-4 col-md-offset-4">
+                <!--- take care about the offset :) !-->
+                <h1 style="color:white; text-shadow: -2px -2px 1px rgba(0,0,0,0.67);"><img style="width:60px;"
+                        src="./img/logogross.png"> Accelerator</h1>
+                <div style="margin-top: 20%;">
+                    <h3 style="margin-top: 50px; color:white">Enter as guest, please provide your name</h3>
+                    <div style="padding: 0px;" class="noMargin row">
+                        <div style="padding:0px;" class="col-xs-11">
+                            <div style="padding:0px;" class="noMargin row">
+                                <div style="padding:0px; position:relative;" class="input-group col-xs-12">
+                                    <input style="position:relative; left:0px;" type="text" class="form-control"
+                                        id="inputUser" placeholder="Username">
+                                    <span id="loginUserIcon" style="position:absolute; right:15px; z-index:2; top:7px;">
+                                        <i class="fa fa-user"></i></span>
+                                </div>
+                            </div>
+                            <div style="padding:0px; display: none;" class="noMargin row">
+                                <div style="padding:0px; position:relative;" class="input-group col-xs-12">
+                                    <label id="pwField" style="padding-top: 10px; margin-bottom:0px;"
+                                        for="inputPassword" class="col-xs-12"></label>
+                                    <input style="position:relative; left:0px;" type="password" class="form-control"
+                                        id="inputPassword" placeholder="Password">
+                                    <span id="loginPasswordIcon"
+                                        style="position:absolute; right:15px; z-index:2; top:20px;"> <i
+                                            class="fa fa-key"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="noPadding col-xs-1">
+                            <button style="height: 40px;" class="btn btn-primary" id="loginBtn"><i
+                                    class="fa fa-unlock"></i></button>
+                        </div>
+                    </div>
+                    <div id="notConnected"
+                        style="display:none; padding-top: 20px; padding-left: 0px; float: left; color: white;">No
+                        connection to the server!</div>
+                    <div style="color:white; padding: 5px; position: fixed; bottom: 0px; right: 0px;">
+                        <b>Working browsers: </b>
+                        <a title="Chrome" href="https://www.google.de/chrome/browser/desktop/"><img style="width: 50px;"
+                                src="/img/chrome.png"></a>
+                        <a title="Firefox" href="https://www.mozilla.org/de/firefox/new/"><img style="width: 50px;"
+                                src="/img/firefox.png"></a>
+                    </div>
+                    <div style="color:white; padding: 5px; position: fixed; bottom: 0px; left: 0px;">
+                        <a target="#" href="http://git.reutlingen-university.de/issues">Bugtracker</a> /
+                        <a target="#" href="./privacy.html">Privacy Policy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!--- Room Page ---------------------------------------------------------------------------------------------------!-->
+    <div class="page" id="roomPage">
+        <div class="row">
+            <div class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+                <h1 style="color:white">Choose Room</h1>
+                <button id="setupCheckBtn" style="padding: 5px;" class="btn btn-primary"><i
+                        class="fa fa-headphones"></i> Setup audio / video</button>
+                <div style="margin-top: 2%;" class="lableContainer">
+                    <h3 style="margin-top: 5px; margin-bottom: 20px;">Room Overview <span>
+                            <form autocomplete="off"><input type="text" autocomplete="off" style="display:none"><input
+                                    autocomplete="rutjfkde" id="groopRoomSearch" type="text" class="form-control"
+                                    placeholder="search room..."></form>
+                        </span></h3>
+                    <div class="noPadding noMargin row">
+                        <div id="roomListContainer" style="max-height: 475px; overflow: auto; padding-right: 10px;"
+                            class="noPadding col-sm-12">
+                            <table class="table" style="width: 100%;" id="roomListContent">
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="addNewRoomPanel" class="noPadding noMargin row">
+                        <div class="noPadding col-xs-11">
+                            <input id="createNewRoomInput" placeholder="New room..." class="form-control" type="text">
+                            <input id="newRoomPassword" placeholder="room password (optional)" class="form-control"
+                                type="password">
+                            <i id="roomPwLockIcon" class="fa fa-unlock-alt" aria-hidden="true"></i>
+                        </div>
+                        <div style="padding-left:5px;" class="noPadding col-xs-1">
+                            <button id="createNewRoomBtn" class="btn btn-primary">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="color:white; padding: 5px; position: fixed; bottom: 0px; left: 0px;">
+            <a target="#" href="http://git.reutlingen-university.de/issues">Bugtracker</a> /
+            <a target="#" href="./datenschutz.html">Privacy Policy</a>
+        </div>
+
+        <!-- Connect direclty Modal -!-->
+        <div style="background: #808080b0;" id="connectModal" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                        <h4 class="modal-title">Direct connect!</h4>
+                    </div>
+                    <div class="modal-body">
+                        You have a Roomlink for the Room: <b><span id="directRoomName">Romname</span></b>
+                        <br>Do you want to Connect?
+                    </div>
+                    <div class="modal-footer">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <button style="margin:3px; padding:3px;" data-dismiss="modal" type="button"
+                                    class="btn btn-default pull-right" id="abortDirektConnect">Cancel
+                                </button>
+                                <button style="margin:3px; padding:3px;" data-dismiss="modal" type="button"
+                                    class="btn btn-primary pull-right" id="acceptDirectConnect">Conncet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End direclty Modal -!-->
+    </div>
+
+    <!---MainPage -----------------------------------------------------------------------------------------------------------!-->
+    <div id="mainPage" class="container-fluid page">
+        <div style="display: none;" id="mediaC">
+            <div id="myVideo" style="width:320px; height: 240px;">
+            </div>
+            <!--
+                the <video> and <audio> tags are all added and removed dynamically
+                in 'onAddStream', 'setup_local_media', and 'removePeer'/'disconnect'
+                !-->
+        </div>
+        <div class="row">
+            <!--- LeftContainer -------------------------------------------------------------------------------!-->
+            <div style="max-width: 320px;" class="col-xs-3 col-md-2" id="leftContainer">
+                <img style="z-index: -10; position:absolute; top:0px; left:0px; height: 100%; opacity: 0.07;"
+                    src="./img/logogross.png">
+                <!--- Moderator Stuff ----!-->
+                <div class="noPadding col-xs-12" id="moderatorDiv">
+                </div>
+                <!--- End Moderator Stuff -!-->
+
+                <table style="width:100%;">
+                    <tr>
+                        <td style="width: 40px; color: white; vertical-align: bottom; padding-left: 5px;">
+                            <i style="font-size: 1.1em;" class="fa fa-male"></i> <span id="userCnt">0</span>
+                        </td>
+                        <td style="color: white; vertical-align: bottom; padding-left: 5px;">
+                            <div id="logoutBtn" title="leave room"
+                                style="position: relative; right:0px; top:0px; cursor: pointer; width: 17px;"><i
+                                    class="fa fa-sign-out" aria-hidden="true"></i></div>
+                        </td>
+                        <td style="color: white; vertical-align: bottom; padding-right: 5px; text-align: right;">
+                            <span style="display: none;" title="Phones connected to the Room" id="sipCountContainer"><i
+                                    class="fa fa-phone"></i> <span id="sipCount">0</span></span>
+                        </td>
+                        <td style="width: 123px;">
+                            <div class="pull-right" id="userControls">
+                                <div class="thumbVotingWrapper">
+                                    <i class="fa fa-thumbs-o-up thumb"></i>
+                                    <span id="tupText">0</span>
+                                </div>
+                                <div class="thumbVotingWrapper">
+                                    <i class="fa fa-thumbs-o-down thumb"></i>
+                                    <span id="tdownText">0</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="col-xs-12" id="panelContainer">
+                    <div id="userPanel" class="userPanel">
+                    </div>
+                </div>
+            </div>
+
+            <!--- RightContainer -------------------------------------------------------------------------------!-->
+            <div style="position: relative;" class="col-xs-9 col-xs-offset-3 col-md-10 col-md-offset-2"
+                id="rightContainer">
+                <div id="handsUpAlertDivContainer">
+                </div>
+
+                <!--- TopContainer --------------------------------------------------------------------------------!-->
+                <div class="row" id="topContainer">
+
+                    <!-- Moderator Toolbar -!-->
+
+                    <div id="praesiToolbar" class="col-xs-12">
+                        <div class="toolbarWrapper">
+                            <div class="btn-group contentOptions buttonToolbar modToolbar moderatorTools" role="group"
+                                aria-label="...">
+                                <button title="Homescreen" tabtarget="#homeScreen" type="button"
+                                    class="mainTab toolbar-icon btn btn-default">
+                                    <i class="fa fa-home"></i>
+                                </button>
+                                <button title="Presentations" tabtarget="#praesiDiv" title="Show presentation"
+                                    id="showPresentation" type="button"
+                                    class="praesiTab mainTab toolbar-icon btn btn-default">
+                                    <img style="height: 25px;" src="./img/presentation.svg">
+                                </button>
+                                <button title="Presentations" tabtarget="#3dScreen" title="Show 3D Objects" id="show3d"
+                                    type="button" class="praesiTab mainTab toolbar-icon btn btn-default">
+                                    <img style="height: 25px;" src="./img/3dIconWhiteS.png">
+                                </button>
+                                <button title="Etherpad" tabtarget="#browserScreen" type="button"
+                                    class="mainTab toolbar-icon btn btn-default clap">
+                                    <i class="fa fa-file-text-o" id="etherpadBtn"></i>
+                                </button>
+                                <button title="Youtube" tabtarget="#youtube" type="button"
+                                    class="mainTab toolbar-icon btn btn-default clap">
+                                    <i class="fa fa-youtube" id="youtubeBtn"></i>
+                                </button>
+                                <button title="Whiteboard" tabtarget="#whiteboardScreen" id="whiteboardTabBtn"
+                                    type="button" class="mainTab toolbar-icon btn btn-default">
+                                    <i class="fa fa-pencil-square-o"></i>
+                                </button>
+                                <button title="Screenshare" tabtarget="#screenShare" id="screenShareTabBtn"
+                                    type="button" class="mainTab toolbar-icon btn btn-default">
+                                    <i class="fa fa-desktop"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group contentOptions buttonToolbar modToolbar moderatorTools" role="group"
+                                aria-label="...">
+                                <button style="position: relative;" type="button"
+                                    title="Open Presentation Control Modal"
+                                    class="praesiUpload toolbar-icon btn btn-default" id="praesicontrol">
+                                    <img style="height: 25px;" src="./img/presentation.svg"><i
+                                        style="font-size: 1.3em; left: 4px; top:1px; position: absolute;"
+                                        class="fa fa-cog"></i>
+                                </button>
+                                <button title="Presentations" title="Show 3D Object Control Modal" type="button"
+                                    class="3dObjUpload toolbar-icon btn btn-default" id="3dObjectControl">
+                                    <img style="height: 25px;" src="./img/3dIconWhiteS.png">
+                                    <i style="font-size: 1.3em; left: 4px; top:1px; position: absolute;"
+                                        class="fa fa-cog"></i>
+                                </button>
+                                <button id="clockBtn" type="button" title="Enable/Disable clock"
+                                    class="keepActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-clock-o"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group buttonToolbar modToolbar moderatorTools" role="group"
+                                aria-label="...">
+                                <button id="praesiStart" title="Jump to the start of the presentation" type="button"
+                                    class="notActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-fast-backward"></i>
+                                </button>
+                                <button id="praesiBack" title="Go one slide back" type="button"
+                                    class="notActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-step-backward"></i>
+                                </button>
+                                <button id="praesiNext" title="Go one slide forward" type="button"
+                                    class="notActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-step-forward"></i>
+                                </button>
+                                <button id="praesiENd" title="Jump to the end of the presentation" type="button"
+                                    class="notActiveBtn toolbar-icon btn btn-default clap">
+                                    <i class="fa fa-fast-forward"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group contentOptions buttonToolbar modToolbar moderatorTools" role="group"
+                                aria-label="...">
+                                <button id="praesiCursorBtn" type="button"
+                                    title="Enable/Disable show the mouse at mouseover on the presentation!"
+                                    class="keepActiveBtn toolbar-icon btn btn-default">
+                                    <i style="position: relative; left:3px; top:1px;" class="fa fa-mouse-pointer"></i>
+                                </button>
+                                <button id="praesiZoomBtn" type="button"
+                                    title="Enable/Disable zoom at mouseover on the presentation."
+                                    class="keepActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-search-plus"></i>
+                                </button>
+                                <button style="position: relative;" id="userTootlsBtn" type="button"
+                                    title="Enable/Disable UserItems (Textfields...) for the users"
+                                    class="keepActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-pencil-square-o"></i>
+                                    <i style="position: absolute; top:6px; left: 7px; font-size: 0.9em;"
+                                        class="fa fa-user-circle-o" aria-hidden="true"></i>
+                                </button>
+                                <button id="userRemoveUserPItemsBtn"
+                                    title="Remove all UserItems (Textfields...) from this slide!" type="button"
+                                    class="notActiveBtn toolbar-icon btn btn-default">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="userTools" style="display:none;"
+                            class="userTools btn-group contentOptions buttonToolbar">
+                            <div style="width: 100px; height: 25px;">Draggables</div>
+                            <div>
+                                <i title="textfield" class="fa fa-file-text"></i>
+                            </div>
+                            <div>
+                                <i title="whiteboard" class="fa fa-pencil-square-o"></i>
+                            </div>
+                            <div>
+                                <i title="image" class="fa fa-picture-o"></i>
+                            </div>
+                            <div>
+                                <i title="camera" class="fa fa-video-camera" id="videoCameraBtn></i>
+                                    </div>
+                                    <div>
+                                        <i class=" fa fa-square"></i>
+                            </div>
+                            <div>
+                                <i class="fa fa-circle"></i>
+                            </div>
+                            <div>
+                                <i class="fa fa-heart"></i>
+                            </div>
+                            <div>
+                                <i style="font-size: 1.5em;" class="fa fa-caret-down"></i>
+                            </div>
+                            <div>
+                                <i style="font-size: 1.5em;" class="fa fa-caret-up"></i>
+                            </div>
+                            <div>
+                                <i style="font-size: 1.5em;" class="fa fa-caret-right"></i>
+                            </div>
+                            <div>
+                                <i style="font-size: 1.5em;" class="fa fa-caret-left"></i>
+                            </div>
+                            <div>
+                                <i class="fa fa-star"></i>
+                            </div>
+                            <div>
+                                <i class="fa fa-cloud"></i>
+                            </div>
+                            <div>
+                                <i class="fa fa-arrow-up"></i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numberone">1</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numbertwo">2</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numberthree">3</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numberfour">4</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numberfive">5</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numbersix">6</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numberseven">7</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numbereight">8</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numbernine">9</i>
+                            </div>
+                            <div>
+                                <i style="font-family: sans-serif;" class="fa numbernull">0</i>
+                            </div>
+                        </div>
+
+
+                        <!-- RightTop Button Controls -!-->
+                        <div class="col-xs-4" id="buttonPanelTopRight">
+                            <button style="display:none;" type="button" class="btn btn-primary">...</button>
+                            <button style="display:none; margin-right:5px" type="button"
+                                class="btn btn-primary">...</button>
+                        </div>
+                    </div>
+
+                    <!--- MainContainer with Presentation Content Area ------------------------------------------------!-->
+                    <div style="overflow: hidden; min-width: 1000px;" class="row" id="mainContainer">
+                        <div id="clockWrapper"
+                            style="display:none; position:absolute; top:0px; left: 5px; color:rgb(230, 230, 230);"><i
+                                class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
+                        <div id="toggle_fullscreen" title="fullscreen presentation"
+                            style="cursor:pointer; z-index: 10000; position:absolute; top:0px; right: 5px; color:rgb(230, 230, 230);">
+                            <i class="fa fa-expand" aria-hidden="true"></i></div>
+
+                        <div style="position:relative; padding-bottom: 5px; z-index: 0;" id="praesiGround">
+                            <div id="praesiZoomOverlay"
+                                style="z-index: 10000; display: none; position:absolute; top:0px; left:0px; width:100%; height:100%;">
+                            </div>
+                            <!--- Overlay while tragging -!-->
+                            <div id="praesiDragOverlay"
+                                style="z-index: 10000; display:none; position:fixed; top:0px; left:0px; width:100%; height:100%;">
+                            </div>
+
+                            <!---SplashScreen -!-->
+                            <div class="praesiMainContent" style="position: relative;" id="homeScreen">
+                                <h1 style="padding-top:80px; text-shadow: -1px -1px 1px rgba(0,0,0,0.67);">Welcome to
+                                    the Accelerator!</h1>
+                                <div style="font-family: 'Rock Salt', cursive !important;">a(t)=dv(t)/dt</div>
+                                <img id="logogrossImg" style="width: 220px; margin-top: 30px;"
+                                    src="./img/logogross.png">
+                            </div>
+
+                            <!---BrowserScreen -!-->
+                            <div class="praesiMainContent"
+                                style="position: relative; display:none; height: 750px; background: white;"
+                                id="browserScreen">
+                                <div
+                                    style="z-index:1; position: absolute; top: 0px; left: 0px; text-align: center; width: 100%; ">
+                                    <br><bR>
+                                    <h1 style="font-family: 'Rock Salt', cursive !important;"><span>Wait for online
+                                            content...</span></h1>
+                                    <i style="font-size: 22em; color: #626f73;" class="fa fa-globe"></i>
+                                    <div><br>If you see this more than a few seconds, something went wrong with
+                                        Etherpad!</div>
+                                </div>
+                                <!-- <input class="moderatorTools" id="browserUrl" style="display:none; z-index:3; position: absolute; top: 0px; height:20px; left: 0px; width: 100%; background: #ffffff7d;" placeholder="Url..." type="text" name=""> !-->
+                                <iframe id="etherpadIframe"
+                                    style="z-index:2; position: absolute; left: 0px; width: 100%; height: 100%; min-height: 710px;"
+                                    src=""></iframe>
+                            </div>
+
+                            <!--- ScreenSharing -!-->
+                            <div class="praesiMainContent" style="display:none;" id="screenShare">
+                                <div class="praesiPlaceholder" style="width: auto;">
+                                    <h1 class="placeHolderHeading wait4ScreenShareTxt"><span>Wait for some
+                                            Screenshare...</span></h1>
+                                    <div class="moderatorTools" id="screenshareQuallyDiv">Resolution: <select
+                                            id="screenshareQually">
+                                            <option value="1">1920x1080</option>
+                                            <option value="2">1280x768</option>
+                                            <option value="3">800x600</option>
+                                            <option value="4">640x480</option>
+                                        </select><br>
+                                        <span id="screenshareSourceContainer">
+                                            Source: <select id="screenshareSource">
+                                                <option value="1">Screen</option>
+                                                <option value="2">Window</option>
+                                            </select>
+                                        </span><br>
+                                    </div>
+                                    <button class="btn btn-primary moderatorTools"
+                                        id="startScreenShareBtn">StartScreenShare!</button>
+                                    <div id="installScreenShareDiv" class="moderatorTools wait4ScreenShareTxt"></div>
+                                    <i style="padding-top:20px;"
+                                        class="wait4ScreenShareTxt placeHolderIcon fa fa-desktop"></i>
+                                    <div id="screenShareStream">
+                                    </div>
+                                    <div id="screenShareErrors"></div>
+                                </div>
+                            </div>
+
+                            <!---3DScreen -!-->
+                            <div class="praesiMainContent"
+                                style="position: relative; display:none; height: 750px; background: white;"
+                                id="3dScreen">
+                                <div
+                                    style="z-index:1; position: absolute; top: 0px; left: 0px; text-align: center; width: 100%; ">
+                                    <br><bR>
+                                    <h1 style="font-family: 'Rock Salt', cursive !important;"><span>Wait for 3D
+                                            content...</span></h1><br>
+                                    <div style="position:relative;" class="moderatorTools"><br>Please upload and show
+                                        your 3D Model by pressing the <img
+                                            style="height: 25px; position: relative; left: 8px;"
+                                            src="./img/3dIconBlack.png"><i
+                                            style="font-size: 1.3em; left: -25px; top: -6px; position: relative;"
+                                            class="fa fa-cog"></i> button above!<br><br></div>
+                                    <img style="opacity: 0.3; width: 370px;" src="./img/3dIconBlack.png">
+
+                                </div>
+                                <iframe id="3DIframe"
+                                    style="z-index:2; position: absolute; left: 0px; width: 100%; height: 100%; min-height: 710px;"
+                                    src=""></iframe>
+                                <i style="color:white; cursor: pointer; position: absolute; right: 5px; top:5px; font-size: 1.5em; z-index: 4;"
+                                    id="control3DInfoModalBtn" title="Control infos" class="fa fa-info-circle"
+                                    aria-hidden="true"></i>
+                            </div>
+
+
+                            <!---WhiteBoard -!-->
+                            <div class="praesiMainContent"
+                                style="display:none; width: 100%; padding-left: 10px; padding-right: 10px;"
+                                id="whiteboardScreen">
+                                <div style="min-height: 98vh; width: 100%; border-radius: 3px; background: white; position: relative; overflow: hidden;"
+                                    id="whiteboard">
+
+                                    <div style="position:relative; height: 98vh; width: 100%;" id="whiteboardContainer">
+                                    </div>
+
+
+                                    <!---Toolbar -!-->
+                                    <div
+                                        style="position: absolute; left: 45px; top: 10px; border-radius: 3px; overflow: hidden;">
+                                        <div style="margin: 0px 0px; background: gray;"
+                                            class="btn-group contentOptions buttonToolbar" role="group"
+                                            aria-label="...">
+                                            <button style="position: relative; border-right: 1px solid #615c5c;"
+                                                id="saveAsImage" title="Save as png" type="button"
+                                                class="whiteboardBtn btn btn-default">
+                                                <i class="fa fa-picture-o" aria-hidden="true"></i>
+                                                <i style="position: absolute; top: 3px; left: 3px; color: #000000; background: grey; font-size: 0.7em; "
+                                                    class="fa fa-floppy-o" aria-hidden="true"></i>
+                                            </button>
+                                            <button style="position: relative;" id="saveAsJson" title="Save as Json"
+                                                type="button" class="whiteboardBtn btn btn-default">
+                                                <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                                                <i style="position: absolute; top: 3px; left: 3px; color: #000000; background: grey; font-size: 0.7em; "
+                                                    class="fa fa-floppy-o" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="rotated"
+                                        style="position: absolute; left: 40px; top: 10px; transform: rotate(90deg); border-radius: 3px; overflow: hidden; transform-origin: 0% 0%;">
+                                        <div style="margin: 0px 0px; background: gray;"
+                                            class="btn-group contentOptions buttonToolbar" role="group"
+                                            aria-label="...">
+                                            <button id="whiteboardTrash" title="Trash" type="button"
+                                                class="whiteboardBtn btn btn-default">
+                                                <i class="fa fa-trash" aria-hidden="true"></i>
+                                            </button>
+                                            <button id="whiteboardUndo" title="Undo" type="button"
+                                                class="whiteboardBtn btn btn-default">
+                                                <i class="fa fa-undo" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                        <div style="margin: 0px 0px; background: gray;"
+                                            class="btn-group contentOptions buttonToolbar" role="group"
+                                            aria-label="...">
+                                            <button title="Mouse" tool="mouse" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                <i class="fa fa-mouse-pointer"></i>
+                                            </button>
+                                            <button title="Select area" tool="recSelect" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                <img src="./img/dottedRec.png">
+                                            </button>
+                                            <button title="Pen" tool="pen" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default alert-danger">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button title="Text" tool="text" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                <i class="fa fa-font"></i>
+                                            </button>
+                                            <button title="Line" tool="line" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                ╱
+                                            </button>
+                                            <button title="Square" tool="rect" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                <i class="fa fa-square-o"></i>
+                                            </button>
+                                            <button title="Circle" tool="circle" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                <i class="fa fa-circle-thin"></i>
+                                            </button>
+                                            <button title="Eraser" tool="eraser" type="button"
+                                                class="whiteboardTool whiteboardBtn btn btn-default">
+                                                <i class="fa fa-eraser" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+
+                                        <div style="margin: 0px 0px; background: gray;"
+                                            class="btn-group contentOptions buttonToolbar" role="group"
+                                            aria-label="...">
+                                            <button id="addImgToCanvasBtn" title="Add Image" type="button"
+                                                class="whiteboardBtn btn btn-default">
+                                                <i class="fa fa-picture-o"></i>
+                                            </button>
+                                        </div>
+                                        <div style="margin: 0px 0px; position: relative; background: gray; min-height: 30px; width: 165px;"
+                                            class="btn-group contentOptions buttonToolbar" role="group"
+                                            aria-label="...">
+                                            <img style="position: absolute; left: 2px; top: 8px; height:14px; width:130px;  transform: rotate(180deg);"
+                                                src="./svg/slider-background.svg">
+                                            <input title="Thickness" id="whiteboardSlider"
+                                                style="position: absolute; left:2px; width: 130px; top: 11px;"
+                                                type="range" min="1" max="50" value="47">
+                                            <div title="Colorpicker"
+                                                style="position: absolute; left: 135px; top: 4px; width: 26px; height: 23px; border-radius: 3px; overflow: hidden; border: 1px solid darkgrey;">
+                                                <div id="whiteboardColorpicker" value="#000000"
+                                                    style="width: 40px; height: 35px; border: 0px; padding: 0px; position: relative; top: -5px; left: -5px;">
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--- Praesis -!-->
+                            <div class="praesiMainContent" style="display:none;" id="praesiDiv">
+                                <div class="praesiPlaceholder">
+                                    <h1 class="placeHolderHeading">No presentation active!</h1>
+                                    <div class="moderatorTools">Please <a class="praesiUpload" href="">upload or
+                                            start</a> some presentation!</div>
+                                    <img style="height: 275px; padding-top: 20px; opacity: 0.5;"
+                                        src="./img/presentationGray.svg">
+                                </div>
+                            </div>
+
+                            <!--- YouTube Cast -!-->
+                            <div class="praesiMainContent praesiPlaceholder" id="youtube"
+                                style="display:none; text-align:center; width: 1100px; height: 757px;">
+                                <table style="margin-left: auto; margin-right: auto;">
+                                    <tr>
+                                        <td><i class="fa fa-volume-off"></i></td>
+                                        <td style="padding: 4px;">
+                                            <div style="width:100px" id="youtubeVolumeSlider" class="slider svert">
+                                            </div>
+                                        </td>
+                                        <td><i class="fa fa-volume-up"></i></td>
+                                        <td style="padding-left: 15px;" class="moderatorTools">
+                                            <input id="youtubeURLinput" class="form-control " type="text"
+                                                placeholder="Enter Youtube URL">
+                                        </td>
+                                        <td class="moderatorTools">
+                                            <button style="width: 50px; height: 30px; margin-left: 5px;"
+                                                class="btn btn-info" id="loadYoutubeBtn">Load</button>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <div style="position:relative;" class="row">
+                                    <div style="display:none; background:rgba(0, 0, 255, 0); position:absolute; left:0px; top:0px; width:1100px; height:700px;"
+                                        id="ytOverlay"></div>
+                                    <div id="ytapiplayer">
+                                        <h1>Please hold the line...</h1>
+                                    </div>
+                                </div>
+                                <i style="padding-top:20px" class="placeHolderIcon fa fa-youtube"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--BottomContainer with UserControl and ChatArea -------------------------------------------------!-->
+                    <div id="bottomContainer" class="container-fluid">
+                        <div id="controllbarWrapper" class="row">
+                            <div class="col-xs-6 col-xs-offset-3">
+                                <div class="toolbarWrapper">
+                                    <div class="btn-group col-centered buttonToolbar" id="userToolbar" role="group"
+                                        aria-label="...">
+                                        <button title="Give thumbs up" type="button"
+                                            class="toolbar-icon btn btn-default" id="ThumbsUp"><i
+                                                class="fa fa-thumbs-o-up"></i></button>
+                                        <button title="Give thumbs down" type="button"
+                                            class="toolbar-icon btn btn-default" id="ThumbsDown"><i
+                                                class="fa fa-thumbs-o-down"></i></button>
+                                        <button title="Raise your hand to ask a question or give input" id="handsUpBtn"
+                                            type="button" class="toolbar-icon btn btn-default"><i
+                                                class="fa fa-hand-o-up"></i></button>
+                                        <button title="Clap" type="button" class="toolbar-icon btn btn-default clap"><i
+                                                class="applause fa fa-sign-language"></i></button>
+                                        <button title="Activate the horn to speak" id="hornBtn" type="button"
+                                            class="toolbar-icon btn btn-default"><i class="fa fa-bullhorn"></i></button>
+                                        <button id="silenceBtn" title="Disable audio output if you need silence"
+                                            type="button" class="toolbar-icon btn btn-default volume"><i
+                                                class="fa fa-volume-up"></i></button>
+                                        <button id="afkBtn"
+                                            title="Disable your microfone and tell everyone that you not on your keyboard"
+                                            type="button" class="toolbar-icon btn btn-default"><i
+                                                class="fa fa-coffee"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3" id="microControls">
+                                <div class="btn-group contentOptions buttonToolbar buttonToolbar pull-right"
+                                    role="group" aria-label="...">
+
+                                    <button id="showNotes" title="Show/hide Notepad"
+                                        class="toolbar-icon btn btn-default">
+                                        <i id="noteBtn" class="mdi-action-assignment"></i>
+                                    </button>
+                                    <button id="showFiles" title="Show/hide uploaded files"
+                                        class="toolbar-icon btn btn-default">
+                                        <i id="fileBtn" class="mdi-file-cloud"></i>
+                                    </button>
+                                </div>
+                                <!-- <div class="btn-group contentOptions buttonToolbar buttonToolbar pull-right"
+                                    role="group" aria-label="...">
+                                    <button id="startSnake"
+                                        title="Start/Stop Snake on Startscreen (Control it with left/right arrow keys!)"
+                                        class="notActiveBtn toolbar-icon btn btn-default">
+                                        <i id="startSnakeBtn" class="fa fa-gamepad"></i>
+                                    </button>
+                                </div> -->
+                            </div>
+                        </div>
+
+                        <!--- Chat Area -!-->
+                        <div id="bottomContentsContainer" class="row">
+                            <div id="chatAreaDummy" style="display:none;" class="noPadding col-xs-6">
+                            </div>
+                            <div id="chatAreaContainer" class="noPadding col-xs-12">
+                                <div id="chatContent">
+                                </div>
+                                <div id="chatInputContainer">
+                                    <div id="chatInputWrapper" class="col-xs-10 col-md-11 noPadding">
+                                        <img id="smilieSvg" style="width: 24px;" src="./img/smilie.svg" />
+                                        <div contentEditable=true id="chatInput" data-ph="Enter Message Here...">
+
+                                        </div>
+                                    </div>
+                                    <div id="chatControls" class="col-xs-2 col-md-1 noPadding">
+                                        <div id="chatButtonWrapper" class="toolbar-icon">
+                                            <i id="chatSendBtn" class="mdi-content-send"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--- Files -!-->
+                            <div id="fileDiv" class="col-xs-6">
+                                <div id="fileTableWrapper">
+                                    <table class="table" id="fileTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding-left: 12px;">Name</th>
+                                                <th>Uploader</th>
+                                                <th>Datum</th>
+                                                <th style="text-align: right;">
+                                                    <div class="fileUpload btn btn-primary">
+                                                        <span><i class="fa fa-cloud-upload"></i></span>
+                                                        <form id="singleFileUploadForm" action="#"
+                                                            enctype="multipart/form-data" method="post">
+                                                            <input name="upload" type="file" id="singleFileUpload"
+                                                                class="upload" />
+                                                        </form>
+                                                    </div>
+                                                    <div id="singleFileUploadStatus"></div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!--- Notes -!-->
+                            <div id="noteDiv" class="col-xs-6">
+                                <div id="noteArea">
+                                    <div>
+                                        <span style="color: white;">
+                                            <i style="margin-left: 8px; margin-top: 8px; font-size:1.7em;"
+                                                class="fa fa-list-alt"></i>
+                                            <b>Notizen</b>
+                                        </span>
+                                        <button class="noteOptions btn btn-primary pull-right"
+                                            title="send notes to chat!" id="shareNotesToChat">
+                                            <span>
+                                                <i class="fa fa-paper-plane-o"></i>
+                                            </span>
+                                        </button>
+                                        <button class="noteOptions btn btn-primary pull-right"
+                                            title="share note as download textfile!" id="shareNotes">
+                                            <span>
+                                                <i style="position: relative; left:2px; top:2px;"
+                                                    class="fa fa-share-square-o"></i>
+                                            </span>
+                                        </button>
+                                        <a id="saveNotesAsFile" title="download note as textfile!" href="#">
+                                            <div class="noteOptions btn btn-primary pull-right">
+                                                <span>
+                                                    <i class="fa fa-floppy-o"></i>
+                                                </span>
+                                            </div>
+
+                                        </a>
+
+                                    </div>
+                                    <textarea id="noteTextArea"
+                                        style="resize: none; height: 75%; width: 100%;"></textarea>
+                                </div>
+                            </div>
+
+                            <i id="minMaxChat" title="minimize/maximize chat"
+                                style="font-size: 1.5em; position: absolute; left: 50%; cursor: pointer; top: -4px;"
+                                class="fa fa-caret-down"></i>
+                        </div>
+                        <!--End Chat Area!-->
+                    </div>
+
+                </div>
+
+                <!--- Hidden Modals, Dialogs and PopUps etc. -------------------------------------------------------!-->
+
+                <!-- User PicUpload Modal -!-->
+                <div id="userPicUploadModal" class="modal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                <h4 class="modal-title">Profilbild ändern!</h4>
+                            </div>
+                            <div class="modal-body">
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <img id="sProfilePic" style="max-width: 70px;" src="./img/dummypic.jpg"
+                                            alt="icon">
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <form id="profilePicForm" action="#" enctype="multipart/form-data"
+                                            method="post">
+                                            <input type="text" readonly="" class="form-control floating-label"
+                                                placeholder="Durchsuchen...">
+                                            <input name="upload" type="file" id="inputProfilePic">
+                                        </form>
+                                        <div id="profilePicStatus"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button style="padding: 10px; width: 60px;" id="changeProfilePicOkBtn" type="button"
+                                    class="btn btn-primary">Ok</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End User PicUpload Modal -!-->
+
+                <!--- Presentation Upload Modal -!-->
+                <div id="uploadPraesis" class="modal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                <h4 class="modal-title">Manage Presentations</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div style="max-height: 350px; overflow: auto;" class="row noMargin">
+                                    <table style="margin-top:20px;" id="praesiTable" class="table">
+                                        <thead>
+                                            <tr>
+                                                <th><b>Name</b></th>
+                                                <th><b>Slides</b></th>
+                                                <th><b>Type</b></th>
+                                                <th>
+                                                </th>
+                                                <th>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+
+                                <div class="row">
+
+                                </div>
+
+                                <div class="row noMargin">
+                                    <b>New presentation:</b>
+                                </div>
+
+                                <div class="row noMargin">
+                                    <form id="praseiUploadForm" action="#" enctype="multipart/form-data" method="post">
+                                        <table id="newPraesiTable" style="width: 100%;">
+                                            <tr>
+                                                <td>Typ:</td>
+                                                <td>
+                                                    <div class="radio radio-info">
+                                                        <label>
+                                                            <input class="praesiType" type="radio" name="praesiType"
+                                                                value="pdfPraesi" checked="true">
+                                                            PDF Presentation
+                                                        </label>
+                                                    </div>
+                                                    <div class="radio radio-info">
+                                                        <label>
+                                                            <input class="praesiType" type="radio" name="praesiType"
+                                                                value="revealPraesi">
+                                                            Reveal JS <img class="html5PraseiLogo"
+                                                                src="./img/HTML5_Logo_256.png"> (<a style="color: gray;"
+                                                                href="/data/RevealJSTemplate.zip">Download template</a>)
+                                                        </label>
+                                                    </div>
+                                                    <div class="radio radio-info">
+                                                        <label>
+                                                            <input class="praesiType" type="radio" name="praesiType"
+                                                                value="elsePraesi">
+                                                            Other formats (Word,Powerpoint,.odt,CSV...) <a
+                                                                style="color: gray;" id="elsePraesiInfo"
+                                                                href="#info">*details</a>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td>Name:</td>
+                                                <td>
+                                                    <input name="praesiName" id="praesiName" class="form-control"
+                                                        type="text" placeholder="Name...">
+                                                </td>
+                                            </tr>
+                                            <tr style="display:none;" id="indexTr">
+                                                <td>Index:</td>
+                                                <td>
+                                                    <input name="indexFile" id="indexFile" class="form-control"
+                                                        type="text" value="index.html" placeholder="index.html">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Files:</td>
+                                                <td>
+                                                    <input type="text" id="filePlaceholder" readonly=""
+                                                        class="form-control floating-label" placeholder="Storage...">
+                                                    <input name="upload" multiple="multiple" type="file"
+                                                        id="praesiUploadInput">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td></td>
+                                                <td>
+                                                    <button style="padding: 10px;" type="submit"
+                                                        class="btn btn-info">Upload <i style="font-size: 1.3em;"
+                                                            class="fa fa-cloud-upload"></i></button>
+                                                </td>
+                                            </tr>
+
+                                        </table>
+                                    </form>
+                                    <div style="color: rgb(101, 101, 245); font-style: italic; float:left;"
+                                        id="praesiUpInfo"></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--- End Presentation Upload Modal -!-->
+
+                <!-- Else Preasi Info -!-->
+                <div id="praesiInfoModal" class="modal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                <h2 class="modal-title">Format Information!</h2>
+                            </div>
+
+                            <div class="modal-body">
+                                The uploaded file will be converted to PDF on the server.
+                                <h3>Supported Formats</h3>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Formatname
+                                            </th>
+                                            <th>
+                                                Fileending
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tr>
+                                        <td>Microsoft Word</td>
+                                        <td>.doc, docx</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Microsoft Powerpoint</td>
+                                        <td>.ppt, pptx</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Microsoft Excel</td>
+                                        <td>.xls, xlsx</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Libreoffice / Open Document formats</td>
+                                        <td>.odt, .ods, .odd, .odp</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Textformats</td>
+                                        <td>.txt, .html, .xml, .rtf, .sdw</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Imageformats</td>
+                                        <td>.jpg, .png, .bmp., .gif, .tiff, .eps, .emf </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Tableformats</td>
+                                        <td>.csv, .sdc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Presentationformats</td>
+                                        <td>.sda</td>
+                                    </tr>
+                                </table>
+                                <hr>
+                                Check <a target="#" href="https://wiki.ubuntuusers.de/unoconv/">unoconv</a> for more
+                                details.
+                                <br><br>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Else Preasi Info -!-->
+            </div>
+        </div>
+    </div>
+    <!-- SETUP CHECK Modal -!-->
+    <div id="setUpCheckModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h2 class="modal-title">Media Setup</h2>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Media
+                                </th>
+                                <th>
+                                    Device
+                                </th>
+                                <th>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tr>
+                            <td style="vertical-align: middle; width: 110px;">Audio Output</td>
+                            <td style="vertical-align: middle;" id="audioOutputDevs"></td>
+                            <td style="vertical-align: middle;" id="audioOutputTest"></td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Audio Input</td>
+                            <td style="vertical-align: middle;" id="audioInputDevs"></td>
+                            <td style="vertical-align: middle;" id="audioInputTest"></td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Webcam Input</td>
+                            <td style="vertical-align: middle;" id="webcamInputDevs"></td>
+                            <td style="vertical-align: middle;" id="webcamInputTest"></td>
+                        </tr>
+                        <tr>
+                            <td id="mediaSetupOutput" colspan="3"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button id="setupCheckSaveBtn" style="padding: 5px;" class="btn btn-primary">Save device choise</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End SETUP CHECK Modal -!-->
+</body>
+
+</html>

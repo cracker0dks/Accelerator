@@ -1,0 +1,1263 @@
+/**************/
+/*** CONFIG ***/
+/**************/
+//@ts-check
+"use strict";
+var yauzl = require("yauzl");
+var formidable = require('formidable');
+var https = require('https');
+var exec = require('child_process').exec;
+var configLoader = require('./configLoader.js');
+var config = configLoader.getConfigs();
+
+var httpsPort = config["https"]["port"] || 443;
+
+var express = require('express');
+var fs = require("fs-extra");
+
+var snake = require("./acc_server_modules/snake/snake.js");
+var s_whiteboard = require("./acc_server_modules/whiteboard/s_whiteboard.js");
+var app = express();
+
+
+app.use(express.static(__dirname + '/public'));
+
+var privateKey = fs.readFileSync('./cert/key.pem');
+var certificate = fs.readFileSync('./cert/cert.pem');
+
+var server = https.createServer({
+    key: privateKey,
+    cert: certificate
+}, app).listen(httpsPort);
+
+var io = require('socket.io').listen(server);
+
+var ezSFU = require('./acc_server_modules/ezSFU/s_ezSFU').init(io, config["sfuConfig"]);
+
+console.log("Webserver & socketserver running on port:" + httpsPort);
+
+fs.ensureDir('./public/profilePics/').catch(err => {
+    console.log("ERROR: Cant create folder: ./public/profilePics/");
+});
+
+fs.ensureDir('./public/singlefiles/').catch(err => {
+    console.log("ERROR: Cant create folder: ./public/singlefiles/");
+});
+
+fs.ensureDir('./db').catch(err => {
+    console.log("ERROR: Cant create folder: ./public/singlefiles/");
+})
+
+exec("unoconv --listener", { cwd: "./public/praesis/" }, function (error, stdout, stderr) { //Init unoconv
+    if (error) {
+        console.log("Warning: unoconv not found! If you are on Dev, this is not a Problem!");
+    }
+})
+
+app.post('/upload', function (req, res) { //File upload
+    var form = new formidable.IncomingForm(); //Receive form
+    var formData = {
+        files: {},
+        fields: {}
+    }
+    // form.on('progress', function(bytesReceived, bytesExpected) {
+    //     //(100*(bytesReceived/bytesExpected))
+    // });
+
+    form.on('file', function (name, file) {
+        formData["files"][file.name] = file;
+    });
+
+    form.on('field', function (name, value) {
+        formData["fields"][name] = value;
+    });
+
+    form.on('error', function (err) {
+        console.log('File uplaod Error!');
+    });
+
+    form.on('end', function () {
+        progressUploadFormData(formData);
+        res.send("done");
+        //End file upload
+    });
+    form.parse(req);
+});
+
+app.get('/loadwhiteboard', function (req, res) {
+    var wid = req["query"]["wid"];
+    var ret = s_whiteboard.loadStoredData(wid);
+    res.send(ret);
+    res.end();
+});
+
+app.get('/isRoomPWCorrect', function (req, res) {
+    var roomName = req["query"]["roomName"];
+    var roomPassword = req["query"]["roomPassword"];
+    var ret = false;
+    if (rooms[roomName] && rooms[roomName]["roomPassword"] == roomPassword) {
+        ret = true;
+    }
+    res.send(ret);
+    res.end();
+});
+
+function trim(str) {
+    if (typeof (str) == "string") {
+        return str.trim();
+    }
+    console.log(str, "not a String to trim...");
+    return "";
+}
+
+var allRoomNames = [];
+var rooms = {};
+var allsockets = {};
+var allPraesis = {};
+var currentLoadedPraesis = {};
+var currentLoadedTab = {};
+var isClockEnabled = {};
+var isUserPItemsLoaded = {};
+var allSingleFiles = {};
+var userPItems = {};
+var all3DObjs = {};
+var url3dObjs = {};
+
+setTimeout(function () {
+    console.log("--------------------------------------");
+    console.log("Accelerator is up and running! YEAH :D");
+    console.log("--------------------------------------");
+}, 100);
+/*************************/
+/*** INTERESTING STUFF ***/
+/*************************/
+
+io.sockets.on('connection', function (socket) {
+    var userdata = { "id": socket.id, "username": "" };
+    var room = null;
+    var roomName = null;
+    console.log("[" + socket.id + "] connection accepted");
+    socket.on('disconnect', async function () {
+        console.log("[" + socket.id + "] disconnected");
+
+        sendToHoleRoom(roomName, 'removePeer', socket.id);
+
+        removeUserFromeRoom(roomName, socket.id);
+
+        if (typeof (rooms[roomName]) != "undefined" && rooms[roomName]["moderator"] == socket.id) {
+            rooms[roomName]["moderator"] = "0";
+            sendToHoleRoom(roomName, 'setModerator', "0");
+        }
+        delete allsockets[socket.id];
+        var cleanRooms = getAllRoomsWithoutPasswords();
+        socket.broadcast.emit('getAllRooms', cleanRooms);
+
+        saveUserPItems();
+
+        snake.startStopSnake(socket.id, roomName, false);
+    });
+
+    socket.on('getAllRooms', function (config) {
+        var cleanRooms = getAllRoomsWithoutPasswords();
+        socket.emit('getAllRooms', cleanRooms);
+    });
+
+    socket.on('deleteRoom', function (content) {
+        var roomName = content["roomName"];
+        var roomId = content["roomId"];
+        var creator = rooms[roomName]["creator"];
+        if (creator == userdata["username"] || userdata["username"] == "raphael" || userdata["username"] == "ph" || userdata["username"] == "gmt" || userdata["username"] == "merk") {
+            delete rooms[roomName];
+            var cleanRooms = getAllRoomsWithoutPasswords();
+            socket.broadcast.emit('getAllRooms', cleanRooms);
+            socket.emit('getAllRooms', cleanRooms);
+            saveALlRoomNames();
+        } else {
+            socket.emit('noRightsToDeleteRoom', null);
+        }
+    });
+
+    socket.on('createRoom', function (content) {
+        var roomName = content["roomName"];
+        var roomPassword = content["roomPassword"];
+        rooms[roomName] = { moderator: null, user: [], "roomName": roomName, "roomPassword": roomPassword, "creator": userdata["username"] };
+
+        var cleanRooms = getAllRoomsWithoutPasswords();
+        socket.broadcast.emit('getAllRooms', cleanRooms);
+        socket.emit('getAllRooms', cleanRooms);
+        saveALlRoomNames();
+    });
+
+    socket.on('join', function (content) {
+        console.log("[" + socket.id + "] join ", content);
+        roomName = content.roomName;
+        userdata["username"] = content.username;
+        userdata["socketId"] = socket.id;
+        userdata["color"] = content.color;
+        allsockets[socket.id] = socket;
+        addUserToRoom(roomName, userdata);
+
+        var cleanRooms = getAllRoomsWithoutPasswords();
+        socket.broadcast.emit('getAllRooms', cleanRooms);
+        socket.emit('getAllRooms', cleanRooms);
+
+        if (!currentLoadedTab[roomName]) {
+            currentLoadedTab[roomName] = "#homeScreen";
+        }
+        //Send allPraesis in this room
+        socket.emit('loadPraesis', allPraesis[roomName]);
+        //Send all singleFiles in this room
+        socket.emit('sigleFilesTable', allSingleFiles[roomName]);
+
+        if (all3DObjs[roomName])
+            socket.emit('load3DObjs', all3DObjs[roomName]);
+
+        if (url3dObjs[roomName])
+            socket.emit('show3DObj', url3dObjs[roomName]);
+
+        sendToHoleRoomButNotMe(roomName, socket.id, 'addPeer', { "socketId": socket.id, "username": content.username, "color": userdata["color"] });
+        for (var i = 0; i < rooms[roomName]["user"].length; i++) {
+            var user = rooms[roomName]["user"][i];
+            socket.emit('addPeer', { "socketId": user["socketId"], "username": user["username"], "color": user["color"] });
+        }
+
+        if (isClockEnabled[roomName]) {
+            socket.emit('showHideClock', true);
+        }
+
+        if (currentLoadedTab[roomName]) {
+            var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
+            socket.emit('changeTab', { "tab": currentLoadedTab[roomName], "userPItems": items });
+        }
+
+        if (isUserPItemsLoaded[roomName]) {
+            socket.emit('showHideUserPItems', isUserPItemsLoaded[roomName]);
+        }
+
+        if (currentLoadedPraesis[roomName]) {
+            socket.emit('loadSlide', currentLoadedPraesis[roomName]); //Load prasei after leaving room
+        }
+
+        //For chat and mgs in the same room
+        socket.on('message', function (msg) {
+            if (typeof (msg) == "string") {
+                sendToHoleRoomButNotMe(roomName, socket.id, 'message', { "msg": msg, "id": socket.id, "username": userdata["username"] });
+            } else if (isModerator()) {
+                var newMsg = msg.msg;
+                var changendUserName = msg.changedName;
+                sendToHoleRoom(roomName, 'message', { "msg": newMsg, "id": socket.id, "username": changendUserName });
+            }
+        });
+
+        socket.on('setStatus', function (status) {
+            if (typeof (userdata["stadien"]) == "undefined") {
+                userdata["stadien"] = {};
+            }
+            var statKey = status.split("-");
+            if (statKey.length >= 2) {
+                userdata["stadien"][statKey[1]] = status;
+            } else {
+                userdata["stadien"][statKey[0]] = status;
+            }
+            sendToHoleRoom(roomName, 'setStatus', { "id": socket.id, "status": status });
+        });
+
+        socket.on('setModerator', function (socketIdToSet) {
+            if (!rooms[roomName]["moderator"] || rooms[roomName]["moderator"] == "0" || (rooms[roomName]["moderator"] == socket.id && socket.id != socketIdToSet)) {
+                rooms[roomName]["moderator"] = socketIdToSet;
+                sendToHoleRoom(roomName, 'setModerator', socketIdToSet);
+            }
+        });
+
+        socket.on('setGetMicToUser', function (data) {
+            if (isModerator() || (data["userid"] == socket.id && data["mic"] == "not-mic")) { //Only allow moderator or removing own mic
+                sendToHoleRoom(roomName, 'setGetMicToUser', data);
+
+                //Save mic state
+                for (var i = 0; i < rooms[roomName]["user"].length; i++) {
+                    if (rooms[roomName]["user"][i]["id"] == data["userid"]) {
+                        rooms[roomName]["user"][i]["mic"] = data["mic"];
+                    }
+                }
+            }
+        });
+
+        socket.on('loadPraesis', function (n) {
+            sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
+        });
+
+        socket.on('deletePraesi', function (name) {
+            if (isModerator()) {
+                removePraesi(name, roomName);
+                delete allPraesis[roomName][name];
+                delete currentLoadedPraesis[roomName];
+                saveAllPraesis();
+                if (userPItems[roomName] && userPItems[roomName][currentLoadedTab[roomName]]) {
+                    var i = userPItems[roomName][currentLoadedTab[roomName]].length;
+                    while (i--) {
+                        if (userPItems[roomName][currentLoadedTab[roomName]][i]["praesiname"] == name) {
+                            userPItems[roomName][currentLoadedTab[roomName]].splice(i, 1);
+                        }
+                    }
+                }
+                sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
+            }
+        });
+
+        socket.on('loadSlide', function (content) {
+            if (isModerator()) {
+                currentLoadedPraesis[roomName] = content;
+                sendToHoleRoom(roomName, 'loadSlide', content);
+            }
+        });
+
+        socket.on('revealSlideKey', function (keycode) {
+            if (isModerator()) {
+                sendToHoleRoom(roomName, 'revealSlideKey', keycode);
+            }
+        });
+
+
+        socket.on('showHideClock', function (trueFalse) {
+            if (isModerator()) {
+                isClockEnabled[roomName] = trueFalse;
+                sendToHoleRoom(roomName, "showHideClock", trueFalse);
+            }
+        });
+
+        socket.on('cursorPosition', function (content) {
+            if (isModerator()) {
+                sendToHoleRoom(roomName, 'cursorPosition', content);
+            }
+        });
+
+        socket.on('addUserPItem', function (content) {
+            content["userId"] = socket.id;
+            if (!userPItems[roomName]) {
+                userPItems[roomName] = {};
+            }
+            if (!userPItems[roomName][currentLoadedTab[roomName]]) {
+                userPItems[roomName][currentLoadedTab[roomName]] = [];
+            }
+            userPItems[roomName][currentLoadedTab[roomName]].push(content);
+            sendToHoleRoom(roomName, 'addUserPItem', content);
+        });
+
+        socket.on('changeUserPItemPosition', function (content) {
+            if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
+                sendToHoleRoom(roomName, 'changeUserPItemPosition', content);
+            }
+        });
+
+        socket.on('fixPItemPosition', function (content) {
+            if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
+                for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                    if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
+                        userPItems[roomName][currentLoadedTab[roomName]][i]["posX"] = content["posX"];
+                        userPItems[roomName][currentLoadedTab[roomName]][i]["posY"] = content["posY"];
+                        sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                        return;
+                    }
+                }
+            }
+        });
+
+        socket.on('removeUserPItem', function (content) {
+            if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
+                for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                    if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
+                        sendToHoleRoom(roomName, 'removeUserPItem', content);
+                        userPItems[roomName][currentLoadedTab[roomName]].splice(i, 1);
+                        return;
+                    }
+                }
+            }
+        });
+
+        socket.on('removeAllUserPItems', function (content) {
+            if (isModerator()) {
+                sendToHoleRoom(roomName, 'removeAllUserPItems', content);
+                if (userPItems[roomName]) {
+                    if (content) {
+                        var currentPraesiName = content["currentPraesiName"];
+                        var currentPraesiSlide = content["currentPraesiSlide"];
+                        var i = userPItems[roomName][currentLoadedTab[roomName]].length;
+                        while (i--) {
+                            if (userPItems[roomName][currentLoadedTab[roomName]][i]["praesiname"] == currentPraesiName && userPItems[roomName][currentLoadedTab[roomName]][i]["praesislide"] == currentPraesiSlide) {
+                                userPItems[roomName][currentLoadedTab[roomName]].splice(i, 1);
+                            }
+                        }
+                    } else if (roomName && currentLoadedTab[roomName] && userPItems[roomName][currentLoadedTab[roomName]]) {
+                        var i = userPItems[roomName][currentLoadedTab[roomName]].length;
+                        while (i--) {
+                            if (!userPItems[roomName][currentLoadedTab[roomName]][i]["praesiname"] || !userPItems[roomName][currentLoadedTab[roomName]][i]["praesislide"]) {
+                                userPItems[roomName][currentLoadedTab[roomName]].splice(i, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        socket.on('showHideUserPItems', function (content) {
+            if (isModerator()) {
+                isUserPItemsLoaded[roomName] = content;
+                sendToHoleRoom(roomName, 'showHideUserPItems', content);
+            }
+        });
+
+        socket.on('youtubeCommand', function (content) {
+            if (isModerator()) {
+                sendToHoleRoom(roomName, 'youtubeCommand', content);
+            }
+        });
+
+        socket.on('secondHandUp', function (content) {
+            if (!isModerator()) {
+                content["senderId"] = socket.id;
+            }
+            sendToHoleRoom(roomName, 'secondHandUp', content);
+        });
+
+        socket.on('changeTab', function (content) {
+            if (isModerator()) {
+                currentLoadedTab[roomName] = content;
+                var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
+                sendToHoleRoom(roomName, "changeTab", { "tab": content, "userPItems": items });
+                if (content != "#homeScreen") {
+                    snake.stopGame(roomName);
+                }
+            }
+        });
+
+        socket.on('setUserPItemsText', function (content) {
+            content["userId"] = socket.id;
+            if (content.image) {
+                sendToHoleRoom(roomName, "setUserPItemsText", content);
+            } else {
+                sendToHoleRoomButNotMe(roomName, socket.id, "setUserPItemsText", content);
+            }
+
+            for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
+                    userPItems[roomName][currentLoadedTab[roomName]][i]["text"] = content["text"];
+                    sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                }
+            }
+        });
+
+        socket.on('setUserColor', function (color) {
+            userdata["color"] = color;
+            sendToHoleRoom(roomName, 'setUserColor', { "userId": socket.id, "color": color });
+        });
+
+        socket.on('shareNotes', function (content) {
+            var text = content["text"];
+            var noteType = content["noteType"];
+            if (typeof (allSingleFiles[roomName]) == "undefined") {
+                allSingleFiles[roomName] = {};
+            }
+
+            var userInfo = getUserInfoFromId(socket.id);
+            var filename = noteType + "" + (+new Date()) + ".txt";
+            fs.writeFile('./public/singlefiles/' + filename, text, function (err) {
+                if (err) {
+                    return console.log("NoteSharFileSaveError", err);
+                }
+
+                allSingleFiles[roomName][filename] = { "filename": filename, "username": userInfo.username, "date": +new Date() };
+                sendToHoleRoom(roomName, 'sigleFilesTable', allSingleFiles[roomName]);
+                saveSingleFileTable();
+                console.log("NoteFileSaved!");
+            });
+        });
+
+        socket.on('changeElementSize', function (content) {
+            content["userId"] = socket.id;
+            sendToHoleRoomButNotMe(roomName, socket.id, "changeElementSize", content);
+            for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
+                    userPItems[roomName][currentLoadedTab[roomName]][i]["width"] = content["width"];
+                    userPItems[roomName][currentLoadedTab[roomName]][i]["height"] = content["height"];
+                    sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                }
+            }
+        });
+
+        socket.on('3dPos', function (pos) {
+            if (isModerator()) {
+                sendToHoleRoomButNotMe(roomName, socket.id, "3dPos", pos);
+            }
+        });
+
+        socket.on('drawSomething', function (content) {
+            sendToHoleRoomButNotMe(roomName, socket.id, "drawSomething", content);
+        });
+
+        socket.on('sendEndDraw', function (content) {
+            var itemId = content["itemId"];
+            var drawBuffer = content["drawBuffer"];
+            for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == itemId) {
+                    if (!userPItems[roomName][currentLoadedTab[roomName]][i]["drawBuffer"]) {
+                        userPItems[roomName][currentLoadedTab[roomName]][i]["drawBuffer"] = [];
+                    }
+                    userPItems[roomName][currentLoadedTab[roomName]][i]["drawBuffer"] = userPItems[roomName][currentLoadedTab[roomName]][i]["drawBuffer"].concat(drawBuffer);
+                    sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                }
+            }
+        });
+
+        socket.on('drawWhiteboard', function (content) {
+            s_whiteboard.handleEventsAndData(content);
+            delete content["wid"];
+            sendToHoleRoomButNotMe(roomName, socket.id, "drawWhiteboard", content);
+        });
+
+        socket.on('lockUnLockCanvas', function (content) {
+            var itemId = content.itemId;
+            var lockUnlock = content.lockUnlock;
+            sendToHoleRoomButNotMe(roomName, socket.id, "lockUnLockCanvas", content);
+            for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == itemId) {
+                    userPItems[roomName][currentLoadedTab[roomName]][i]["lockUnlock"] = lockUnlock;
+                    sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                    return;
+                }
+            }
+        });
+
+        socket.on('makeTransparent', function (content) {
+            var itemId = content.itemId;
+            var transparent = content.transparent;
+            sendToHoleRoom(roomName, "makeTransparent", content);
+            for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == itemId) {
+                    userPItems[roomName][currentLoadedTab[roomName]][i]["transparent"] = transparent;
+                    sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                    return;
+                }
+            }
+        });
+
+        socket.on('removeSingleFileEX', function (fileName) {
+            fs.unlink("./public/singlefiles/" + fileName, function (err) {
+                if (err) {
+                    console.error(err)
+                    return;
+                }
+            });
+            if (allSingleFiles[roomName])
+                delete allSingleFiles[roomName][fileName];
+            sendToHoleRoom(roomName, 'sigleFilesTable', allSingleFiles[roomName]);
+            saveSingleFileTable();
+        });
+
+        socket.on('getSingleFileTable', function () {
+            sendToHoleRoom(roomName, 'sigleFilesTable', allSingleFiles[roomName]);
+        });
+
+        socket.on('startStopSnake', function (trueFalse) {
+            var userInfo = getUserInfoFromId(socket.id);
+            snake.startStopSnake(socket.id, roomName, trueFalse);
+        });
+
+        socket.on('snakeKeyPressed', function (key) {
+            snake.snakeKeyPressed(socket.id, roomName, key);
+        });
+
+        socket.on('sendZoom', function (content) {
+            if (isModerator()) {
+                sendToHoleRoom(roomName, 'sendZoom', content);
+            }
+        });
+
+
+        socket.on('getUserInfos', function (id) {
+            var infos = getUserInfoFromId(id);
+            if (infos)
+                socket.emit('getUserInfos', infos);
+
+            if (id == rooms[roomName]["moderator"]) {
+                socket.emit('setModerator', id);
+            }
+        });
+
+        socket.on('putRemoteHandDown', function (id) {
+            if (isModerator()) {
+                sendToHoleRoom(roomName, 'putRemoteHandDown', id);
+            }
+        });
+
+        socket.on('delete3DObj', function (name) {
+            if (isModerator()) {
+                if (all3DObjs[roomName]) {
+                    for (var i = 0; i < all3DObjs[roomName].length; i++) {
+                        if (all3DObjs[roomName][i]["name"] == name) {
+                            all3DObjs[roomName].splice(i, 1);
+                        }
+                    }
+                    fs.remove('public/3dObjs/' + name, function (err) {
+                        if (err)
+                            console.log("DELERROR:", err);
+                    });
+                    save3DObjs();
+                }
+                sendToHoleRoom(roomName, 'load3DObjs', all3DObjs[roomName]);
+            }
+        });
+
+        socket.on('show3DObj', function (url) {
+            if (isModerator()) {
+                url3dObjs[roomName] = url;
+                sendToHoleRoom(roomName, 'show3DObj', url);
+            }
+        });
+
+        socket.on('getTimeStamp', function () {
+            socket.emit('getTimeStamp', +new Date());
+        });
+
+        socket.emit('getTimeStamp', +new Date());
+        setInterval(function () {
+            socket.emit('getTimeStamp', +new Date());
+        }, 60000);
+
+        socket.on('audioVolume', function (vol) {
+            sendToHoleRoom(roomName, 'audioVolume', { "userId": socket.id, "vol": vol });
+        });
+
+
+
+        socket.on('setUserName', function (content) {
+            var username = content["username"];
+            var password = content["passwort"];
+            var userLang = content["userLang"];
+            userdata["username"] = username;
+            userdata["userLang"] = userLang + '-' + userLang.toUpperCase();
+            // checkUserNameAndPassword(username, password, function(trueFalse) {
+            // });
+
+        });
+
+    });
+
+    function isModerator() {
+        if (rooms[roomName]["moderator"] == socket.id)
+            return true;
+        return false;
+    }
+
+});
+
+function removePraesi(name, roomName) {
+    delete allPraesis[roomName][name];
+    fs.remove('public/praesis/' + roomName.split("###")[0] + '/' + name, function (err) {
+        if (err)
+            console.log("DELERROR:", err);
+    });
+}
+
+function getAllRoomsWithoutPasswords() {
+    var cleanRooms = JSON.parse(JSON.stringify(rooms));
+    for (var i in cleanRooms) {
+        if (cleanRooms[i]["roomPassword"] != "") {
+            cleanRooms[i]["hasPassword"] = true;
+        }
+
+        delete cleanRooms[i]["roomPassword"];
+    }
+    return cleanRooms;
+}
+
+function progressUploadFormData(formData) {
+    var fields = formData.fields;
+    var files = formData.files;
+    var uploadType = fields["uploadType"];
+    var roomName = fields["room"];
+    var userId = fields["userId"];
+    var userInfo = getUserInfoFromId(userId);
+    if (!userInfo) {
+        console.log("Error: Cant get User infos!");
+        return;
+    }
+
+    if (uploadType == "praesi") {
+        var praesiName = trim(fields["praesiName"]);
+        var praesiType = trim(fields["praesiType"]);
+        var path = "./public/praesis/" + roomName.split("###")[0] + "/" + praesiName;
+        if (typeof (allPraesis[roomName]) == "undefined")
+            allPraesis[roomName] = {};
+
+        if (typeof (praesiName) == "undefined" || praesiName == "") {
+            console.log("empty praesiName not allowed!");
+            return;
+        }
+
+        fs.ensureDir(path).then(() => {
+            if (praesiType == "revealPraesi") {
+                var indexFile = trim(fields["indexFile"]);
+                var fileCtn = 0;
+                var file = null;
+                for (var i in files) {
+                    fileCtn++;
+                    file = files[i];
+                }
+                if (fileCtn != 1) {
+                    console.error("More than one File uploaded", files.length);
+                    return;
+                }
+
+                //Save Zip File
+                // try {
+                //     fs.createReadStream(file.path).pipe(fs.createWriteStream(path+'/'+file.name));
+                // } catch (e) {
+                //     console.log("fileUploadServerError",e);
+                //     return;
+                // }
+
+                yauzl.open(file.path, function (err, zipfile) {
+                    if (err) {
+                        console.error(err);
+                        return;
+                    }
+                    zipfile.on("entry", function (entry) {
+                        if (/\/$/.test(entry.fileName)) {
+                            // Dont do something on dirs
+                            return;
+                        }
+                        zipfile.openReadStream(entry, function (err, readStream) {
+                            if (err) {
+                                console.error(err);
+                                return;
+                            }
+                            var filesplit = entry.fileName.split("/");
+                            var dir = path;
+                            for (var i = 0; i < filesplit.length - 1; i++) {
+                                dir += "/" + filesplit[i];
+                            }
+                            fs.ensureDir(dir, function (err) {
+                                if (err) {
+                                    console.error(err);
+                                    removePraesi(praesiName, roomName);
+                                    return;
+                                }
+                                var nameSplit = filesplit[filesplit.length - 1].split(".");
+                                readStream.pipe(fs.createWriteStream(dir + "/" + filesplit[filesplit.length - 1]));
+                            });
+
+                        });
+                    });
+                    var secondCheck = false;
+                    zipfile.on("end", function () {
+                        function finishInit(tryCnt) {
+                            if (praesiType == "revealPraesi" && fs.existsSync(path + "/js/reveal.js")) {
+
+                                fs.readFile(path + '/' + indexFile, function read(err, data) {
+                                    if (err) {
+                                        console.log("Indexfile not found!");
+                                        if (tryCnt < 8) {
+                                            console.log("But try again!", tryCnt);
+                                            setTimeout(function () { finishInit(++tryCnt); }, 300);//Wait for data to be written
+                                        } else {
+                                            delete allPraesis[roomName][praesiName];
+                                        }
+                                        return;
+                                    }
+                                    var dataString = data.toString();
+                                    var slideCtn = undefined;
+                                    if (praesiType == "revealPraesi") {
+                                        slideCtn = dataString.split('<section').length;
+                                    }
+
+                                    allPraesis[roomName][praesiName] = {
+                                        "name": praesiName,
+                                        "type": praesiType,
+                                        "indexFile": indexFile,
+                                        "slideCtn": slideCtn
+                                    };
+                                    saveAllPraesis();
+                                    sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
+                                });
+                            } else if (tryCnt <= 4 && !secondCheck) {
+                                //Check if files are in subfolder
+                                fs.readdir(path, function (err, files) {
+                                    if (err) {
+                                        console.log("praesi readdir error:", err)
+                                        return;
+                                    }
+                                    if (files.length == 1) {
+                                        fs.readdir(path + "/" + files[0], function (err, files2) {
+                                            if (err) {
+                                                console.log("praesi readdir error2:", err)
+                                                return;
+                                            }
+                                            for (var i = 0; i < files2.length; i++) {
+                                                (function () {
+                                                    var k = i;
+                                                    fs.move(path + "/" + files[0] + "/" + files2[i], path + "/" + files2[i], function (err) {
+                                                        if (err) return console.error("praesi readdir error2:", err);
+                                                        if (k == files2.length - 1) {
+                                                            console.log("DONE! MOVING PRAESI FILES! FOR:", path);
+                                                            secondCheck = true;
+                                                            finishInit(0);
+                                                        }
+                                                    })
+                                                })();
+                                            }
+                                        });
+                                    } else {
+                                        delete allPraesis[roomName][praesiName];
+                                        console.log("Error: More than one subfolder at praesi upload!");
+                                    }
+                                });
+                            } else if (tryCnt >= 4) {
+                                delete allPraesis[roomName][praesiName];
+                                console.log("Dont ex", path, praesiType);
+                            } else {
+                                console.log("try to verify zip:", tryCnt, secondCheck);
+                                setTimeout(finishInit(++tryCnt), 200);//Wait for data to be written
+                            }
+                        }
+                        finishInit(0)
+                    });
+                });
+            } else if (praesiType == "pdfPraesi") {
+                //START PDF PRAESI
+                var fileCtn = 0;
+                var file = null;
+                for (var i in files) {
+                    fileCtn++;
+                    file = files[i];
+                }
+                if (fileCtn != 1) {
+                    console.error("More than one File uploaded", files.length);
+                    return;
+                }
+
+                var filespilt = file.name.split(".");
+                if (filespilt[filespilt.length - 1].toLowerCase() != "pdf") {
+                    console.error("upload was not a pdf", files.length);
+                    return;
+                }
+
+                fs.createReadStream(file.path).pipe(fs.createWriteStream(path + '/' + file.name));
+
+                allPraesis[roomName][praesiName] = {
+                    "name": praesiName,
+                    "type": praesiType,
+                    "filename": file.name
+                };
+                saveAllPraesis();
+
+                sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
+                //End PDF PRAESI
+
+            } else if (praesiType == "elsePraesi") {
+                //START ELSE PRAESI
+                var fileCtn = 0;
+                var file = null;
+                for (var i in files) {
+                    fileCtn++;
+                    file = files[i];
+                }
+                if (fileCtn != 1) {
+                    console.error("More than one File uploaded", files.length);
+                    return;
+                }
+                var fileName = file.name.replace(/[^a-zA-Z0-9.+]/g, "_");
+                fs.createReadStream(file.path).pipe(fs.createWriteStream(path + '/' + fileName));
+
+                var cmd = 'unoconv -f pdf -o ' + fileName + '.pdf ' + fileName;
+                sendToUserById(userId, 'praesiConvertion', { type: "info", msg: "beginConversion" });
+                exec(cmd, { cwd: path }, function (error, stdout, stderr) {
+                    if (error) {
+                        sendToUserById(userId, 'praesiConvertion', { type: "error", msg: JSON.stringify(error) });
+                        return console.log(error);
+                    }
+
+                    allPraesis[roomName][praesiName] = {
+                        "name": praesiName,
+                        "type": "pdfPraesi",
+                        "filename": fileName + '.pdf'
+                    };
+                    saveAllPraesis();
+                    sendToUserById(userId, 'praesiConvertion', { type: "info", msg: "successConversion" });
+                    sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
+                });
+                //End ELSE PRAESI
+            } else {
+                console.log("unknown praesiType!");
+            }
+        }).catch(err => {
+            console.log("could not create praesiFolder", praesiName);
+        });
+    } else if (uploadType == "singleFileUpload") {
+        if (typeof (allSingleFiles[roomName]) == "undefined") {
+            allSingleFiles[roomName] = {};
+        }
+
+        for (var i in files) {
+            var file = files[i];
+            if (file.name != "") {
+                try {
+                    fs.createReadStream(file.path).pipe(fs.createWriteStream('public/singlefiles/' + file.name));
+                    allSingleFiles[roomName][file.name] = { "filename": file.name, "username": userInfo.username, "date": +new Date() };
+                    console.log(file.name, "uploaded");
+                } catch (e) {
+                    console.log("singleFileUploadError122", e);
+                }
+            }
+        }
+
+        var imagedata = fields["imagedata"];
+        var name = fields["name"] || "";
+        var date = fields["date"] || (+new Date());
+        if (imagedata && imagedata != "") { //Its a video frame save
+            imagedata = imagedata.replace(/^data:image\/png;base64,/, "");
+            imagedata = imagedata.replace(/^data:image\/jpeg;base64,/, "");
+            imagedata = imagedata.replace(/^data:image\/jpg;base64,/, "");
+            imagedata = imagedata.replace(/^data:image\/gif;base64,/, "");
+            var filename = userInfo.username + "_" + name + "_" + date + ".png";
+            allSingleFiles[roomName][filename] = { "filename": filename, "username": userInfo.username, "date": +new Date() };
+            fs.writeFile('public/singlefiles/' + filename, imagedata, 'base64', function (err) {
+                if (err) {
+                    delete allSingleFiles[roomName][filename];
+                }
+            });
+        }
+
+        var imagedataJson = fields["imagedataJson"];
+        if (imagedataJson && imagedataJson != "") { //Its a video frame save
+            var filename = userInfo.username + "_" + name + "_" + (+new Date()) + ".json"
+            allSingleFiles[roomName][filename] = { "filename": filename, "username": userInfo.username, "date": +new Date() };
+            fs.writeFile('public/singlefiles/' + filename, imagedataJson, 'utf8', function (err) {
+                if (err) {
+                    delete allSingleFiles[roomName][filename];
+                }
+            });
+        }
+
+        sendToHoleRoom(roomName, 'sigleFilesTable', allSingleFiles[roomName]);
+        saveSingleFileTable();
+    } else if (uploadType == "profilePic") {
+        for (var i in files) {
+            var file = files[i];
+            try {
+                fs.createReadStream(file.path).pipe(fs.createWriteStream('public/profilePics/' + userInfo.username));
+                var userInfo = getUserInfoFromId(userId);
+                console.log("File Saved:" + file.name);
+            } catch (e) {
+                console.log("profilePicFileUploadServerError", e);
+            }
+        }
+
+        sendToHoleRoom(roomName, 'profilePicChange', { "userId": userId, "username": userInfo.username });
+    } else if (uploadType == "3dObj") {
+        var name = trim(fields["name"]);
+        var path = "./public/3dObjs/" + name;
+        var fileCtn = 0;
+        var file = null;
+        for (var i in files) {
+            fileCtn++;
+            file = files[i];
+        }
+        if (fileCtn != 1) {
+            console.error("More than one File uploaded", files.length);
+            return;
+        }
+
+        yauzl.open(file.path, function (err, zipfile) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            var fileArray = [];
+            zipfile.on("entry", function (entry) {
+                if (/\/$/.test(entry.fileName)) {
+                    // Dont do something on dirs
+                    return;
+                }
+                fileArray.push(entry.fileName);
+                zipfile.openReadStream(entry, function (err, readStream) {
+                    if (err) {
+                        console.error(err);
+                        return;
+                    }
+                    var filesplit = entry.fileName.split("/");
+                    var dir = path;
+                    for (var i = 0; i < filesplit.length - 1; i++) {
+                        dir += "/" + filesplit[i];
+                    }
+                    fs.ensureDir(dir, function (err) {
+                        if (err) {
+                            console.error(err);
+                            return;
+                        }
+                        var nameSplit = filesplit[filesplit.length - 1].split(".");
+                        readStream.pipe(fs.createWriteStream(dir + "/" + filesplit[filesplit.length - 1]));
+                    });
+                });
+            });
+            zipfile.on("end", function () {
+                if (!all3DObjs[roomName]) {
+                    all3DObjs[roomName] = [];
+                }
+                all3DObjs[roomName].push({ "name": name, "fileArray": fileArray });
+                save3DObjs();
+                sendToUserById(userId, '3dObjUploadMsg', { type: "info", msg: "Zip extracted!" });
+                sendToHoleRoom(roomName, 'load3DObjs', all3DObjs[roomName]);
+            });
+        });
+    } else {
+        console.log("unknown uploadType!");
+    }
+}
+
+snake.addGameCallbacks(function (theRoomName, players) {
+    sendToHoleRoom(theRoomName, 'updateSnakeGame', players);
+}, function (theRoomName) { //EndSnake game
+    sendToHoleRoom(theRoomName, 'endSnakeGame', false);
+}, function (theRoomName, socketId) { //EndSnake game
+    sendToHoleRoom(theRoomName, 'removeSnakePlayer', socketId);
+}, function (theRoomName, eatable) { // updateEatableCallback
+    sendToHoleRoom(theRoomName, 'updateEatable', eatable);
+}, function (theRoomName, players) { //showSnakeStatsCallback
+    sendToHoleRoom(theRoomName, 'showSnakeStats', players);
+});
+
+
+function sendToHoleRoom(roomName, key, content) {
+    if (rooms[roomName] && rooms[roomName]["user"]) {
+        for (var i = 0; i < rooms[roomName]["user"].length; i++) {
+            if (allsockets && rooms[roomName]["user"][i] && rooms[roomName]["user"][i]["socketId"] && allsockets[rooms[roomName]["user"][i]["socketId"]]) {
+                allsockets[rooms[roomName]["user"][i]["socketId"]].emit(key, content);
+            }
+        }
+    }
+}
+
+function sendToHoleRoomButNotMe(roomName, mySocketId, key, content) {
+    for (var i = 0; i < rooms[roomName]["user"].length; i++) {
+        if (rooms[roomName]["user"][i]["socketId"] != mySocketId) {
+            allsockets[rooms[roomName]["user"][i]["socketId"]].emit(key, content);
+        }
+    }
+}
+
+function sendToUserById(userId, key, content) {
+    allsockets[userId].emit(key, content);
+}
+
+function addUserToRoom(roomName, user) {
+    if (typeof (rooms[roomName]) == "undefined")
+        rooms[roomName] = {};
+    if (typeof (rooms[roomName]["user"]) == "undefined")
+        rooms[roomName]["user"] = [];
+    for (var i = 0; i < rooms[roomName]["user"].length; i++) {
+        if (user["socketId"] == rooms[roomName]["user"][i]["socketId"]) {
+            return; //user already in the room
+        }
+    }
+    rooms[roomName]["user"].push(user);
+}
+
+function removeUserFromeRoom(roomName, socketId) {
+    if (rooms[roomName] && rooms[roomName]["user"]) {
+        for (var i = 0; i < rooms[roomName]["user"].length; i++) {
+            if (socketId == rooms[roomName]["user"][i]["socketId"]) {
+                rooms[roomName]["user"].splice(i, 1);
+            }
+        }
+    }
+}
+
+function saveSingleFileTable() {
+    try {
+        var allSingleFilesString = JSON.stringify(allSingleFiles);
+        try {
+            fs.writeFileSync("./db/singleFileTable.txt", allSingleFilesString);
+        } catch (e) {
+            console.log(e);
+        }
+
+    } catch (e) {
+        console.log("Faild to save FileTable!", e);
+    }
+}
+
+function loadALlSingleFiles() {
+    fs.readFile('./db/singleFileTable.txt', 'utf8', function (err, data) {
+        if (err) {
+            return console.log("warning: File ./db/singleFileTable.txt not found (yet).");
+        }
+        try {
+            allSingleFiles = JSON.parse(data);
+        } catch (e) {
+            console.log("error reading ./db/singleFileTable.txt", e);
+        }
+    });
+}
+loadALlSingleFiles();
+
+function saveAllPraesis() {
+    try {
+        var allPraesisString = JSON.stringify(allPraesis);
+        if (typeof (allPraesisString) == "string") {
+            try {
+                fs.writeFileSync("./db/praesiSave.txt", allPraesisString);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+    } catch (e) {
+        console.log("Faild to save allPraesis!", e);
+    }
+}
+
+function loadALlPreasis() {
+    fs.readFile('./db/praesiSave.txt', 'utf8', function (err, data) {
+        if (err) {
+            return console.log("warning: File ./db/praesiSave.txt not found (yet).");
+        }
+        try {
+            allPraesis = JSON.parse(data);
+        } catch (e) {
+            console.log("error reading ./db/praesiSave.txt", e);
+        }
+    });
+}
+loadALlPreasis();
+
+function saveALlRoomNames() {
+    try {
+        var allRoomNames = [];
+        for (var i in rooms) {
+            var creator = rooms[i]["creator"] || "";
+            allRoomNames.push({ "roomName": rooms[i]["roomName"], "roomPassword": rooms[i]["roomPassword"], "creator": creator, "sipnumber": rooms[i]["sipnumber"] })
+        }
+        var allRoomNamesString = JSON.stringify(allRoomNames);
+        try {
+            fs.writeFileSync("./db/allRoomNames.txt", allRoomNamesString);
+        } catch (e) {
+            console.log(e);
+        }
+    } catch (e) {
+        console.log("Faild to save allRoomNames!", e);
+    }
+}
+
+function loadALlRoomNames(callback) {
+    fs.readFile('./db/allRoomNames.txt', 'utf8', function (err, data) {
+        if (err) {
+            return console.log("warning: File ./db/allRoomNames.txt not found (yet).");
+        }
+        try {
+            allRoomNames = JSON.parse(data);
+            callback(allRoomNames);
+        } catch (e) {
+            console.log("error reading ./db/allRoomNames.txt", e);
+        }
+    });
+}
+
+loadALlRoomNames(function (allRoomNames) {
+    for (var i = 0; i < allRoomNames.length; i++) {
+        var croom = allRoomNames[i];
+        rooms[croom["roomName"]] = { moderator: null, user: [], "roomName": croom["roomName"], "creator": croom["creator"], "roomPassword": croom["roomPassword"], "sipnumber": croom["sipnumber"] };
+    }
+});
+
+function loadALlUserPItems() {
+    fs.readFile('./db/userPItems.txt', 'utf8', function (err, data) {
+        if (err) {
+            return console.log("warning: File ./db/userPItems.txt not found (yet).");
+        }
+        try {
+            userPItems = JSON.parse(data);
+        } catch (e) {
+            console.log("error reading ./db/userPItems.txt", e);
+        }
+    });
+};
+
+loadALlUserPItems();
+
+function saveUserPItems() {
+    try {
+        var userPItemsString = JSON.stringify(userPItems);
+        try {
+            fs.writeFileSync("./db/userPItems.txt", userPItemsString);
+        } catch (e) {
+            console.log(e);
+        }
+    } catch (e) {
+        console.log("Faild to save userPItems!", e);
+    }
+}
+
+function loadAll3DObjs() {
+    fs.readFile('./db/all3DObjs.txt', 'utf8', function (err, data) {
+        if (err) {
+            return console.log("warning: File ./db/all3DObjs.txt not found (yet).");
+        }
+        try {
+            all3DObjs = JSON.parse(data);
+        } catch (e) {
+            console.log("error reading ./db/all3DObjs.txt", e);
+        }
+    });
+};
+
+loadAll3DObjs();
+
+function save3DObjs() {
+    try {
+        var the3DString = JSON.stringify(all3DObjs);
+        try {
+            fs.writeFileSync("./db/all3DObjs.txt", the3DString);
+        } catch (e) {
+            console.log(e);
+        }
+    } catch (e) {
+        console.log("Faild to save 3DObjs!", e);
+    }
+}
+
+function getUserInfoFromId(id) {
+    for (var i in rooms) {
+        if (rooms[i]["user"]) {
+            for (var k = 0; k < rooms[i]["user"].length; k++) {
+                if (rooms[i]["user"][k]["socketId"] == id) {
+                    var ret = {};
+                    for (var j in rooms[i]["user"][k]) {
+                        if (j != "socket") {
+                            ret[j] = rooms[i]["user"][k][j];
+                        }
+                    }
+                    return ret;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+// CLEANUP ON EXIT
+process.on('exit', function (code) {
+    console.log('Cleanup and exit!');
+    saveUserPItems();
+    process.exit();
+});
+
+//catches ctrl+c event
+process.on('SIGINT', function (code) {
+    process.exit();
+});
+
+//catches uncaught exceptions
+process.on('uncaughtException', function (code) {
+    console.log(code);
+    process.exit();
+});

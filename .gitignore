@@ -102,3 +102,15 @@ dist
 
 # TernJS port file
 .tern-port
+
+/db
+/public/erizo.js
+/public/praesis
+/public/profilePics
+/public/singlefiles
+/public/3dObjs
+/node_modules
+/config
+/public/js/clientConfig.js
+.idea/
+package-lock.json

@@ -1,0 +1,47 @@
+{
+  "name": "accelerator",
+  "version": "2.0.0",
+  "description": "WebRTC Collaboration/Presentation Tool",
+  "main": "server.js",
+  "directories": {
+  },
+  "scripts": {
+    "test": "echo \"No tests needed!\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cracker0dks/Accelerator"
+  },
+  "keywords": [
+    "webrtc",
+    "collaboration",
+    "conference",
+    "accelerator"
+  ],
+  "dependencies": {
+    "express": "^4.17.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "formidable": "^1.2.2",
+    "fs-extra": "^8.1.0",
+    "os-utils": "0.0.14",
+    "simple-peer": "^9.6.2",
+    "socket.io": "^2.3.0",
+    "wrtc": "^0.4.4",
+    "yauzl": "^2.10.0"
+  },
+  "author": "Raphael Fritsch",
+  "contributors": [
+    {
+      "name": "Raphael Fritsch",
+      "email": "raphael.fritsch@gmx.de"
+    },
+    {
+      "name": "Simone Liegl",
+      "email": "simone.liegl@gmail.com"
+    },
+    {
+      "name": "Sebastian Hirth"
+    }
+  ],
+  "license": "GPLv3.0"
+}
