@@ -47,7 +47,7 @@ function initEzWebRTC(initiator, config) {
 
     pc.oniceconnectionstatechange = async function (e) {
         //console.log('ICE state: ' + pc.iceConnectionState);
-        if (pc.iceConnectionState == "connected") {
+        if (pc.iceConnectionState == "connected" || pc.iceConnectionState == "completed") {
             _this.isConnected = true;
             _this.emitEvent("connect", true)
         } else if (pc.iceConnectionState == 'disconnected') {
