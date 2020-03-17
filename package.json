@@ -24,7 +24,6 @@
     "formidable": "^1.2.2",
     "fs-extra": "^8.1.0",
     "os-utils": "0.0.14",
-    "simple-peer": "^9.6.2",
     "socket.io": "^2.3.0",
     "wrtc": "^0.4.4",
     "yauzl": "^2.10.0"
