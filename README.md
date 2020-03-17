@@ -86,10 +86,10 @@ Because we are running with --net=host, we ca set "serverIp" to the ip of the ho
 
 -------------------------
 
-### Based on a Master Semester Project ###
+### Based on a Semester Project ###
 * University: [Reutlingen University](https://www.reutlingen-university.de)
 * Faculty: [Informatik](https://www.inf.reutlingen-university.de/de/home/)
-* Course of study: [Human-Centered Computing](https://www.inf.reutlingen-university.de/de/master/human-centered-computing/ziel-des-studiengangs/) 
+* Course of study: [Human-Centered Computing (Master)](https://www.inf.reutlingen-university.de/de/master/human-centered-computing/ziel-des-studiengangs/) 
 * Lecture: "Kollaborative Systeme" 
 
 ### Authors ###
