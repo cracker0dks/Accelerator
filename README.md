@@ -93,8 +93,16 @@ Because we are running with --net=host, we ca set "serverIp" to the ip of the ho
 * Lecture: "Kollaborative Systeme" 
 
 ### Authors ###
+
+#### Students ####
 * Simone Liegl (simone.liegl@gmail.com) | Frontend / Design / UX
 * Raphael Fritsch (raphael.fritsch@reutlingen-university.de) | Backend / WebRTC
 * Sebastian Hirth | Frontend / Backend / Logo
+
+#### Professors ####
+* Gabriela Tullius (gabriela.tullius@reutlingen-university.de)
+* Peter Hertkorn (peter.hertkorn@reutlingen-university.de)
+
+
 
 license: GPLv3.0
