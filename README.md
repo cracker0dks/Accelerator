@@ -1,5 +1,5 @@
 # Accelerator
-Free Online Conference and Collaboration Tool with build in Node SFU
+Free Online Conference and Collaboration Tool with build in WebRTC SFU running in NodeJS
 
 ![previmg](/public/images/acc.png)
 
