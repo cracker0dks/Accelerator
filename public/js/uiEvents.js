@@ -142,7 +142,7 @@ $(function () { //Document ready
 
 			for (var i in devices) {
 				var device = devices[i];
-				var devLabel = device["label"] && device["label"] != "" ? device["label"] : "Video Device "+device["deviceId"].substr(0, 10)
+				var devLabel = device["label"] && device["label"] != "" ? device["label"] : "Video Device " + device["deviceId"].substr(0, 10)
 				if (device.kind === 'audiooutput') {
 					audioOutputSelect.append('<option value="' + device["deviceId"] + '">' + devLabel + '</option>');
 					oneOutputDevice = true;
