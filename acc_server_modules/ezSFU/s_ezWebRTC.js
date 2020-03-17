@@ -25,6 +25,7 @@ function initEzWebRTC(initiator, config) {
 
     var pc = new wrtc.RTCPeerConnection(rtcConfig);
 
+    // @ts-ignore
     pc.onnegotiationneeded = async function () {
         if (initiator) {
             negotiate()
@@ -33,6 +34,7 @@ function initEzWebRTC(initiator, config) {
         }
     }
 
+    // @ts-ignore
     pc.onicecandidate = function (e) {
         if (!pc || !e || !e.candidate) return;
         _this.emitEvent("signaling", e.candidate)
@@ -50,17 +52,22 @@ function initEzWebRTC(initiator, config) {
         });
     }
 
+    // @ts-ignore
     pc.oniceconnectionstatechange = async function (e) {
         //console.log('ICE state: ' + pc.iceConnectionState);
+        // @ts-ignore
         if (pc.iceConnectionState == "connected") {
             _this.isConnected = true;
             _this.emitEvent("connect", true)
+        // @ts-ignore
         } else if (pc.iceConnectionState == 'disconnected') {
             _this.isConnected = true;
             _this.emitEvent("disconnect", true)
+        // @ts-ignore
         } else if (pc.iceConnectionState == 'failed' && initiator) { //Try to reconnect from initator side
             _this.isConnected = false;
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))
+            // @ts-ignore
             _this.emitEvent("signaling", pc.localDescription)
         }
     };
@@ -69,6 +76,7 @@ function initEzWebRTC(initiator, config) {
         if (signalData == "renegotiate") { //Got renegotiate request, so do it
             negotiate();
         } else if (signalData && signalData.type == "offer") { //Got an offer -> Create Answer)
+            // @ts-ignore
             if (pc.signalingState != "stable") { //If not stable ask for renegotiation
                 await Promise.all([
                     pc.setLocalDescription({ type: "rollback" }), //Be polite
@@ -78,10 +86,12 @@ function initEzWebRTC(initiator, config) {
                 await pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
             }
             await pc.setLocalDescription(await pc.createAnswer(rtcConfig.offerOptions));
+            // @ts-ignore
             _this.emitEvent("signaling", pc.localDescription)
         } else if (signalData && signalData.type == "answer") { //STEP 5 (Initiator: Setting answer and starting connection)
             pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
         } else if (signalData && signalData.candidate) { //is a icecandidate thing
+            // @ts-ignore
             pc.addIceCandidate(new wrtc.RTCIceCandidate(signalData));
         }
     }
@@ -118,9 +128,13 @@ function initEzWebRTC(initiator, config) {
 
     this.destroy = function () {
         pc.close();
+        // @ts-ignore
         pc.oniceconnectionstatechange = null
+        // @ts-ignore
         pc.onicegatheringstatechange = null
+        // @ts-ignore
         pc.onsignalingstatechange = null
+        // @ts-ignore
         pc.onicecandidate = null
         pc.ontrack = null
         _this.isConnected = false;
@@ -134,8 +148,10 @@ function initEzWebRTC(initiator, config) {
 
     async function negotiate() {
         const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
+        // @ts-ignore
         if (pc.signalingState != "stable") return;
         await pc.setLocalDescription(offer);
+        // @ts-ignore
         _this.emitEvent("signaling", pc.localDescription)
     }
 

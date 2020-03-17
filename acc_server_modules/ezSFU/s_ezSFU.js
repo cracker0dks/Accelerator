@@ -25,7 +25,7 @@ var loadBalancersAttributes = {
 
 var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
-    var orgIceServer = JSON.parse(JSON.stringify(newConfig.config.iceServers));
+    var orgIceServer = JSON.parse(JSON.stringify(newConfig.webRtcConfig.iceServers));
 
     io.sockets.on('connection', function (socket) {
         let myStreamIds = [];
@@ -62,8 +62,6 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             delete allPeers[socket.id];
         });
 
-        var defaultPeerConfig = {
-        }
 
         function getCurrentIceServers() {
             var icesevers = orgIceServer;
@@ -81,18 +79,14 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                 }
             }
 
-            newConfig.config.iceServers = returnIce;
+            newConfig.webRtcConfig.iceServers = returnIce;
             return returnIce;
 
         }
 
         socket.emit("sfu_onIceServers", getCurrentIceServers())
 
-        for (var i in newConfig) {
-            defaultPeerConfig[i] = newConfig[i];
-        }
-
-        var localPeer = new Peer.initEzWebRTC(true, defaultPeerConfig) //Create a peer for every socketconnection
+        var localPeer = new Peer.initEzWebRTC(true, newConfig.webRtcConfig) //Create a peer for every socketconnection
         allPeers[socket.id] = localPeer;
 
         localPeer.on('error', function (err) {

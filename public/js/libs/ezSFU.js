@@ -1,8 +1,6 @@
 //@ts-check
 function ezSFU(socket, newConfig = {}) {
-    var sfuConfig = {
-        trickle: true
-    }
+    var sfuConfig = {}
     for (var i in newConfig) {
         sfuConfig[i] = newConfig[i];
     }
@@ -31,12 +29,9 @@ function ezSFU(socket, newConfig = {}) {
         if (_this.peers[peerId]) {
             return console.log("Already connected to this peer!");
         }
+
         // @ts-ignore
-        _this.peers[peerId] = new initEzWebRTC(false, {
-            config: {
-                iceServers: iceServers
-            }
-        })
+        _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers })
         _this.peers[peerId].on('error', err => console.log('error', err))
 
         _this.peers[peerId].on('signaling', data => {
