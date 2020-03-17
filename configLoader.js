@@ -4,7 +4,6 @@ var defaultConfig = {
 	"https": { "port": 443 },
 	"sfuConfig": {
 		reconnectTimer: 100,
-		trickle: true,
 		config: { //This is the configs for the peer connections
 			portRange: {
 				min: 30000, // defaults to 30000

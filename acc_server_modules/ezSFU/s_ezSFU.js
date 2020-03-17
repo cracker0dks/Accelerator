@@ -6,8 +6,7 @@ So all things supported that are supported by Chromium
  --------------------------- */
 var os = require('os-utils');
 var crypto = require('crypto');
-var Peer = require('simple-peer');
-var wrtc = require('wrtc');
+var Peer = require('./s_ezWebRTC');
 var ezRtcRecorder = require("./s_ezRtcRecorder");
 
 var allStreams = {}; //Contains all the streams on this instance
@@ -64,9 +63,6 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         });
 
         var defaultPeerConfig = {
-            initiator: false,
-            trickle: true,
-            wrtc: wrtc
         }
 
         function getCurrentIceServers() {
@@ -96,7 +92,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             defaultPeerConfig[i] = newConfig[i];
         }
 
-        var localPeer = new Peer(defaultPeerConfig) //Create a peer for every socketconnection
+        var localPeer = new Peer.initEzWebRTC(true, defaultPeerConfig) //Create a peer for every socketconnection
         allPeers[socket.id] = localPeer;
 
         localPeer.on('error', function (err) {
@@ -109,8 +105,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         localPeer.on('connect', () => {
         })
 
-        localPeer.on('signal', data => {
-            //console.log('SIGNAL', JSON.stringify(data))
+        localPeer.on('signaling', data => {
             socket.emit("sfu_signaling", { instanceFrom: "main", data: data });
         })
 
@@ -157,7 +152,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             var data = content["data"];
             if (instanceTo == "main") {
                 try {
-                    localPeer.signal(data);
+                    localPeer.signaling(data);
                 } catch (e) {
                     console.log("warning: localPeer gone... no signaling!")
                 }
@@ -179,7 +174,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             function subToStream(subCnt) {
                 if (allStreams[streamId]) {
                     // @ts-ignore
-                    if (localPeer._connected) {
+                    if (localPeer.isConnected) {
                         try {
                             localPeer.addStream(allStreams[streamId]);
                             callback(null);
