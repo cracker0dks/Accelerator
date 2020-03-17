@@ -86,7 +86,11 @@ Because we are running with --net=host, we ca set "serverIp" to the ip of the ho
 
 -------------------------
 
-Based on a Semester Project at: [Reutlingen University](https://www.reutlingen-university.de)
+### Based on a Master Semester Project ###
+* University: [Reutlingen University](https://www.reutlingen-university.de)
+* Faculty: [Informatik](https://www.inf.reutlingen-university.de/de/home/)
+* Course of study: [Human-Centered Computing](https://www.inf.reutlingen-university.de/de/master/human-centered-computing/ziel-des-studiengangs/) 
+* Lecture: "Kollaborative Systeme" 
 
 ### Authors ###
 * Simone Liegl (simone.liegl@gmail.com) | Frontend / Design / UX
