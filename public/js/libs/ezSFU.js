@@ -204,13 +204,7 @@ function ezSFU(socket, newConfig = {}) {
         var _this = this;
         var instanceTo = _this.allStreamAttributes[streamId] ? _this.allStreamAttributes[streamId]["instanceTo"] : "";
         if (instanceTo == "main")
-            socket.emit("sfu_subscribeToStream", streamId, function (err) {
-                if (err) {
-                    callback(err)
-                } else {
-                    callback()
-                }
-            });
+            socket.emit("sfu_subscribeToStream", streamId, callback);
         else { //Stream is on a loadbalancer
             if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
                 _this.peers[instanceTo].send(JSON.stringify({

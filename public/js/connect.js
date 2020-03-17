@@ -72,7 +72,9 @@ var loadSFUConnection = function (roomToConnect) {
                 if (streamId != localAudioStream.id.replace("{", "").replace("}", "")) {
                     mySFU.subscribeToStream(streamId, function (err) {
                         if (err) {
+                            $("#" + streamId).remove();
                             writeToChat("StreamError", "Was not able to add stream:" + streamId);
+                            console.error("StreamError", "Was not able to add stream:" + streamId, err);
                         } else {
                             console.log("StreamInfo", "Connected to stream:" + streamId);
                         }
@@ -122,6 +124,7 @@ var loadSFUConnection = function (roomToConnect) {
                     showTheScreen();
                 } else if (stream.hasVideo) {  //Video Stream
                     console.log("ADD VIDEO!")
+                    $("#video" + streamId).remove(); //just in case so no double cam
                     if (streamAttr && streamAttr["itemId"]) { //Webcamstream in userPitem
                         if (streamSocketId == ownSocketId) {
                             writeToChat("Server", "Webcamstream connected!");
@@ -156,12 +159,8 @@ var loadSFUConnection = function (roomToConnect) {
                             });
                         }
 
-                        if ($("#" + streamAttr["itemId"]).length >= 1) {
-                            $("#" + streamAttr["itemId"]).find(".innerContent").html('<div id="video' + streamId + '" class="" style="width: 100%; height: 100%; z-index:10;"></div>');
-                            mySFU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
-                        } else {
-                            setTimeout(appendStream, 2000); //Wait for item to show up
-                        }
+                        $("#" + streamAttr["itemId"]).find(".innerContent").html('<div id="video' + streamId + '" class="" style="width: 100%; height: 100%; z-index:10;"></div>');
+                        mySFU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
 
                     } else {
                         if (streamSocketId == ownSocketId) {
@@ -189,12 +188,12 @@ var loadSFUConnection = function (roomToConnect) {
                     $('.socketId' + streamSocketId + ' audio').prop("muted", "true");
 
                     if (getBrowser() == "chrome-stable") {
-                        if(prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
+                        if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
                             $('#audio' + streamId).find("audio")[0].setSinkId(prevOutputDevice); //Set audio output chrome  
                         } else {
                             $('#audio' + streamId).find("audio")[0].setSinkId("default"); //Set audio output device to default in chrome  
                         }
-                        
+
                     }
                 }
             });
@@ -239,7 +238,7 @@ var loadSFUConnection = function (roomToConnect) {
 
             function startLocalAudioStream() {
                 var constraints = prevAudioInputDevice ? { deviceId: { exact: prevAudioInputDevice } } : true;
-                
+
                 navigator.getUserMedia({ audio: constraints, video: false }, (stream) => {
                     stream["attributes"] = { socketId: ownSocketId, username: username };
                     localAudioStream = stream;
@@ -1295,5 +1294,3 @@ function initSocketIO() {
         })
     })
 }
-
-
