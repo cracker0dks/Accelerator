@@ -29,12 +29,12 @@ function ezSFU(socket, newConfig = {}) {
         if (_this.peers[peerId]) {
             return console.log("Already connected to this peer!");
         }
-
         // @ts-ignore
         _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers })
         _this.peers[peerId].on('error', err => console.log('error', err))
 
         _this.peers[peerId].on('signaling', data => {
+            //console.log("SENDING SIGNALING OUT >", data)
             socket.emit("sfu_signaling", { instanceTo: peerId, data: data })
         })
 
@@ -71,7 +71,9 @@ function ezSFU(socket, newConfig = {}) {
             console.log("sfu socket connected");
 
             socket.on("sfu_signaling", function (content) {
+
                 var data = content["data"];
+                //console.log("SENDING SIGNALING IN <", data)
                 var instanceFrom = content["instanceFrom"];
                 if (_this.peers[instanceFrom]) {
                     _this.peers[instanceFrom].signaling(data);
@@ -218,7 +220,7 @@ function ezSFU(socket, newConfig = {}) {
             } else if (_this.peers[instanceTo]) { //We already started a connection so wait for it to connect
                 setTimeout(function () {
                     _this.subscribeToStream(streamId, callback);
-                }, 200)
+                }, 100)
             } else {
                 //We need to connect to the instance first
                 _this.makeNewPeer(instanceTo, function () {
@@ -252,9 +254,9 @@ function ezSFU(socket, newConfig = {}) {
                     _this.peers[instanceTo].addStream(stream);
                     callback(null, setStreamAttributes)
                 } else if (_this.peers[instanceTo]) { //Connection started so wait for it...
-                    setTimeout(function() {
+                    setTimeout(function () {
                         _this.publishStreamToRoom(roomname, stream, callback)
-                    }, 200)                    
+                    }, 200)
                 } else if (!_this.peers[instanceTo]) {
                     //We need to connect to the instance first
                     console.log("CONNECT TO LB!!!");

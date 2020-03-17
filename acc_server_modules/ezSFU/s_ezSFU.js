@@ -93,22 +93,18 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             console.log('peererror', socket.id, err)
         });
 
-        localPeer.on('close', () => {
+        localPeer.on('disconnect', () => {
         })
 
         localPeer.on('connect', () => {
         })
 
         localPeer.on('signaling', data => {
+            //console.log("SIGNALING OUT >", data.type)
             socket.emit("sfu_signaling", { instanceFrom: "main", data: data });
         })
 
-        localPeer.on('data', data => {
-            //console.log(data);
-        })
-
         localPeer.on('stream', stream => {
-
             var streamId = stream.id.replace("{", "").replace("}", "");
             allStreams[streamId] = stream;
 
@@ -146,12 +142,14 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             var data = content["data"];
             if (instanceTo == "main") {
                 try {
+                    //console.log("SIGNALING IN <", data.type)
                     localPeer.signaling(data);
                 } catch (e) {
                     console.log("warning: localPeer gone... no signaling!")
                 }
             } else if (loadBalancersSockets[instanceTo]) {
                 content["clientSocketId"] = socket.id;
+
                 loadBalancersSockets[instanceTo].emit("sfu_signaling", content);
             } else if (instanceTo == "clientSocket") {
                 var clientSocketId = content["clientSocketId"];
@@ -327,7 +325,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
     function findBestStreamingInstance(streamAttributes, callback) {
         var instanceId = null;
         for (var i in loadBalancersAttributes) { //Find a fitting free loadbalancer
-            if (loadBalancersAttributes[i]["enabled"] && loadBalancersAttributes[i]["cpuUsage"] < loadBalancersAttributes[i]["maxCpuLoad"] ) { // && loadBalancersAttributes[i]["freeMem"] > loadBalancersAttributes[i]["minMemory"]
+            if (loadBalancersAttributes[i]["enabled"] && loadBalancersAttributes[i]["cpuUsage"] < loadBalancersAttributes[i]["maxCpuLoad"]) { // && loadBalancersAttributes[i]["freeMem"] > loadBalancersAttributes[i]["minMemory"]
                 if (!instanceId) { //If we have no instance, set always one
                     instanceId = i;
                 } else if ((loadBalancersAttributes[i]["maxWantedCpuLoad"] - loadBalancersAttributes[i]["cpuUsage"]) > (loadBalancersAttributes[instanceId]["maxWantedCpuLoad"] - loadBalancersAttributes[instanceId]["cpuUsage"])) { //Take the instance with less load away from wanted cpuLoad 
@@ -335,10 +333,10 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                 }
             }
         }
-		console.log("mainload", loadBalancersAttributes["main"]["enabled"], loadBalancersAttributes["main"]["cpuUsage"], loadBalancersAttributes["main"]["maxCpuLoad"], loadBalancersAttributes["main"]["freeMem"], loadBalancersAttributes["main"]["minMemory"])
+        console.log("mainload", loadBalancersAttributes["main"]["enabled"], loadBalancersAttributes["main"]["cpuUsage"], loadBalancersAttributes["main"]["maxCpuLoad"], loadBalancersAttributes["main"]["freeMem"], loadBalancersAttributes["main"]["minMemory"])
         if (!instanceId) {
             callback(null, "main");
-           // callback("No fitting streaming instance found! Maybe servers are down or to high server load?!", instanceId);
+            // callback("No fitting streaming instance found! Maybe servers are down or to high server load?!", instanceId);
         } else {
             callback(null, instanceId);
         }

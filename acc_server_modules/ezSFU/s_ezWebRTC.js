@@ -15,7 +15,8 @@ function initEzWebRTC(initiator, config) {
             {
                 "urls": "stun:stun.l.google.com:19302"
             }
-        ]
+        ],
+        sdpSemantics: 'unified-plan'
     }
     if (config) {
         for (var i in config) {
@@ -26,12 +27,8 @@ function initEzWebRTC(initiator, config) {
     var pc = new wrtc.RTCPeerConnection(rtcConfig);
 
     // @ts-ignore
-    pc.onnegotiationneeded = async function () {
-        if (initiator) {
-            negotiate()
-        } else {
-            _this.emitEvent("signaling", "renegotiate"); //Request the initiator for renegotiation
-        }
+    pc.onsignalingstatechange = function (event) {
+        _this.emitEvent("onsignalingstatechange", event);
     }
 
     // @ts-ignore
@@ -46,7 +43,6 @@ function initEzWebRTC(initiator, config) {
             _this.emitEvent('track', event.track, eventStream);
             if (!knownStreams[eventStream.id]) { //emit onStream event
                 _this.emitEvent("stream", eventStream);
-
             }
             knownStreams[eventStream.id] = true;
         });
@@ -59,11 +55,11 @@ function initEzWebRTC(initiator, config) {
         if (pc.iceConnectionState == "connected") {
             _this.isConnected = true;
             _this.emitEvent("connect", true)
-        // @ts-ignore
+            // @ts-ignore
         } else if (pc.iceConnectionState == 'disconnected') {
             _this.isConnected = true;
             _this.emitEvent("disconnect", true)
-        // @ts-ignore
+            // @ts-ignore
         } else if (pc.iceConnectionState == 'failed' && initiator) { //Try to reconnect from initator side
             _this.isConnected = false;
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))
@@ -73,8 +69,8 @@ function initEzWebRTC(initiator, config) {
     };
 
     this.signaling = async function (signalData) { //Handle signaling
-        if (signalData == "renegotiate") { //Got renegotiate request, so do it
-            negotiate();
+        if (signalData == "renegotiate" && initiator) { //Got renegotiate request, so do it
+            negotiate("REQUEST");
         } else if (signalData && signalData.type == "offer") { //Got an offer -> Create Answer)
             // @ts-ignore
             if (pc.signalingState != "stable") { //If not stable ask for renegotiation
@@ -88,11 +84,17 @@ function initEzWebRTC(initiator, config) {
             await pc.setLocalDescription(await pc.createAnswer(rtcConfig.offerOptions));
             // @ts-ignore
             _this.emitEvent("signaling", pc.localDescription)
+            if (!initiator)
+                requestMissingTransceivers()
         } else if (signalData && signalData.type == "answer") { //STEP 5 (Initiator: Setting answer and starting connection)
             pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
+        } else if (signalData && signalData.type == "transceive" && initiator) { //Got an request to transrecive
+            _this.addTransceiver(signalData.kind, signalData.init)
         } else if (signalData && signalData.candidate) { //is a icecandidate thing
             // @ts-ignore
             pc.addIceCandidate(new wrtc.RTCIceCandidate(signalData));
+        } else {
+            console.log("Some unused signaling data???", signalData)
         }
     }
 
@@ -110,20 +112,42 @@ function initEzWebRTC(initiator, config) {
             }
             delete trackSenders[event.track.id]
         };
+        negotiate("addStream");
     }
 
     this.removeStream = function (stream) {
         stream.getTracks().forEach(track => {
             pc.removeTrack(trackSenders[track.id])
         });
+        negotiate("removeStream");
     }
 
     this.addTrack = function (track, stream) {
         pc.addTrack(track, stream);
+        negotiate("addTrack");
     }
 
     this.removeTrack = function (track) {
         pc.removeTrack(trackSenders[track.id])
+        negotiate("removeTrack");
+    }
+
+    this.addTransceiver = function (kind, init) {
+        if (initiator) {
+            try {
+                pc.addTransceiver(kind, init)
+                negotiate("addTransceiver");
+            } catch (err) {
+                console.log("addTransceiver Error", err)
+                _this.destroy()
+            }
+        } else {
+            _this.emitEvent("signaling", { // request initiator add a transceiver
+                type: "transceive",
+                kind: kind,
+                init: init
+            })
+        }
     }
 
     this.destroy = function () {
@@ -142,17 +166,35 @@ function initEzWebRTC(initiator, config) {
 
     if (rtcConfig.stream) {
         this.addStream(rtcConfig.stream); //Add stream at start, this will trigger negotiation on initiator
-    } else if (initiator) { //start negotiation without a stream if we are initiator
-        negotiate();
     }
 
-    async function negotiate() {
-        const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
-        // @ts-ignore
-        if (pc.signalingState != "stable") return;
-        await pc.setLocalDescription(offer);
-        // @ts-ignore
-        _this.emitEvent("signaling", pc.localDescription)
+    if (initiator) { //start negotiation if we are initiator
+        negotiate("start");
+    }
+
+    async function negotiate(from) {
+        //console.log("WE ARE HERE, negotiate", from)
+        if (initiator) {
+            const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
+            // @ts-ignore
+            if (pc.signalingState != "stable") return;
+            await pc.setLocalDescription(offer);
+            // @ts-ignore
+            _this.emitEvent("signaling", pc.localDescription)
+        } else {
+            _this.emitEvent("signaling", "renegotiate");
+        }
+    }
+
+    function requestMissingTransceivers() {
+        if (pc.getTransceivers) {
+            pc.getTransceivers().forEach(transceiver => {
+                if (!transceiver.mid && transceiver.sender.track && !transceiver.requested) {
+                    transceiver.requested = true // HACK: Safari returns negotiated transceivers with a null mid
+                    _this.addTransceiver(transceiver.sender.track.kind)
+                }
+            })
+        }
     }
 
     this.mappedEvents = {};
