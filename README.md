@@ -1,5 +1,5 @@
 # Accelerator
-Free Online Conference and Collaboration Tool with Node SFU
+Free Online Conference and Collaboration Tool with build in Node SFU
 
 ![previmg](/public/images/acc.png)
 
