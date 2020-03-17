@@ -16,7 +16,7 @@ Free Online Conference and Collaboration Tool with build in Node SFU
 - [x] Text Chat
 - [x] WebRTC SFU in Node (using [simple-peer](https://github.com/feross/simple-peer))
 - [x] Configurable with own STUN / TURN Server (Setup below)
-- [x] Mutch more...
+- [x] much more...
 
 - [ ] Etherpad (Must be hosted on its own)
 
