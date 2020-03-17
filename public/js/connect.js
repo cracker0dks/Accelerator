@@ -102,7 +102,7 @@ var loadSFUConnection = function (roomToConnect) {
                     function showTheScreen() {
                         if (currentTab == "#screenShare") { //Dont show screenshare on wrong tab
                             $("#screenShareStream").empty();
-                            mySFU.showMediaStream("screenShareStream", stream, "width: 100%;");
+                            mySFU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
 
 
                             var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
