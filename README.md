@@ -100,8 +100,8 @@ Because we are running with --net=host, we ca set "serverIp" to the ip of the ho
 * Sebastian Hirth | Frontend / Backend / Logo
 
 #### Professors ####
-* Gabriela Tullius (gabriela.tullius@reutlingen-university.de)
-* Peter Hertkorn (peter.hertkorn@reutlingen-university.de)
+* Gabriela Tullius (gabriela.tullius@reutlingen-university.de) | [SwuxLab](https://swuxlab.reutlingen-university.de/team/)
+* Peter Hertkorn (peter.hertkorn@reutlingen-university.de) | [SwuxLab](https://swuxlab.reutlingen-university.de/team/)
 
 
 
