@@ -123,7 +123,7 @@ $(function () { //Document ready
 
 	$("#setupCheckBtn").click(function () {
 		$("#setupCheckBtn").attr("disabled", "true")
-		setTimeout(function() {
+		setTimeout(function () {
 			$("#setupCheckBtn").removeAttr("disabled")
 		}, 2000)
 		var testAudioStream = null;
@@ -133,7 +133,7 @@ $(function () { //Document ready
 		var oneOutputDevice = false;
 		var oneVideoInput = false;
 		var audioInputProgressBar = $('<progress value="0" max="100" style="width: 300px;">0</progress>')
-		navigator.getUserMedia({ audio: true, video : true }, async function (stream) {
+		navigator.getUserMedia({ audio: true, video: false }, async function (stream) {
 			var audioOutputSelect = $('<select style="width: 300px;"></select>');
 			var audioInputSelect = $('<select style="width: 300px;"></select>');
 			var videoInputSelect = $('<select style="width: 300px;"></select>');
@@ -142,13 +142,14 @@ $(function () { //Document ready
 
 			for (var i in devices) {
 				var device = devices[i];
+				var devLabel = device["label"] && device["label"] != "" ? device["label"] : "Video Device "+device["deviceId"].substr(0, 10)
 				if (device.kind === 'audiooutput') {
-					audioOutputSelect.append('<option value="' + device["deviceId"] + '">' + device["label"] + '</option>');
+					audioOutputSelect.append('<option value="' + device["deviceId"] + '">' + devLabel + '</option>');
 					oneOutputDevice = true;
 				} else if (device.kind === 'audioinput') {
-					audioInputSelect.append('<option value="' + device["deviceId"] + '">' + device["label"] + '</option>');
+					audioInputSelect.append('<option value="' + device["deviceId"] + '">' + devLabel + '</option>');
 				} else { //VideoInput
-					videoInputSelect.append('<option value="' + device["deviceId"] + '">' + device["label"] + '</option>');
+					videoInputSelect.append('<option value="' + device["deviceId"] + '">' + devLabel + '</option>');
 					oneVideoInput = true;
 				}
 			}
@@ -159,7 +160,7 @@ $(function () { //Document ready
 			if (prevAudioInputDevice) {
 				audioInputSelect.val(prevAudioInputDevice);
 			}
-			if (prevAudioInputDevice) {
+			if (prevVideoInputDevice) {
 				videoInputSelect.val(prevVideoInputDevice);
 			}
 
@@ -307,13 +308,11 @@ $(function () { //Document ready
 				webcamTestStopBtn.hide();
 				$("#mediaSetupOutput").empty();
 			})
-			if(oneVideoInput) {
+			if (oneVideoInput) {
 				$("#webcamInputTest").empty().append(webcamTestStartBtn).append(webcamTestStopBtn);
 			} else {
 				$("#webcamInputDevs").html('No video device found!');
 			}
-			
-
 
 			$('#setUpCheckModal').modal('show');
 			$('#setUpCheckModal').on('hidden.bs.modal', function () {
