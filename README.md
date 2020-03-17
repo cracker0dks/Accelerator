@@ -8,13 +8,13 @@ Free Online Conference and Collaboration Tool with build in WebRTC SFU running i
 - [x] Online Conference with "*unlimited*" participants (Audio / Video)
 - [x] Screenshare
 - [x] Presentations
-- [x] Whiteboard ([Repo](https://github.com/cracker0dks/whiteboard))
+- [x] Whiteboard ([Own implementation](https://github.com/cracker0dks/whiteboard))
 - [x] Youtube viewer
 - [x] 3D Object viewer
 - [x] User interactions with draggable items (like Textboxes, Drawings...)
 - [x] Fileshare
 - [x] Text Chat
-- [x] WebRTC SFU in Node (using [simple-peer](https://github.com/feross/simple-peer))
+- [x] WebRTC SFU in Node (Own implementation with [node webrtc](https://github.com/node-webrtc/node-webrtc))
 - [x] Configurable with own STUN / TURN Server (Setup below)
 - [x] much more...
 
