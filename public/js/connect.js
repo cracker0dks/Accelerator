@@ -1,5 +1,3 @@
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-
 var ownSocketId = null;
 var ownColor = null;
 var roomImIn = null;

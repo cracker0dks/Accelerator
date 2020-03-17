@@ -1,8 +1,6 @@
 //@ts-check
 function ezSFU(socket, newConfig = {}) {
-    var sfuConfig = {
-        trickle: true
-    }
+    var sfuConfig = {}
     for (var i in newConfig) {
         sfuConfig[i] = newConfig[i];
     }
@@ -12,9 +10,7 @@ function ezSFU(socket, newConfig = {}) {
     this.allStreamAttributes = {};
     this.connectedToMainPeer = false;
     this.currentIceServers = [];
-    this.log = function (msg, msg2) {  //You can override this to log somewhere else!
-        console.log("ezSFU", msg, msg2)
-    };
+
     this.on = function (eventname, callback) {
         if (this.mappedEvents[eventname]) {
             this.mappedEvents[eventname].push(callback)
@@ -26,24 +22,19 @@ function ezSFU(socket, newConfig = {}) {
         for (var i in this.mappedEvents[eventname]) {
             this.mappedEvents[eventname][i](arguments[1], arguments[2], arguments[3])
         }
-        this.log(eventname + ":" + JSON.stringify(arguments[1]))
+        console.log(eventname + ":" + JSON.stringify(arguments[1]))
     };
     this.makeNewPeer = function (peerId, connectedCallback, iceServers) {
         var _this = this;
         if (_this.peers[peerId]) {
-            return _this.log("Already connected to this peer!");
+            return console.log("Already connected to this peer!");
         }
         // @ts-ignore
-        _this.peers[peerId] = new SimplePeer({
-            initiator: true,
-            trickle: sfuConfig.trickle,
-            config: {
-                iceServers: iceServers
-            }
-        })
-        _this.peers[peerId].on('error', err => _this.log('error', err))
+        _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers })
+        _this.peers[peerId].on('error', err => console.log('error', err))
 
-        _this.peers[peerId].on('signal', data => {
+        _this.peers[peerId].on('signaling', data => {
+            //console.log("SENDING SIGNALING OUT >", data)
             socket.emit("sfu_signaling", { instanceTo: peerId, data: data })
         })
 
@@ -51,7 +42,7 @@ function ezSFU(socket, newConfig = {}) {
             stream.audioMuted = false;
             var streamId = stream.id.replace("{", "").replace("}", "");
             stream["streamAttributes"] = _this.allStreamAttributes[streamId];
-            _this.log("New Stream on peer:", streamId)
+            console.log("New Stream on peer:", streamId)
             stream.hasVideo = (stream.getVideoTracks().length > 0);
             stream.hasAudio = (stream.getAudioTracks().length > 0);
 
@@ -59,16 +50,16 @@ function ezSFU(socket, newConfig = {}) {
         })
 
         _this.peers[peerId].on('connect', () => {
-            _this.log('CONNECTED PEER');
+            console.log('CONNECTED PEER');
             if (connectedCallback)
                 connectedCallback();
         })
 
         _this.peers[peerId].on('data', data => {
-            _this.log('data: ' + data)
+            console.log('data: ' + data)
         })
 
-        _this.peers[peerId].on('close', () => {
+        _this.peers[peerId].on('disconnect', () => {
             _this.peers[peerId].destroy();
             delete _this.peers[peerId];
             _this.emitEvent("peerDisconnected", peerId);
@@ -77,15 +68,17 @@ function ezSFU(socket, newConfig = {}) {
     this.init = function () {
         var _this = this;
         socket.on("connect", function () {
-            _this.log("sfu socket connected");
+            console.log("sfu socket connected");
 
             socket.on("sfu_signaling", function (content) {
+
                 var data = content["data"];
+                //console.log("SENDING SIGNALING IN <", data)
                 var instanceFrom = content["instanceFrom"];
                 if (_this.peers[instanceFrom]) {
-                    _this.peers[instanceFrom].signal(data);
+                    _this.peers[instanceFrom].signaling(data);
                 } else {
-                    _this.log("Error: Can not send signal to disconnected peer!", content)
+                    console.log("Error: Can not send signal to disconnected peer!", content)
                 }
             })
 
@@ -132,15 +125,15 @@ function ezSFU(socket, newConfig = {}) {
             })
 
             socket.on('error', (error) => {
-                _this.log(error);
+                console.log(error);
             });
 
             socket.on('connect_error', (error) => {
-                _this.log(error);
+                console.log(error);
             });
 
             socket.on('connect_timeout', (timeout) => {
-                _this.log(timeout);
+                console.log(timeout);
             });
         });
     };
@@ -154,7 +147,7 @@ function ezSFU(socket, newConfig = {}) {
             var joinI = setInterval(function () {
                 if (_this.connectedToMainPeer) { //Make sure the peer connection is active
                     clearInterval(joinI);
-                    _this.log("JOINED!");
+                    console.log("JOINED!");
                     callback();
                 }
             }, 10)
@@ -163,7 +156,7 @@ function ezSFU(socket, newConfig = {}) {
     this.unpublishStream = function (stream) {
         var _this = this;
         socket.emit("sfu_unpublishStream", stream.id.replace("{", "").replace("}", ""), function (err) {
-            if (err) _this.log(err);
+            if (err) console.log(err);
         });
         for (var i in stream.getAudioTracks()) {
             stream.getAudioTracks()[i].stop();
@@ -204,7 +197,7 @@ function ezSFU(socket, newConfig = {}) {
             _this.allStreamAttributes = activeStreamAttrs;
             //Callback
             callback(activeStreamAttrs);
-            _this.log("all streams", activeStreamAttrs)
+            console.log("all streams", activeStreamAttrs)
         })
     };
     this.subscribeToStream = function (streamId, callback) {
@@ -219,7 +212,7 @@ function ezSFU(socket, newConfig = {}) {
                 }
             });
         else { //Stream is on a loadbalancer
-            if (_this.peers[instanceTo] && _this.peers[instanceTo]._connected) {
+            if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
                 _this.peers[instanceTo].send(JSON.stringify({
                     "key": "reqStream",
                     "content": streamId
@@ -227,7 +220,7 @@ function ezSFU(socket, newConfig = {}) {
             } else if (_this.peers[instanceTo]) { //We already started a connection so wait for it to connect
                 setTimeout(function () {
                     _this.subscribeToStream(streamId, callback);
-                }, 200)
+                }, 100)
             } else {
                 //We need to connect to the instance first
                 _this.makeNewPeer(instanceTo, function () {
@@ -257,13 +250,13 @@ function ezSFU(socket, newConfig = {}) {
                 console.error(err)
             } else {
                 var instanceTo = setStreamAttributes["instanceTo"] || "";
-                if (_this.peers[instanceTo] && _this.peers[instanceTo]._connected) {
+                if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
                     _this.peers[instanceTo].addStream(stream);
                     callback(null, setStreamAttributes)
                 } else if (_this.peers[instanceTo]) { //Connection started so wait for it...
-                    setTimeout(function() {
+                    setTimeout(function () {
                         _this.publishStreamToRoom(roomname, stream, callback)
-                    }, 200)                    
+                    }, 200)
                 } else if (!_this.peers[instanceTo]) {
                     //We need to connect to the instance first
                     console.log("CONNECT TO LB!!!");
@@ -273,7 +266,7 @@ function ezSFU(socket, newConfig = {}) {
                         _this.peers[instanceTo].addStream(stream);
                     }, _this.currentIceServers);
                 } else {
-                    _this.log("Problem while connecting to the given streaming instance! Check logs.", setStreamAttributes)
+                    console.log("Problem while connecting to the given streaming instance! Check logs.", setStreamAttributes)
                     callback("Problem while connecting to the given streaming instance! Check logs.")
                 }
             }

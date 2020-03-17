@@ -3,9 +3,7 @@ var fs = require('fs');
 var defaultConfig = {
 	"https": { "port": 443 },
 	"sfuConfig": {
-		reconnectTimer: 100,
-		trickle: true,
-		config: { //This is the configs for the peer connections
+		webRtcConfig: { //This is the configs for the peer connections
 			portRange: {
 				min: 30000, // defaults to 30000
 				max: 65535  // defaults to 65535
@@ -27,7 +25,7 @@ var defaultConfig = {
 			],
 			recordPath: "./", //Path where we save recorded streams
 		},
-		loadBalancerAuthKey: (Math.random()+"").replace(".","") //Key for the loadbalancers to auth on the master
+		loadBalancerAuthKey: (Math.random() + "").replace(".", "") //Key for the loadbalancers to auth on the master
 	}
 }
 

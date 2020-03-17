@@ -6,8 +6,7 @@ So all things supported that are supported by Chromium
  --------------------------- */
 var os = require('os-utils');
 var crypto = require('crypto');
-var Peer = require('simple-peer');
-var wrtc = require('wrtc');
+var Peer = require('./s_ezWebRTC');
 var ezRtcRecorder = require("./s_ezRtcRecorder");
 
 var allStreams = {}; //Contains all the streams on this instance
@@ -26,7 +25,7 @@ var loadBalancersAttributes = {
 
 var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
-    var orgIceServer = JSON.parse(JSON.stringify(newConfig.config.iceServers));
+    var orgIceServer = JSON.parse(JSON.stringify(newConfig.webRtcConfig.iceServers));
 
     io.sockets.on('connection', function (socket) {
         let myStreamIds = [];
@@ -63,11 +62,6 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             delete allPeers[socket.id];
         });
 
-        var defaultPeerConfig = {
-            initiator: false,
-            trickle: true,
-            wrtc: wrtc
-        }
 
         function getCurrentIceServers() {
             var icesevers = orgIceServer;
@@ -85,41 +79,32 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                 }
             }
 
-            newConfig.config.iceServers = returnIce;
+            newConfig.webRtcConfig.iceServers = returnIce;
             return returnIce;
 
         }
 
         socket.emit("sfu_onIceServers", getCurrentIceServers())
 
-        for (var i in newConfig) {
-            defaultPeerConfig[i] = newConfig[i];
-        }
-
-        var localPeer = new Peer(defaultPeerConfig) //Create a peer for every socketconnection
+        var localPeer = new Peer.initEzWebRTC(true, newConfig.webRtcConfig) //Create a peer for every socketconnection
         allPeers[socket.id] = localPeer;
 
         localPeer.on('error', function (err) {
             console.log('peererror', socket.id, err)
         });
 
-        localPeer.on('close', () => {
+        localPeer.on('disconnect', () => {
         })
 
         localPeer.on('connect', () => {
         })
 
-        localPeer.on('signal', data => {
-            //console.log('SIGNAL', JSON.stringify(data))
+        localPeer.on('signaling', data => {
+            //console.log("SIGNALING OUT >", data.type)
             socket.emit("sfu_signaling", { instanceFrom: "main", data: data });
         })
 
-        localPeer.on('data', data => {
-            //console.log(data);
-        })
-
         localPeer.on('stream', stream => {
-
             var streamId = stream.id.replace("{", "").replace("}", "");
             allStreams[streamId] = stream;
 
@@ -157,12 +142,14 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             var data = content["data"];
             if (instanceTo == "main") {
                 try {
-                    localPeer.signal(data);
+                    //console.log("SIGNALING IN <", data.type)
+                    localPeer.signaling(data);
                 } catch (e) {
                     console.log("warning: localPeer gone... no signaling!")
                 }
             } else if (loadBalancersSockets[instanceTo]) {
                 content["clientSocketId"] = socket.id;
+
                 loadBalancersSockets[instanceTo].emit("sfu_signaling", content);
             } else if (instanceTo == "clientSocket") {
                 var clientSocketId = content["clientSocketId"];
@@ -179,7 +166,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             function subToStream(subCnt) {
                 if (allStreams[streamId]) {
                     // @ts-ignore
-                    if (localPeer._connected) {
+                    if (localPeer.isConnected) {
                         try {
                             localPeer.addStream(allStreams[streamId]);
                             callback(null);
@@ -338,7 +325,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
     function findBestStreamingInstance(streamAttributes, callback) {
         var instanceId = null;
         for (var i in loadBalancersAttributes) { //Find a fitting free loadbalancer
-            if (loadBalancersAttributes[i]["enabled"] && loadBalancersAttributes[i]["cpuUsage"] < loadBalancersAttributes[i]["maxCpuLoad"] ) { // && loadBalancersAttributes[i]["freeMem"] > loadBalancersAttributes[i]["minMemory"]
+            if (loadBalancersAttributes[i]["enabled"] && loadBalancersAttributes[i]["cpuUsage"] < loadBalancersAttributes[i]["maxCpuLoad"]) { // && loadBalancersAttributes[i]["freeMem"] > loadBalancersAttributes[i]["minMemory"]
                 if (!instanceId) { //If we have no instance, set always one
                     instanceId = i;
                 } else if ((loadBalancersAttributes[i]["maxWantedCpuLoad"] - loadBalancersAttributes[i]["cpuUsage"]) > (loadBalancersAttributes[instanceId]["maxWantedCpuLoad"] - loadBalancersAttributes[instanceId]["cpuUsage"])) { //Take the instance with less load away from wanted cpuLoad 
@@ -346,10 +333,10 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                 }
             }
         }
-		console.log("mainload", loadBalancersAttributes["main"]["enabled"], loadBalancersAttributes["main"]["cpuUsage"], loadBalancersAttributes["main"]["maxCpuLoad"], loadBalancersAttributes["main"]["freeMem"], loadBalancersAttributes["main"]["minMemory"])
+        console.log("mainload", loadBalancersAttributes["main"]["enabled"], loadBalancersAttributes["main"]["cpuUsage"], loadBalancersAttributes["main"]["maxCpuLoad"], loadBalancersAttributes["main"]["freeMem"], loadBalancersAttributes["main"]["minMemory"])
         if (!instanceId) {
             callback(null, "main");
-           // callback("No fitting streaming instance found! Maybe servers are down or to high server load?!", instanceId);
+            // callback("No fitting streaming instance found! Maybe servers are down or to high server load?!", instanceId);
         } else {
             callback(null, instanceId);
         }
