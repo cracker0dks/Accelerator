@@ -94,7 +94,7 @@ Because we are running with --net=host, we ca set "serverIp" to the ip of the ho
 
 ### Authors ###
 * Simone Liegl (simone.liegl@gmail.com) | Frontend / Design / UX
-* Raphael Fritsch (raphael.fritsch@gmx.de) | Backend / WebRTC
+* Raphael Fritsch (raphael.fritsch@reutlingen-university.de) | Backend / WebRTC
 * Sebastian Hirth | Frontend / Backend / Logo
 
 license: GPLv3.0
