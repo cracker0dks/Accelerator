@@ -8,7 +8,7 @@ Free Online Conference and Collaboration Tool with build in WebRTC SFU running i
 - [x] Online Conference with "*unlimited*" participants (Audio / Video)
 - [x] Screenshare
 - [x] Presentations
-- [x] Whiteboard ([Own implementation](https://github.com/cracker0dks/whiteboard))
+- [x] Whiteboard ([can also be hosted standalone](https://github.com/cracker0dks/whiteboard))
 - [x] Youtube viewer
 - [x] 3D Object viewer
 - [x] User interactions with draggable items (like Textboxes, Drawings...)
