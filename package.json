@@ -3,8 +3,7 @@
   "version": "2.0.0",
   "description": "WebRTC Collaboration/Presentation Tool",
   "main": "server.js",
-  "directories": {
-  },
+  "directories": {},
   "scripts": {
     "test": "echo \"No tests needed!\" && exit 1"
   },
@@ -42,5 +41,5 @@
       "name": "Sebastian Hirth"
     }
   ],
-  "license": "GPLv3.0"
+  "license": "AGPL-3.0-or-later"
 }
