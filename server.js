@@ -122,19 +122,19 @@ var allSingleFiles = {};
 var userPItems = {};
 var all3DObjs = {};
 var url3dObjs = {};
+var userConnectionCnt = 0;
 
 setTimeout(function () {
     console.log("--------------------------------------");
     console.log("Accelerator is up and running! YEAH :D");
     console.log("--------------------------------------");
-}, 100);
+}, 200);
 /*************************/
 /*** INTERESTING STUFF ***/
 /*************************/
 
 io.sockets.on('connection', function (socket) {
     var userdata = { "id": socket.id, "username": "" };
-    var room = null;
     var roomName = null;
     console.log("[" + socket.id + "] connection accepted");
     socket.on('disconnect', async function () {
