@@ -7,8 +7,8 @@ function initEzWebRTC(initiator, config) {
 
     var rtcConfig = { //Default Values
         offerOptions: {
-            offerToReceiveAudio: true, //Want audio
-            offerToReceiveVideo: true  //Want video
+            offerToReceiveAudio: true, //- depricated - want audio
+            offerToReceiveVideo: true  //- depricated - want video
         },
         stream: null,
         'iceServers': [
