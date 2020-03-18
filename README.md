@@ -86,22 +86,22 @@ Because we are running with --net=host, we ca set "serverIp" to the ip of the ho
 
 -------------------------
 
-### Based on a Semester Project ###
+### Version 0 based on students project work ###
 * University: [Reutlingen University](https://www.reutlingen-university.de)
 * Faculty: [Informatik](https://www.inf.reutlingen-university.de/de/home/)
 * Course of study: [Human-Centered Computing (Master)](https://www.inf.reutlingen-university.de/de/master/human-centered-computing/ziel-des-studiengangs/) 
-* Lecture: "Kollaborative Systeme" 
+* Lecture: "Kollaborative Systeme" (Collaborative Environments) 
 
 ### Authors ###
 
 #### Students ####
+* Raphael Fritsch (raphael.fritsch@reutlingen-university.de) | Backend / WebRTC (and generally further development)
 * Simone Liegl (simone.liegl@gmail.com) | Frontend / Design / UX
-* Raphael Fritsch (raphael.fritsch@reutlingen-university.de) | Backend / WebRTC
 * Sebastian Hirth | Frontend / Backend / Logo
 
 #### Professors ####
-* Gabriela Tullius (gabriela.tullius@reutlingen-university.de) | [SwuxLab](https://swuxlab.reutlingen-university.de/team/)
-* Peter Hertkorn (peter.hertkorn@reutlingen-university.de) | [SwuxLab](https://swuxlab.reutlingen-university.de/team/)
+* Gabriela Tullius (gabriela.tullius@reutlingen-university.de) | [swuxLab](https://swuxlab.reutlingen-university.de/team/)
+* Peter Hertkorn (peter.hertkorn@reutlingen-university.de) | [swuxLab](https://swuxlab.reutlingen-university.de/team/)
 
 
 
