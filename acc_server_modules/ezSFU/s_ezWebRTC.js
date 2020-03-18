@@ -68,6 +68,11 @@ function initEzWebRTC(initiator, config) {
         }
     };
 
+    // @ts-ignore
+    pc.onnegotiationneeded = function() {
+        negotiate("onnegotiationneeded");
+    }
+
     this.signaling = async function (signalData) { //Handle signaling
         if (signalData == "renegotiate" && initiator) { //Got renegotiate request, so do it
             negotiate("REQUEST");
@@ -112,31 +117,26 @@ function initEzWebRTC(initiator, config) {
             }
             delete trackSenders[event.track.id]
         };
-        negotiate("addStream");
     }
 
     this.removeStream = function (stream) {
         stream.getTracks().forEach(track => {
             pc.removeTrack(trackSenders[track.id])
         });
-        negotiate("removeStream");
     }
 
     this.addTrack = function (track, stream) {
         pc.addTrack(track, stream);
-        negotiate("addTrack");
     }
 
     this.removeTrack = function (track) {
         pc.removeTrack(trackSenders[track.id])
-        negotiate("removeTrack");
     }
 
     this.addTransceiver = function (kind, init) {
         if (initiator) {
             try {
                 pc.addTransceiver(kind, init)
-                negotiate("addTransceiver");
             } catch (err) {
                 console.log("addTransceiver Error", err)
                 _this.destroy()
