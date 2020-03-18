@@ -61,12 +61,12 @@ function initEzWebRTC(initiator, config) {
     };
 
     pc.onnegotiationneeded = function() {
-        negotiate("onnegotiationneeded");
+        negotiate();
     }
 
     this.signaling = async function (signalData) { //Handle signaling
         if (signalData == "renegotiate" && initiator) { //Got renegotiate request, so do it
-            negotiate("REQUEST");
+            negotiate();
         } else if (signalData && signalData.type == "offer") { //Got an offer -> Create Answer)
             if (pc.signalingState != "stable") { //If not stable ask for renegotiation
                 await Promise.all([
@@ -156,8 +156,8 @@ function initEzWebRTC(initiator, config) {
         negotiate();
     }
 
-    async function negotiate(from) {
-        //console.log("Negotiate", from)
+    async function negotiate() {
+        //console.log("Negotiate")
         if (initiator) {
             const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
             if (pc.signalingState != "stable") return;

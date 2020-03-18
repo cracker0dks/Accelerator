@@ -366,14 +366,17 @@ $(function () { //Document ready
 	});
 
 	$("#createNewRoomBtn").click(function () {
-		var roomName = cleanString($("#createNewRoomInput").val()) + "###" + (+new Date());
-		var roomPassword = cleanString($("#newRoomPassword").val());
-		if (roomName && roomName != "") {
-			sendCreateNewRoom(roomName, roomPassword);
+		var romname = cleanString($("#createNewRoomInput").val().trim());
+		if (romname != "" && romname.length >= 3) {
+			var roomName = romname + "###" + (+new Date());
+			var roomPassword = cleanString($("#newRoomPassword").val());
+			if (roomName && roomName != "") {
+				sendCreateNewRoom(roomName, roomPassword);
+			}
+			$("#createNewRoomInput").val("");
+			$("#newRoomPassword").val("");
+			$("#roomPwLockIcon").removeClass("fa-lock").addClass("fa-unlock-alt");
 		}
-		$("#createNewRoomInput").val("");
-		$("#newRoomPassword").val("");
-		$("#roomPwLockIcon").removeClass("fa-lock").addClass("fa-unlock-alt");
 	});
 
 	$("#elsePraesiInfo").click(function () {
