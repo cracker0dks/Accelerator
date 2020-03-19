@@ -6,9 +6,9 @@ So all things supported that are supported by Chromium
  --------------------------- */
 var os = require('os-utils');
 var crypto = require('crypto');
-var Peer = require('./s_ezWebRTC');
+var wrtc = require('wrtc');
+var ezWebRTC = require('./s_ezWebRTC');
 var ezRtcRecorder = require("./s_ezRtcRecorder");
-
 var allStreams = {}; //Contains all the streams on this instance
 var allStreamAttributes = {}; //Constains all the stream Attr (also from streams on other instances)
 var allRecorders = {}; //Contains all the recorders
@@ -86,7 +86,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
         socket.emit("sfu_onIceServers", getCurrentIceServers())
 
-        var localPeer = new Peer.initEzWebRTC(true, newConfig.webRtcConfig) //Create a peer for every socketconnection
+        var localPeer = new ezWebRTC.initEzWebRTC(wrtc, true, newConfig.webRtcConfig) //Create a peer for every socketconnection
         allPeers[socket.id] = localPeer;
 
         localPeer.on('error', function (err) {

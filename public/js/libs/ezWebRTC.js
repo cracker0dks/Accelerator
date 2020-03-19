@@ -1,12 +1,12 @@
 //@ts-check
-function initEzWebRTC(initiator, config) {
+function initEzWebRTC(wrtc, initiator, config) {
     var _this = this;
     this.isConnected = false;
 
     var rtcConfig = { //Default Values
         offerOptions: {
-            offerToReceiveAudio: true, //Want audio
-            offerToReceiveVideo: true  //Want video
+            offerToReceiveAudio: true, //- depricated - want audio
+            offerToReceiveVideo: true  //- depricated - want video
         },
         stream: null,
         'iceServers': [
@@ -22,7 +22,7 @@ function initEzWebRTC(initiator, config) {
         }
     }
 
-    var pc = new RTCPeerConnection(rtcConfig);
+    var pc = new wrtc.RTCPeerConnection(rtcConfig);
 
     pc.onsignalingstatechange = function (event) {
         _this.emitEvent("onsignalingstatechange", event);
@@ -39,7 +39,6 @@ function initEzWebRTC(initiator, config) {
             _this.emitEvent('track', event.track, eventStream);
             if (!knownStreams[eventStream.id]) { //emit onStream event
                 _this.emitEvent("stream", eventStream);
-
             }
             knownStreams[eventStream.id] = true;
         });
@@ -71,21 +70,21 @@ function initEzWebRTC(initiator, config) {
             if (pc.signalingState != "stable") { //If not stable ask for renegotiation
                 await Promise.all([
                     pc.setLocalDescription({ type: "rollback" }), //Be polite
-                    await pc.setRemoteDescription(new RTCSessionDescription(signalData))
+                    await pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
                 ]);
             } else {
-                await pc.setRemoteDescription(new RTCSessionDescription(signalData))
+                await pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
             }
             await pc.setLocalDescription(await pc.createAnswer(rtcConfig.offerOptions));
             _this.emitEvent("signaling", pc.localDescription)
             if (!initiator)
                 requestMissingTransceivers()
         } else if (signalData && signalData.type == "answer") { //STEP 5 (Initiator: Setting answer and starting connection)
-            pc.setRemoteDescription(new RTCSessionDescription(signalData))
+            pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
         } else if (signalData && signalData.type == "transceive" && initiator) { //Got an request to transrecive
-            pc.addTransceiver(signalData.kind, signalData.init)
+            _this.addTransceiver(signalData.kind, signalData.init)
         } else if (signalData && signalData.candidate) { //is a icecandidate thing
-            pc.addIceCandidate(new RTCIceCandidate(signalData));
+            pc.addIceCandidate(new wrtc.RTCIceCandidate(signalData));
         } else {
             console.log("Some unused signaling data???", signalData)
         }
@@ -118,7 +117,7 @@ function initEzWebRTC(initiator, config) {
     }
 
     this.removeTrack = function (track) {
-        pc.removeTrack(trackSenders[track.id]);
+        pc.removeTrack(trackSenders[track.id])
     }
 
     this.addTransceiver = function (kind, init) {
@@ -157,7 +156,7 @@ function initEzWebRTC(initiator, config) {
     }
 
     async function negotiate() {
-        //console.log("Negotiate")
+        //console.log("negotiate")
         if (initiator) {
             const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
             if (pc.signalingState != "stable") return;
