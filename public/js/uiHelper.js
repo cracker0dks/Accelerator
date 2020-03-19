@@ -1511,6 +1511,7 @@ function renderAllRooms(roomList) {
 
 function filterRooms() {
 	var searchW = $("#groopRoomSearch").val().toLowerCase();
+	document.getElementById('roomListContainer').scrollTop = 0;
 	$.each($("#roomListContent").find(".roomLaBle"), function () {
 		if ($(this).attr("roomname").toLowerCase().indexOf(searchW) !== -1) {
 			$(this).show();
