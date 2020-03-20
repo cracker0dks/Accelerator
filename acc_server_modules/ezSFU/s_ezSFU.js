@@ -85,7 +85,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
         socket.emit("sfu_onIceServers", getCurrentIceServers())
 
-        var localPeer = new ezWebRTC.initEzWebRTC(false, newConfig.webRtcConfig) //Create a peer for every socketconnection
+        var localPeer = new ezWebRTC.initEzWebRTC(true, newConfig.webRtcConfig) //Create a peer for every socketconnection
         allPeers[socket.id] = localPeer;
 
         localPeer.on('error', function (err) {
