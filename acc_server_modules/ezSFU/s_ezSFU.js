@@ -318,27 +318,29 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             }
         })
 
+        socket.on("sfu_reqStreamFromLB", function (content, callback) {
+            var instanceFrom = content["instanceFrom"];
+            content["clientSocketId"] = socket.id;
+            loadBalancersSockets[instanceFrom].emit("sfu_reqSteam", content);
+        });
+
+        socket.on("sfu_reqPeerConnectionToLB", function (content, callback) {
+            var instanceTo = content["instanceTo"];
+            content["clientSocketId"] = socket.id;
+            loadBalancersSockets[instanceTo].emit("sfu_reqPeerConnectionToLB", content);
+        });
+
         //END - LOAD BALANCER STUFF
     })
 
     function findBestStreamingInstance(streamAttributes, callback) {
-        var instanceId = null;
+        var instanceId = "main";
         for (var i in loadBalancersAttributes) { //Find a fitting free loadbalancer
-            if (loadBalancersAttributes[i]["enabled"] && loadBalancersAttributes[i]["cpuUsage"] < loadBalancersAttributes[i]["maxCpuLoad"]) { // && loadBalancersAttributes[i]["freeMem"] > loadBalancersAttributes[i]["minMemory"]
-                if (!instanceId) { //If we have no instance, set always one
-                    instanceId = i;
-                } else if ((loadBalancersAttributes[i]["maxWantedCpuLoad"] - loadBalancersAttributes[i]["cpuUsage"]) > (loadBalancersAttributes[instanceId]["maxWantedCpuLoad"] - loadBalancersAttributes[instanceId]["cpuUsage"])) { //Take the instance with less load away from wanted cpuLoad 
-                    instanceId = i;
-                }
+            if(i != "main") {
+                instanceId = i;
             }
         }
-        console.log("mainload", loadBalancersAttributes["main"]["enabled"], loadBalancersAttributes["main"]["cpuUsage"], loadBalancersAttributes["main"]["maxCpuLoad"], loadBalancersAttributes["main"]["freeMem"], loadBalancersAttributes["main"]["minMemory"])
-        if (!instanceId) {
-            callback(null, "main");
-            // callback("No fitting streaming instance found! Maybe servers are down or to high server load?!", instanceId);
-        } else {
-            callback(null, instanceId);
-        }
+        callback(null, instanceId);
     }
 
     setInterval(function () {
@@ -365,6 +367,26 @@ function getTURNCredentials(name, secret) {
         password: password
     };
 }
+
+// (async function () {
+//     const browser = await puppeteer.launch({
+//         "ignoreHTTPSErrors": true,
+//         args: ['--no-sandbox']
+//     });
+//     const page = await browser.newPage();
+//     await page.goto('https://127.0.0.1/webSFU/sfu.html');
+
+//     page.on('console', msg => {
+//         for (let i = 0; i < msg.args().length; ++i) {
+//             console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+//         }
+//     });
+//     await page.waitFor('#loadSFUBtn');
+//     await page.click('body');
+//     await page.click('#loadSFUBtn');
+
+//     console.log("STARTED MAIN LOADBALANCER")
+// })()
 
 module.exports = {
     init: init

@@ -23,6 +23,8 @@ function initEzWebRTC(initiator, config) {
         }
     }
 
+    console.log("Make new peer!", initiator, rtcConfig)
+    //Make new peer
     var pc = new wrtc.RTCPeerConnection(rtcConfig);
 
     pc.onsignalingstatechange = function (event) {
@@ -48,11 +50,15 @@ function initEzWebRTC(initiator, config) {
     pc.oniceconnectionstatechange = async function (e) {
         //console.log('ICE state: ' + pc.iceConnectionState);
         if (pc.iceConnectionState == "connected" || pc.iceConnectionState == "completed") {
-            _this.isConnected = true;
-            _this.emitEvent("connect", true)
+            if (!_this.isConnected) {
+                _this.isConnected = true;
+                _this.emitEvent("connect", true)
+            }
         } else if (pc.iceConnectionState == 'disconnected') {
-            _this.isConnected = false;
-            _this.emitEvent("disconnect", true)
+            if (_this.isConnected) {
+                _this.isConnected = false;
+                _this.emitEvent("disconnect", true)
+            }
         } else if (pc.iceConnectionState == 'failed' && initiator) { //Try to reconnect from initator side
             _this.isConnected = false;
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))
@@ -60,7 +66,7 @@ function initEzWebRTC(initiator, config) {
         }
     };
 
-    pc.onnegotiationneeded = function() {
+    pc.onnegotiationneeded = function () {
         negotiate();
     }
 
@@ -152,12 +158,12 @@ function initEzWebRTC(initiator, config) {
         this.addStream(rtcConfig.stream); //Add stream at start, this will trigger negotiation on initiator
     }
 
-    if (initiator) { //start negotiation if we are initiator
+    if (initiator && !rtcConfig.stream) { //start negotiation if we are initiator
         negotiate();
     }
 
     async function negotiate() {
-        //console.log("negotiate")
+        //console.log("negotiate", initiator)
         if (initiator) {
             const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
             if (pc.signalingState != "stable") return;
@@ -177,7 +183,7 @@ function initEzWebRTC(initiator, config) {
                         _this.addTransceiver(transceiver.sender.track.kind)
                     }
                 })
-            } catch(e) {
+            } catch (e) {
                 console.log("Faild to add transriver!", e)
             }
         }

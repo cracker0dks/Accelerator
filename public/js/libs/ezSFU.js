@@ -29,7 +29,7 @@ function ezSFU(socket, newConfig = {}) {
         if (_this.peers[peerId]) {
             return console.log("Already connected to this peer!");
         }
-        // @ts-ignore
+
         _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers })
         _this.peers[peerId].on('error', err => console.log('error', err))
 
@@ -53,10 +53,6 @@ function ezSFU(socket, newConfig = {}) {
             console.log('CONNECTED PEER');
             if (connectedCallback)
                 connectedCallback();
-        })
-
-        _this.peers[peerId].on('data', data => {
-            console.log('data: ' + data)
         })
 
         _this.peers[peerId].on('disconnect', () => {
@@ -207,10 +203,11 @@ function ezSFU(socket, newConfig = {}) {
             socket.emit("sfu_subscribeToStream", streamId, callback);
         else { //Stream is on a loadbalancer
             if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
-                _this.peers[instanceTo].send(JSON.stringify({
-                    "key": "reqStream",
-                    "content": streamId
-                }))
+                console.log("REQEST THE STREAM!!", streamId)
+                socket.emit("sfu_reqStreamFromLB", {
+                    "instanceFrom": instanceTo,
+                    "streamId": streamId,
+                }, callback);
             } else if (_this.peers[instanceTo]) { //We already started a connection so wait for it to connect
                 setTimeout(function () {
                     _this.subscribeToStream(streamId, callback);
@@ -220,11 +217,13 @@ function ezSFU(socket, newConfig = {}) {
                 _this.makeNewPeer(instanceTo, function () {
                     //Connected callback
                     console.log("LOADBALANCER CONNECTED!!!");
-                    _this.peers[instanceTo].send(JSON.stringify({
-                        "key": "reqStream",
-                        "content": streamId
-                    }))
                 }, _this.currentIceServers);
+
+                console.log("REQEST THE STREAM!!")
+                socket.emit("sfu_reqStreamFromLB", {
+                    "instanceFrom": instanceTo,
+                    "streamId": streamId,
+                }, callback);
             }
         }
     };
@@ -249,8 +248,9 @@ function ezSFU(socket, newConfig = {}) {
                     callback(null, setStreamAttributes)
                 } else if (_this.peers[instanceTo]) { //Connection started so wait for it...
                     setTimeout(function () {
-                        _this.publishStreamToRoom(roomname, stream, callback)
-                    }, 200)
+                        _this.peers[instanceTo].addStream(stream);
+                        //_this.publishStreamToRoom(roomname, stream, callback)
+                    }, 500)
                 } else if (!_this.peers[instanceTo]) {
                     //We need to connect to the instance first
                     console.log("CONNECT TO LB!!!");
@@ -259,6 +259,10 @@ function ezSFU(socket, newConfig = {}) {
                         console.log("LOADBALANCER CONNECTED!!!");
                         _this.peers[instanceTo].addStream(stream);
                     }, _this.currentIceServers);
+
+                    socket.emit("sfu_reqPeerConnectionToLB", {
+                        "instanceTo": instanceTo
+                    }, callback);
                 } else {
                     console.log("Problem while connecting to the given streaming instance! Check logs.", setStreamAttributes)
                     callback("Problem while connecting to the given streaming instance! Check logs.")
