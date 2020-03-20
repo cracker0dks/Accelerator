@@ -1,5 +1,6 @@
+var wrtc = require('wrtc');
 //@ts-check
-function initEzWebRTC(wrtc, initiator, config) {
+function initEzWebRTC(initiator, config) {
     var _this = this;
     this.isConnected = false;
 
@@ -59,7 +60,7 @@ function initEzWebRTC(wrtc, initiator, config) {
         }
     };
 
-    pc.onnegotiationneeded = function() {
+    pc.onnegotiationneeded = function () {
         negotiate();
     }
 
@@ -169,12 +170,16 @@ function initEzWebRTC(wrtc, initiator, config) {
 
     function requestMissingTransceivers() {
         if (pc.getTransceivers) {
-            pc.getTransceivers().forEach(transceiver => {
-                if (!transceiver.mid && transceiver.sender.track && !transceiver.requested) {
-                    transceiver.requested = true // HACK: Safari returns negotiated transceivers with a null mid
-                    _this.addTransceiver(transceiver.sender.track.kind)
-                }
-            })
+            try {
+                pc.getTransceivers().forEach(transceiver => {
+                    if (!transceiver.mid && transceiver.sender.track && !transceiver.requested) {
+                        transceiver.requested = true // HACK: Safari returns negotiated transceivers with a null mid
+                        _this.addTransceiver(transceiver.sender.track.kind)
+                    }
+                })
+            } catch(e) {
+                console.log("Faild to add transriver!", e)
+            }
         }
     }
 
