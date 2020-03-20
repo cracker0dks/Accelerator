@@ -30,7 +30,7 @@ function ezSFU(socket, newConfig = {}) {
             return console.log("Already connected to this peer!");
         }
         // @ts-ignore
-        _this.peers[peerId] = new initEzWebRTC(true, { iceServers: iceServers })
+        _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers })
         _this.peers[peerId].on('error', err => console.log('error', err))
 
         _this.peers[peerId].on('signaling', data => {
