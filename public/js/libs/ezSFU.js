@@ -244,11 +244,12 @@ function ezSFU(socket, newConfig = {}) {
                         //Connected callback
                         console.log("LOADBALANCER CONNECTED (With streamadd)!!!");
                         //_this.peers[instanceTo].addStream();
+                        callback();
                     }, _this.currentIceServers, stream);
 
                     socket.emit("sfu_reqPeerConnectionToLB", {
                         "instanceTo": instanceTo
-                    }, callback);
+                    });
                 } else {
                     console.log("Problem while connecting to the given streaming instance! Check logs.", setStreamAttributes)
                     callback("Problem while connecting to the given streaming instance! Check logs.")

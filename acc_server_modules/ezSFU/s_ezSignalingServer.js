@@ -187,13 +187,13 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             }
         })
 
-        socket.on("sfu_reqStreamFromLB", function (content, callback) {
+        socket.on("sfu_reqStreamFromLB", function (content) {
             var instanceFrom = content["instanceFrom"];
             content["clientSocketId"] = socket.id;
             loadBalancersSockets[instanceFrom].emit("sfu_reqSteam", content);
         });
 
-        socket.on("sfu_reqPeerConnectionToLB", function (content, callback) {
+        socket.on("sfu_reqPeerConnectionToLB", function (content) {
             var instanceTo = content["instanceTo"];
             content["clientSocketId"] = socket.id;
             loadBalancersSockets[instanceTo].emit("sfu_reqPeerConnectionToLB", content);

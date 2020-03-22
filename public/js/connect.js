@@ -252,7 +252,7 @@ var loadSFUConnection = function (roomToConnect) {
                         //Calc the current volume!
                         var audioAontext = window.AudioContext || window.webkitAudioContext;
                         var context = new audioAontext();
-                        var microphone = context.createMediaStreamSource(stream);
+                        var microphone = context.createMediaStreamSource(localAudioStream);
                         var dest = context.createMediaStreamDestination();
 
                         gainNode = context.createGain();
@@ -290,7 +290,7 @@ var loadSFUConnection = function (roomToConnect) {
                         microphone.connect(gainNode);
                         gainNode.connect(analyser); //get sound  
                         analyser.connect(dest);
-                        stream = dest.stream;
+                        //localAudioStream = dest.stream;
                         //Calc the current volume END!
                     }
                 });

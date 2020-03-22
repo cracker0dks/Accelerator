@@ -1379,135 +1379,122 @@ var waitCnt = 0;
 function renderAllRooms(roomList) {
 	console.log(roomList);
 	$("#roomListContent tbody").empty();
-	$("#roomListContent tbody").text("Waiting...");
 
-	var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
-	navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
-		localAudioStream = stream;
-		initRenderRooms();
-	}, function () {
-		initRenderRooms();
-	});
-	$("#roomListContent tbody").empty();
+	$("#addNewRoomPanel").show();
+	if (JSON.stringify(roomList) == "{}") {
+		$("#roomListContent tbody").text("No room on this Server!");
+	} else {
+		for (var i in roomList) {
+			(function () {
+				var room = roomList[i];
+				if (room["roomName"]) {
+					var roomNameSplit = room["roomName"] ? room["roomName"].split("###") : "NA";
+					var roomName = roomNameSplit[0];
+					var roomNameToShow = roomName.split('_').join(' ');
+					var roomLockIcon = "";
+					if (room["hasPassword"])
+						roomLockIcon = '<i class="fa fa-lock" aria-hidden="true"></i>';
 
-	function initRenderRooms() {
-
-		$("#addNewRoomPanel").show();
-		if (JSON.stringify(roomList) == "{}") {
-			$("#roomListContent tbody").text("No room on this Server!");
-		} else {
-			for (var i in roomList) {
-				(function () {
-					var room = roomList[i];
-					if (room["roomName"]) {
-						var roomNameSplit = room["roomName"] ? room["roomName"].split("###") : "NA";
-						var roomName = roomNameSplit[0];
-						var roomNameToShow = roomName.split('_').join(' ');
-						var roomLockIcon = "";
-						if (room["hasPassword"])
-							roomLockIcon = '<i class="fa fa-lock" aria-hidden="true"></i>';
-
-						var roomId = room["_id"];
-						var userInRoom = "";
-						var usersInRoomCnt = room["user"] ? room["user"].length : 0;
-						if (room["user"]) {
-							for (var k = 0; k < room["user"].length; k++) {
-								userInRoom += room["user"][k]["username"] + "\n";
-							}
+					var roomId = room["_id"];
+					var userInRoom = "";
+					var usersInRoomCnt = room["user"] ? room["user"].length : 0;
+					if (room["user"]) {
+						for (var k = 0; k < room["user"].length; k++) {
+							userInRoom += room["user"][k]["username"] + "\n";
 						}
-						var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
-							'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
-							'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
-							'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +
-							'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class="badge">' + usersInRoomCnt + '</span></td>' +
-							'</tr>');
-
-						if (roomLockIcon != "") {
-							roomListEntry.find(".usersInRoomTd").empty();
-						}
-
-
-						roomListEntry.mouseenter(function () {
-							$(this).find(".roomToTrashBtn").show();
-							$(this).find(".clickToEnter").show();
-						});
-						roomListEntry.mouseleave(function () {
-							$(this).find(".roomToTrashBtn").hide();
-							$(this).find(".clickToEnter").hide();
-						});
-						roomListEntry.find(".roomToTrashBtn").click(function (e) {
-							e.preventDefault();
-							if (!room["user"] || room["user"].length == 0) {
-								sendDeleteNewRoom(room["roomName"], roomId);
-							} else {
-								alert("Room is not empty!");
-							}
-							return false;
-						});
-
-						$("#roomListContent tbody").append(roomListEntry);
-						roomListEntry.click(function (event) {
-							if (!$(event.target).hasClass("roomToTrashBtn, roomPassword")) {
-								if (room["hasPassword"]) {
-									var localStoragePW = localStorage.getItem("pw");
-									if (localStoragePW) {
-										$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: localStoragePW }).done(function (data) {
-											if (!data) {
-												showPwPromt();
-											} else {
-												room["roomName"] = room["roomName"] + "" + cleanString(localStoragePW);
-												joinRoom(room);
-											}
-										}).fail(function () {
-											alert("To many failed connection requests. Try again in a few minutes!");
-										});
-									} else {
-										showPwPromt();
-									}
-									function showPwPromt() {
-										$(".roomPassword").remove();
-										var input = $('<input style="color: black;" class="roomPassword form-control" type="password" placeholder="password">');
-										roomListEntry.find(".clickTr").html(input);
-										input.focus();
-										input.keydown(function (e) {
-											if (e.which == 13) {
-												var pw = input.val();
-												$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: pw }).done(function (data) {
-													if (data) {
-														localStorage.setItem("pw", pw);
-														room["roomName"] = room["roomName"] + "" + cleanString(pw);
-														joinRoom(room);
-													} else {
-														alert("Wrong password!");
-													}
-												}).fail(function () {
-													alert("To many failed connection requests. Try again in a few minutes!");
-												});
-											}
-										})
-									}
-								} else {
-									joinRoom(room);
-								}
-							}
-						});
 					}
-				})();
-			}
-			//Join a room directly if url get parameter is set   
-			if (!roomImIn) {
-				var roomQ = getQueryVariable("room");
-				if (roomQ && roomQ != "" && username && username != "dummy") {
-					$("#directRoomName").text(roomQ);
-					$('#connectModal').modal({ backdrop: 'static', keyboard: false });
-					$('#connectModal').find("#acceptDirectConnect").click(function () {
-						$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
-					})
+					var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
+						'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
+						'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
+						'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +
+						'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class="badge">' + usersInRoomCnt + '</span></td>' +
+						'</tr>');
+
+					if (roomLockIcon != "") {
+						roomListEntry.find(".usersInRoomTd").empty();
+					}
+
+
+					roomListEntry.mouseenter(function () {
+						$(this).find(".roomToTrashBtn").show();
+						$(this).find(".clickToEnter").show();
+					});
+					roomListEntry.mouseleave(function () {
+						$(this).find(".roomToTrashBtn").hide();
+						$(this).find(".clickToEnter").hide();
+					});
+					roomListEntry.find(".roomToTrashBtn").click(function (e) {
+						e.preventDefault();
+						if (!room["user"] || room["user"].length == 0) {
+							sendDeleteNewRoom(room["roomName"], roomId);
+						} else {
+							alert("Room is not empty!");
+						}
+						return false;
+					});
+
+					$("#roomListContent tbody").append(roomListEntry);
+					roomListEntry.click(function (event) {
+						if (!$(event.target).hasClass("roomToTrashBtn, roomPassword")) {
+							if (room["hasPassword"]) {
+								var localStoragePW = localStorage.getItem("pw");
+								if (localStoragePW) {
+									$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: localStoragePW }).done(function (data) {
+										if (!data) {
+											showPwPromt();
+										} else {
+											room["roomName"] = room["roomName"] + "" + cleanString(localStoragePW);
+											joinRoom(room);
+										}
+									}).fail(function () {
+										alert("To many failed connection requests. Try again in a few minutes!");
+									});
+								} else {
+									showPwPromt();
+								}
+								function showPwPromt() {
+									$(".roomPassword").remove();
+									var input = $('<input style="color: black;" class="roomPassword form-control" type="password" placeholder="password">');
+									roomListEntry.find(".clickTr").html(input);
+									input.focus();
+									input.keydown(function (e) {
+										if (e.which == 13) {
+											var pw = input.val();
+											$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: pw }).done(function (data) {
+												if (data) {
+													localStorage.setItem("pw", pw);
+													room["roomName"] = room["roomName"] + "" + cleanString(pw);
+													joinRoom(room);
+												} else {
+													alert("Wrong password!");
+												}
+											}).fail(function () {
+												alert("To many failed connection requests. Try again in a few minutes!");
+											});
+										}
+									})
+								}
+							} else {
+								joinRoom(room);
+							}
+						}
+					});
 				}
+			})();
+		}
+		//Join a room directly if url get parameter is set   
+		if (!roomImIn) {
+			var roomQ = getQueryVariable("room");
+			if (roomQ && roomQ != "" && username && username != "dummy") {
+				$("#directRoomName").text(roomQ);
+				$('#connectModal').modal({ backdrop: 'static', keyboard: false });
+				$('#connectModal').find("#acceptDirectConnect").click(function () {
+					$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
+				})
 			}
 		}
-		filterRooms();
 	}
+	filterRooms();
 }
 
 function filterRooms() {

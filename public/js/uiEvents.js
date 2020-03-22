@@ -324,7 +324,7 @@ $(function () { //Document ready
 				$("#webcamInputDevs").html('No video device found!');
 			}
 
-			$('#setUpCheckModal').modal('show');
+			$('#setUpCheckModal').modal({backdrop: 'static', keyboard: false});
 			$('#setUpCheckModal').on('hidden.bs.modal', function () {
 				if (testAudioStream) {
 					testAudioStream.getTracks().forEach(function (track) {
