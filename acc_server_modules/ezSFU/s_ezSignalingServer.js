@@ -3,8 +3,9 @@
 /* -----------------------------
 Signaling Server to manage different SFUs
  --------------------------- */
-var os = require('os-utils');
 var crypto = require('crypto');
+var puppeteer = require('puppeteer');
+
 var allStreams = {}; //Contains all the streams on this instance
 var allStreamAttributes = {}; //Constains all the stream Attr (also from streams on other instances)
 var loadBalancersSockets = {};
@@ -231,25 +232,25 @@ function getTURNCredentials(name, secret) {
     };
 }
 
-// (async function () {
-//     const browser = await puppeteer.launch({
-//         "ignoreHTTPSErrors": true,
-//         args: ['--no-sandbox']
-//     });
-//     const page = await browser.newPage();
-//     await page.goto('https://127.0.0.1/webSFU/sfu.html');
+(async function () {
+    const browser = await puppeteer.launch({
+        "ignoreHTTPSErrors": true,
+        args: ['--no-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.goto('https://127.0.0.1/webSFU/sfu.html');
 
-//     page.on('console', msg => {
-//         for (let i = 0; i < msg.args().length; ++i) {
-//             console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
-//         }
-//     });
-//     await page.waitFor('#loadSFUBtn');
-//     await page.click('body');
-//     await page.click('#loadSFUBtn');
+    page.on('console', msg => {
+        for (let i = 0; i < msg.args().length; ++i) {
+            console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+        }
+    });
+    await page.waitFor('#loadSFUBtn');
+    await page.click('body');
+    await page.click('#loadSFUBtn');
 
-//     console.log("STARTED MAIN LOADBALANCER")
-// })()
+    console.log("STARTED MAIN LOADBALANCER")
+})()
 
 module.exports = {
     init: init
