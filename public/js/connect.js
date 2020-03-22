@@ -43,25 +43,6 @@ var loadSFUConnection = function (roomToConnect) {
                 "color": ownColor
             });
 
-            setTimeout(function () { //Delay getting all streams a little
-                mySFU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
-                    console.log(allStreamsFromRoom);
-                    for (var i in allStreamsFromRoom) {
-                        if (ownSocketId != allStreamsFromRoom[i].socketId) { //Dont subscribe to own stream
-                            (function () {
-                                if ($("#" + allStreamsFromRoom[i].streamId).length == 0) {
-                                    mySFU.subscribeToStream(allStreamsFromRoom[i]["streamId"], function (err) {
-                                        if (err) {
-                                            writeToChat("StreamError", "Was not able to add stream from:" + allStreamsFromRoom[i].username);
-                                        }
-                                    })
-                                }
-                            })();
-                        }
-                    }
-                })
-            }, 100)
-
             mySFU.on("newStreamPublished", function (content) {
                 console.log(content)
                 // var roomname = content["roomname"];
@@ -198,9 +179,8 @@ var loadSFUConnection = function (roomToConnect) {
                 }
             });
 
-            setTimeout(function () {
-                refreshMuteUnmuteAll();
-            }, 500);
+            refreshMuteUnmuteAll();
+
             mySFU.on("streamUnpublished", function (streamAttributes) {
                 console.log("streamUnpublished", streamAttributes)
                 var socketId = streamAttributes.socketId;
@@ -230,16 +210,17 @@ var loadSFUConnection = function (roomToConnect) {
                 }
             })
 
-            mySFU.on("disconnect", function (streamExtraContent) {
+            mySFU.on("disconnect", function () {
                 writeToChat("ERROR", 'Network to server disconnected! If you encounter problems, try to refresh the page.');
             });
 
-            writeToChat("Server", "Try to access microfone!");
+            writeToChat("Server", "Try to stream microfone!");
 
             if(localAudioStream) {
                 mySFU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
                     if (err) {
                         writeToChat("ERROR", "Stream could not be published! Error: " + err);
+                        initOtherStreams();
                     } else {
                         writeToChat("Server", "Local Audiostream Connected!");
                         writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
@@ -292,10 +273,31 @@ var loadSFUConnection = function (roomToConnect) {
                         analyser.connect(dest);
                         //localAudioStream = dest.stream;
                         //Calc the current volume END!
+                        initOtherStreams();
                     }
                 });
             } else {
                 writeToChat("ERROR", "Problem to get your Audio. If you want to talk, go back to the Roomlist and do the Audiosetup.");
+                initOtherStreams();
+            }
+
+            function initOtherStreams() {
+                mySFU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
+                    console.log(allStreamsFromRoom);
+                    for (var i in allStreamsFromRoom) {
+                        if (ownSocketId != allStreamsFromRoom[i].socketId) { //Dont subscribe to own stream
+                            (function () {
+                                if ($("#" + allStreamsFromRoom[i].streamId).length == 0) {
+                                    mySFU.subscribeToStream(allStreamsFromRoom[i]["streamId"], function (err) {
+                                        if (err) {
+                                            writeToChat("StreamError", "Was not able to add stream from:" + allStreamsFromRoom[i].username);
+                                        }
+                                    })
+                                }
+                            })();
+                        }
+                    }
+                })
             }
         }
     })

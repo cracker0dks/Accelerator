@@ -9,7 +9,6 @@ function ezSFU(socket, newConfig = {}) {
     this.mappedEvents = {};
     this.peers = {}; //contains all peers (to main and load balancers)
     this.allStreamAttributes = {};
-    this.connectedToMainPeer = false;
     this.currentIceServers = [];
 
     this.on = function (eventname, callback) {
