@@ -1,5 +1,5 @@
-$(document).ready(function() {
-	$("#loadSFUBtn").click(function() {
+$(document).ready(function () {
+	$("#loadSFUBtn").click(function () {
 		start()
 	})
 })
@@ -43,34 +43,36 @@ function start() {
 		});
 
 		socket.on('sfu_reqSteam', function (content) {
-			console.log("sfu_reqSteam", content)
+			//console.log("sfu_reqSteam", content)
 			var streamId = content.streamId;
 			var clientSocketId = content.clientSocketId;
 			if (allStreams[streamId]) {
 				if (!allPeers[clientSocketId]) {
-					createNewPeer(clientSocketId, allStreams[streamId], function () {
-						console.log("Created peer!", clientSocketId, allStreams[streamId])
+					createNewPeer(clientSocketId, function () {
+						//console.log("Created peer!", clientSocketId, allStreams[streamId])
 						pipeStream()
 					});
 				} else {
 					pipeStream()
 				}
+			} else {
+				console.log("StreamID not found!");
 			}
 
 			function pipeStream() {
-				console.log("piped stream", clientSocketId, allStreams[streamId])
 				var audioTracks = allStreams[streamId].getAudioTracks(); //Here do some things...
 				var videoTracks = allStreams[streamId].getVideoTracks();
 				if (videoTracks.length > 0) {
-					console.log("add stream!")
 					allPeers[clientSocketId].addStream(allStreams[streamId]);
 				} else if (audioTracks.length > 0) {
-					console.log("connect audio!")
-					
-					allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
-					
-					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
-					mediaEl[0].srcObject = allStreamDestinations[clientSocketId].stream;
+					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
+						allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
+
+						var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
+						mediaEl[0].srcObject = allStreamDestinations[clientSocketId].stream;
+					} else {
+						console.log("missing src or dest to connect audio!")
+					}
 				} else {
 					console.log("no stream, say what ?!!")
 				}
@@ -78,12 +80,12 @@ function start() {
 		});
 
 		socket.on('sfu_reqPeerConnectionToLB', function (content) {
-			console.log("sfu_reqPeerConnectionToLB", content)
+			//console.log("sfu_reqPeerConnectionToLB", content)
 			var clientSocketId = content.clientSocketId;
 
 			if (!allPeers[clientSocketId]) {
-				createNewPeer(clientSocketId, null, function () {
-					console.log("Created peer!", clientSocketId)
+				createNewPeer(clientSocketId, function () {
+					//console.log("Created peer!", clientSocketId)
 				});
 			}
 		});
@@ -97,7 +99,7 @@ function start() {
 				allPeers[clientSocketId].signaling(data);
 		});
 
-		function createNewPeer(clientSocketId, stream, callback) {
+		function createNewPeer(clientSocketId, callback) {
 
 			var dest = ac.createMediaStreamDestination();
 			allStreamDestinations[clientSocketId] = dest;
@@ -126,7 +128,7 @@ function start() {
 			})
 
 			localPeer.on('stream', stream => {
-				console.log("Peer added stream!", stream)
+				//console.log("Peer added stream!", stream)
 				var streamId = stream.id.replace("{", "").replace("}", "");
 				allStreams[streamId] = stream;
 
@@ -145,7 +147,7 @@ function start() {
 					hasAudio: audioTracks.length > 0 ? true : false,
 					streamId: streamId
 				}
-				console.log(retObj)
+				//console.log(retObj)
 				socket.emit("sfu_streamIsActive", loadBalancerAuthKey, retObj) //to main instance
 			});
 		}
