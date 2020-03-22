@@ -2030,7 +2030,13 @@ function refreshMuteUnmuteAll() {
 					audioElement.prop('muted', muted);
 				}
 			} else {
-				muted = "error"
+				var found = false;
+				for(var i in mySFU.allStreamAttributes) {
+					if(mySFU.allStreamAttributes[i].socketId == socketId) {
+						found = true;
+					}
+				}
+				muted = !found ? "error" : muted;
 			}
 		}
 
@@ -2050,7 +2056,6 @@ function refreshMuteUnmuteAll() {
 			if (socketId == ownSocketId && localAudioStream && !localAudioStream.audioMuted) {
 				mySFU.muteMediaStream(true, localAudioStream);
 			}
-
 		} else {
 			$(this).find(".UserRightTD").css({ "background": "#03a9f442" });
 			if (socketId == ownSocketId && gainNode) {
