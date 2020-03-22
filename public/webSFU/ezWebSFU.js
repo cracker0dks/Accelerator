@@ -5,8 +5,12 @@ var lbConfig = {
 	enabled: true, //set to false and the main server does not handle any streams (An other loadbalancer has to be online)
 }
 
+var ac = new AudioContext();
+
 var allPeers = {};
 var allStreams = {};
+var allStreamDestinations = {};
+var allStreamSources = {};
 var iceServers = [];
 
 socket.on('connect', function () {
@@ -25,13 +29,6 @@ socket.on('connect', function () {
 		iceServers = newIceServers;
 	});
 
-	socket.on('sfu_onUserDisconnectedFromRoom', function (clientSocketId) {
-		if (allPeers[clientSocketId]) {
-			allPeers[clientSocketId].destroy();
-			delete allPeers[clientSocketId];
-		}
-	});
-
 	socket.on('sfu_onStreamUnpublished', function (streamAttr) {
 		var streamId = streamAttr["streamId"];
 		if (allStreams[streamId]) {
@@ -46,11 +43,26 @@ socket.on('connect', function () {
 		if (allStreams[streamId]) {
 			if (!allPeers[clientSocketId]) {
 				createNewPeer(clientSocketId, allStreams[streamId], function () {
-					console.log("Created peer and piped stream", clientSocketId, allStreams[streamId])
+					console.log("Created peer!", clientSocketId, allStreams[streamId])
+					pipeStream()
 				});
 			} else {
-				console.log("piped stream", clientSocketId, allStreams[streamId])
-				allPeers[clientSocketId].addStream(allStreams[streamId])
+				pipeStream()
+			}
+		}
+
+		function pipeStream() {
+			console.log("piped stream", clientSocketId, allStreams[streamId])
+			var audioTracks = allStreams[streamId].getAudioTracks(); //Here do some things...
+			var videoTracks = allStreams[streamId].getVideoTracks();
+			if (videoTracks.length > 0) {
+				console.log("add stream!")
+				allPeers[clientSocketId].addStream(allStreams[streamId]);
+			} else if (audioTracks.length > 0) {
+				console.log("connect audio!")
+				allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
+			} else {
+				console.log("no stream, say what ?!!")
 			}
 		}
 	});
@@ -76,8 +88,11 @@ socket.on('connect', function () {
 	});
 
 	function createNewPeer(clientSocketId, stream, callback) {
-		
-		var localPeer = new initEzWebRTC(true, { iceServers: iceServers, stream: stream })
+
+		var dest = ac.createMediaStreamDestination();
+		allStreamDestinations[clientSocketId] = dest;
+
+		var localPeer = new initEzWebRTC(true, { iceServers: iceServers, stream: dest.stream })
 		allPeers[clientSocketId] = localPeer;
 
 		localPeer.on('error', function (err) {
@@ -85,6 +100,8 @@ socket.on('connect', function () {
 		});
 
 		localPeer.on('disconnect', () => {
+			allPeers[clientSocketId].destroy();
+			delete allPeers[clientSocketId];
 		})
 
 		localPeer.on('connect', () => {
@@ -106,14 +123,17 @@ socket.on('connect', function () {
 			var videoTracks = stream.getVideoTracks();
 			var audioTracks = stream.getAudioTracks();
 			if (videoTracks == 0) { //Only audio
+				var scr = ac.createMediaStreamSource(stream);
+				allStreamSources[streamId] = scr;
+
 				var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
 				mediaEl[0].srcObject = stream;
 			}
 
 			var retObj = {
-				hasVideo : videoTracks.length>0 ? true : false,
-				hasAudio : audioTracks.length>0 ? true : false,
-				streamId : streamId
+				hasVideo: videoTracks.length > 0 ? true : false,
+				hasAudio: audioTracks.length > 0 ? true : false,
+				streamId: streamId
 			}
 			console.log(retObj)
 			socket.emit("sfu_streamIsActive", loadBalancerAuthKey, retObj) //to main instance

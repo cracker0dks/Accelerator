@@ -65,6 +65,22 @@ var loadSFUConnection = function (roomToConnect) {
 
             mySFU.on("streamAdded", function (stream) {
                 console.log(stream)
+
+                if(!stream.hasVideo && stream.hasAudio) {
+                    console.log("ADD GLOBAL AUDIO!")
+                    $("#mediaC").append('<div id="audio' + streamId + '" class="audiocontainer" style="width: 320px; height: 217px; display:none;"></div>');
+                    mySFU.showMediaStream("audio" + streamId, stream);
+
+                    if (getBrowser() == "chrome-stable") {
+                        if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
+                            $('#audio' + streamId).find("audio")[0].setSinkId(prevOutputDevice); //Set audio output chrome  
+                        } else {
+                            $('#audio' + streamId).find("audio")[0].setSinkId("default"); //Set audio output device to default in chrome  
+                        }
+                    }
+                    return;
+                }
+                
                 var streamAttr = stream.streamAttributes;
                 var streamSocketId = streamAttr.socketId;
                 var streamId = stream.id.replace("{", "").replace("}", "")
@@ -157,25 +173,6 @@ var loadSFUConnection = function (roomToConnect) {
                         $("#" + streamSocketId).find(".popoutVideoBtn").show();
                     }
 
-                } else if (stream.hasAudio) { //Audio Stream
-                    console.log("ADD AUDIO!")
-                    var username = streamAttr ? streamAttr["username"] : null;
-                    $("#mediaC").append('<div id="audio' + streamId + '" username="' + username + '" streamSocketId="' + streamSocketId + '" class="audiocontainer socketId' + streamSocketId + '" style="width: 320px; height: 217px; display:none;"></div>');
-                    mySFU.showMediaStream("audio" + streamId, stream);
-                    if ($("#" + streamSocketId).length == 0) {
-                        sendGetUserInfos(streamSocketId);
-                    }
-
-                    $('.socketId' + streamSocketId + ' audio').prop("muted", "true");
-
-                    if (getBrowser() == "chrome-stable") {
-                        if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
-                            $('#audio' + streamId).find("audio")[0].setSinkId(prevOutputDevice); //Set audio output chrome  
-                        } else {
-                            $('#audio' + streamId).find("audio")[0].setSinkId("default"); //Set audio output device to default in chrome  
-                        }
-
-                    }
                 }
             });
 
