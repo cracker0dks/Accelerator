@@ -1,26 +1,13 @@
 //@ts-check
 
 /* -----------------------------
-WebRTC SFU created with simple-peer and the Chromium WebRTC Stack!
-So all things supported that are supported by Chromium
+Signaling Server to manage different SFUs
  --------------------------- */
 var os = require('os-utils');
 var crypto = require('crypto');
-var ezWebRTC = require('./s_ezWebRTC');
-var ezRtcRecorder = require("./s_ezRtcRecorder");
 var allStreams = {}; //Contains all the streams on this instance
 var allStreamAttributes = {}; //Constains all the stream Attr (also from streams on other instances)
-var allRecorders = {}; //Contains all the recorders
-var allPeers = {};
 var loadBalancersSockets = {};
-var loadBalancersAttributes = {
-    "main": {
-        enabled: true, //set to false and the main server does not handle any streams (An other loadbalancer has to be online)
-        maxWantedCpuLoad: 40,  //New streams will only be accepted if no other instance is available over this load (Set to 0 to always use other instances if possible)
-        maxCpuLoad: 80, //Limit CPU Load no new streams will be accepted on higher cpu load (clients can sub to streams regardless)
-        minMemory: 200 //Only accept new streams on this amount of RAM (MB) or more
-    }
-};
 
 var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
@@ -56,9 +43,6 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                 }
             }
             delete loadBalancersSockets[socket.id];
-            delete loadBalancersAttributes[socket.id];
-            localPeer.destroy();
-            delete allPeers[socket.id];
         });
 
 
@@ -85,70 +69,23 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
         socket.emit("sfu_onIceServers", getCurrentIceServers())
 
-        var localPeer = new ezWebRTC.initEzWebRTC(true, newConfig.webRtcConfig) //Create a peer for every socketconnection
-        allPeers[socket.id] = localPeer;
-
-        localPeer.on('error', function (err) {
-            console.log('peererror', socket.id, err)
-        });
-
-        localPeer.on('disconnect', () => {
-        })
-
-        localPeer.on('connect', () => {
-        })
-
-        localPeer.on('signaling', data => {
-            //console.log("SIGNALING OUT >", data.type)
-            socket.emit("sfu_signaling", { instanceFrom: "main", data: data });
-        })
-
-        localPeer.on('stream', stream => {
-            var streamId = stream.id.replace("{", "").replace("}", "");
-            allStreams[streamId] = stream;
-
-            if (!allStreamAttributes[streamId]) {
-                allStreamAttributes[streamId] = {};
-            }
-
-            allStreamAttributes[streamId]["socketId"] = socket.id;
-            allStreamAttributes[streamId]["streamId"] = streamId;
-            allStreamAttributes[streamId]["active"] = true;
-            if (allStreamAttributes[streamId]["roomname"]) {
-                socket.to(allStreamAttributes[streamId]["roomname"]).emit("sfu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in
-            }
-
-            socket.emit("sfu_onNewStreamPublished", allStreamAttributes[streamId]) //to yourself
-        });
-
         socket.on("sfu_joinRoom", function (content, callback) { //call to join a room
-            var username = content["username"].trim() || "unknown" + (+(new Date()));
             var roomname = content["roomname"].trim() || "";
             myRooms[roomname] = roomname;
 
-            if (roomname == "" || username == "") {
+            if (roomname == "") {
                 return console.log("error, not entered room! roomname or username is empty!")
             }
 
             socket.join(roomname);
-            socket.to(roomname).emit("sfu_onUserJoinedRoom", { socketId: socket.id, username: username })
-            callback();
+            callback(getCurrentIceServers());
         });
 
         //Handel signaling between client and server peers
         socket.on("sfu_signaling", function (content) {
             var instanceTo = content["instanceTo"];
-            var data = content["data"];
-            if (instanceTo == "main") {
-                try {
-                    //console.log("SIGNALING IN <", data.type)
-                    localPeer.signaling(data);
-                } catch (e) {
-                    console.log("warning: localPeer gone... no signaling!")
-                }
-            } else if (loadBalancersSockets[instanceTo]) {
+            if (loadBalancersSockets[instanceTo]) {
                 content["clientSocketId"] = socket.id;
-
                 loadBalancersSockets[instanceTo].emit("sfu_signaling", content);
             } else if (instanceTo == "clientSocket") {
                 var clientSocketId = content["clientSocketId"];
@@ -157,35 +94,6 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             } else {
                 console.log("instance not found at signaling:", instanceTo);
             }
-        })
-
-        //client wants to sub to a stream
-        socket.on("sfu_subscribeToStream", function (streamId, callback) {
-            //console.log("subStream", content)
-            function subToStream(subCnt) {
-                if (allStreams[streamId]) {
-                    // @ts-ignore
-                    if (localPeer.isConnected) {
-                        try {
-                            localPeer.addStream(allStreams[streamId]);
-                            callback(null);
-                        } catch (e) {
-                            console.log("warning: something wrong on addstream!", e)
-                            callback("warning: localPeer could not addstream! " + streamId);
-                        }
-                    } else {
-                        if (subCnt > 100) {
-                            return callback("Error: something wrong with the connection to main peer! " + streamId);
-                        }
-                        setTimeout(function () {
-                            subToStream(++subCnt)
-                        }, 200); //Wait for connection to be ready
-                    }
-                } else {
-                    callback("could not find stream! " + streamId);
-                }
-            }
-            subToStream(0);
         })
 
         socket.on("sfu_registerStream", function (streamAttributes, callback) {
@@ -200,7 +108,6 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                     streamAttributes["instanceTo"] = instance;
                     allStreamAttributes[streamAttributes["streamId"]] = streamAttributes;
                     myStreamIds.push(streamAttributes["streamId"]);
-                    //allStreams[streamAttributes["streamId"]] = true;
                     callback(null, streamAttributes);
                 })
             } else {
@@ -234,45 +141,11 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
 
                 delete allStreams[streamId];
                 delete allStreamAttributes[streamId];
-                delete allRecorders[streamId];
                 callback();
             } else {
                 callback("Not a stream you own! Nothing was set!");
             }
         })
-
-        socket.on("sfu_recordStream", function (streamId) {
-            if (!newConfig.recordingEnabled) {
-                return console.log("Recording is not enabled!")
-            }
-            var stream = allStreams[streamId];
-            if (stream != null) {
-                socket.emit("sfu_recordingStarted", streamId);
-                if (!allRecorders[streamId]) {
-                    var filename = (+new Date()) + '_' + streamId + '.mp4'
-                    var rec = new ezRtcRecorder.record(stream, {
-                        width: 640,
-                        height: 480,
-                        recordName: filename,
-                        recordPath: newConfig.recordPath || './'
-                    }, function () {
-                        socket.emit("sfu_recordingDone", { streamId: streamId, filename: filename })
-                        console.log("REC DONE!")
-                    });
-                    allRecorders[streamId] = rec;
-
-                    // setTimeout(function () {
-                    //     rec.stop();
-                    // }, 10000)
-                }
-            }
-        })
-
-        socket.on("sfu_stopRecordStream", function (streamId) {
-            if (allRecorders[streamId]) {
-                allRecorders[streamId].stop();
-            }
-        });
 
         socket.on("sfu_getAllStreamsFromRoom", function (roomname, callback) {
             var retArr = []
@@ -288,14 +161,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         socket.on("sfu_registerLoadBalancer", function (lbAuthKey, attributes) {
             if (newConfig["loadBalancerAuthKey"] && newConfig["loadBalancerAuthKey"] == lbAuthKey) {
                 loadBalancersSockets[socket.id] = socket;
-                loadBalancersAttributes[socket.id] = attributes || {};
                 console.log("New Loadbalancer connected: ", socket.id);
-            }
-        });
-
-        socket.on("sfu_updateLoadBalancerAttributes", function (lbAuthKey, attributes) {
-            if (newConfig["loadBalancerAuthKey"] && newConfig["loadBalancerAuthKey"] == lbAuthKey) {
-                loadBalancersAttributes[socket.id] = attributes || {};
             }
         });
 
@@ -305,14 +171,17 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             }
         })
 
-        socket.on("sfu_streamIsActive", function (lbAuthKey, streamId) {
+        socket.on("sfu_streamIsActive", function (lbAuthKey, content) {
+            var streamId = content.streamId
             if (newConfig["loadBalancerAuthKey"] && newConfig["loadBalancerAuthKey"] == lbAuthKey) {
                 if (allStreamAttributes[streamId]) {
+                    allStreamAttributes[streamId].hasVideo = content.hasVideo;
+                    allStreamAttributes[streamId].hasAudio = content.hasAudio;
                     allStreamAttributes[streamId]["active"] = true;
                     if (allStreamAttributes[streamId]["roomname"]) {
                         socket.to(allStreamAttributes[streamId]["roomname"]).emit("sfu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in
                     }
-
+                    
                     socket.emit("sfu_onNewStreamPublished", allStreamAttributes[streamId]) //to yourself
                 }
             }
@@ -334,23 +203,17 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
     })
 
     function findBestStreamingInstance(streamAttributes, callback) {
-        var instanceId = "main";
-        for (var i in loadBalancersAttributes) { //Find a fitting free loadbalancer
-            if(i != "main") {
-                instanceId = i;
-            }
+        var instanceId = null;
+        for (var i in loadBalancersSockets) { //Find a fitting free loadbalancer
+            instanceId = i;
         }
-        callback(null, instanceId);
+        if(!instanceId) {
+            callback("No streaming instance found!");
+        } else {
+            callback(null, instanceId);
+        }
+        
     }
-
-    setInterval(function () {
-        if (loadBalancersAttributes["main"]["enabled"]) {
-            os.cpuUsage(function (cpuP) {
-                loadBalancersAttributes["main"]["cpuUsage"] = cpuP;
-                loadBalancersAttributes["main"]["freeMem"] = os.freemem();
-            });
-        }
-    }, 1000)
 }
 
 function getTURNCredentials(name, secret) {

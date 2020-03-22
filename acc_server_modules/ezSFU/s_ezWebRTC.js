@@ -48,11 +48,15 @@ function initEzWebRTC(initiator, config) {
     pc.oniceconnectionstatechange = async function (e) {
         //console.log('ICE state: ' + pc.iceConnectionState);
         if (pc.iceConnectionState == "connected" || pc.iceConnectionState == "completed") {
-            _this.isConnected = true;
-            _this.emitEvent("connect", true)
+            if (!_this.isConnected) {
+                _this.isConnected = true;
+                _this.emitEvent("connect", true)
+            }
         } else if (pc.iceConnectionState == 'disconnected') {
-            _this.isConnected = false;
-            _this.emitEvent("disconnect", true)
+            if (_this.isConnected) {
+                _this.isConnected = false;
+                _this.emitEvent("disconnect", true)
+            }
         } else if (pc.iceConnectionState == 'failed' && initiator) { //Try to reconnect from initator side
             _this.isConnected = false;
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))

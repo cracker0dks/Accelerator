@@ -34,6 +34,14 @@ $(function () { //Document ready
 			} else {
 				setUserName(username, password);
 				showPage("#roomPage");
+				var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
+				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
+					localAudioStream = stream;
+				}, function (err) {
+					alert("Audio input error. Run the Audio / Video Setup to fix this.");
+					console.log(err);
+				});
+
 				sendGetAllRooms();
 			}
 			$("#notConnected").hide();
@@ -132,8 +140,10 @@ $(function () { //Document ready
 		var oscillator = null;
 		var oneOutputDevice = false;
 		var oneVideoInput = false;
-		var audioInputProgressBar = $('<progress value="0" max="100" style="width: 300px;">0</progress>')
-		navigator.getUserMedia({ audio: true, video: false }, async function (stream) {
+		var audioInputProgressBar = $('<progress value="0" max="100" style="width: 300px;">0</progress>');
+
+		var constraints = prevAudioInputDevice ? { deviceId: { exact: prevAudioInputDevice } } : true;
+		navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 			var audioOutputSelect = $('<select style="width: 300px;"></select>');
 			var audioInputSelect = $('<select style="width: 300px;"></select>');
 			var videoInputSelect = $('<select style="width: 300px;"></select>');
@@ -345,11 +355,15 @@ $(function () { //Document ready
 				prevAudioInputDevice = audioInputSelect.val();
 				localStorage.setItem("prevAudioInputDevice", audioInputSelect.val())
 
+				var constraints = { deviceId: { exact: audioInputSelect.val() } };
+				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
+					localAudioStream = stream;
+				});
+
 				if (oneVideoInput) {
 					prevVideoInputDevice = videoInputSelect.val()
 					localStorage.setItem("prevVideoInputDevice", videoInputSelect.val())
 				}
-
 
 				$('#setUpCheckModal').modal('hide');
 			})

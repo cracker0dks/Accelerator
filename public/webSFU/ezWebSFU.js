@@ -44,8 +44,7 @@ socket.on('connect', function () {
 		var streamId = content.streamId;
 		var clientSocketId = content.clientSocketId;
 		if (allStreams[streamId]) {
-
-			if(!allPeers[clientSocketId]) {
+			if (!allPeers[clientSocketId]) {
 				createNewPeer(clientSocketId, allStreams[streamId], function () {
 					console.log("Created peer and piped stream", clientSocketId, allStreams[streamId])
 				});
@@ -60,24 +59,25 @@ socket.on('connect', function () {
 		console.log("sfu_reqPeerConnectionToLB", content)
 		var clientSocketId = content.clientSocketId;
 
-		if(!allPeers[clientSocketId]) {
+		if (!allPeers[clientSocketId]) {
 			createNewPeer(clientSocketId, null, function () {
 				console.log("Created peer!", clientSocketId)
 			});
 		}
-	});	
+	});
 
 	socket.emit("sfu_registerLoadBalancer", loadBalancerAuthKey, lbConfig);
 
 	socket.on('sfu_signaling', function (content) {
 		var data = content["data"];
 		var clientSocketId = content["clientSocketId"];
-		if(allPeers[clientSocketId])
+		if (allPeers[clientSocketId])
 			allPeers[clientSocketId].signaling(data);
 	});
 
 	function createNewPeer(clientSocketId, stream, callback) {
-		var localPeer = new initEzWebRTC(true, { iceServers: iceServers, stream : stream })
+		
+		var localPeer = new initEzWebRTC(true, { iceServers: iceServers, stream: stream })
 		allPeers[clientSocketId] = localPeer;
 
 		localPeer.on('error', function (err) {
@@ -99,11 +99,24 @@ socket.on('connect', function () {
 		})
 
 		localPeer.on('stream', stream => {
+			console.log("Peer added stream!", stream)
 			var streamId = stream.id.replace("{", "").replace("}", "");
-			console.log("NEW STREAM WAS ADDED TO LB", streamId)
 			allStreams[streamId] = stream;
 
-			socket.emit("sfu_streamIsActive", loadBalancerAuthKey, streamId) //to main instance
+			var videoTracks = stream.getVideoTracks();
+			var audioTracks = stream.getAudioTracks();
+			if (videoTracks == 0) { //Only audio
+				var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
+				mediaEl[0].srcObject = stream;
+			}
+
+			var retObj = {
+				hasVideo : videoTracks.length>0 ? true : false,
+				hasAudio : audioTracks.length>0 ? true : false,
+				streamId : streamId
+			}
+			console.log(retObj)
+			socket.emit("sfu_streamIsActive", loadBalancerAuthKey, retObj) //to main instance
 		});
 	}
 

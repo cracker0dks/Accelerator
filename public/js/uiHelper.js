@@ -141,7 +141,7 @@ function addUserPItem(content) {
 								pitemWebcamStreams[itemId] = stream;
 								mySFU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
 									if (err) {
-										writeToChat("ERROR", "Stream could not be published! Error: "+err);
+										writeToChat("ERROR", "Stream could not be published! Error: " + err);
 									} else {
 										writeToChat("Server", "Webcamstream connecting...");
 										drop.find(".innerContent").html('<br><br>connecting...');
@@ -583,7 +583,7 @@ function setUserColor(id, color) {
 			var pad = $("#etherpadIframe")[0].contentWindow.pad; //Update Etherpad colors as well
 			pad.notifyChangeColor(ownColor);
 			pad.myUserInfo.globalUserColor = ownColor;
-		} catch(e) {
+		} catch (e) {
 			console.log("Could not access Etherpad IFRAME to set colors!")
 		}
 	}
@@ -1058,7 +1058,7 @@ function addUserToPanel(id, username) {
 					writeToChat("Pusblish video stream:" + stream.id)
 					mySFU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
 						if (err) {
-							writeToChat("ERROR", "Stream could not be published! Error: "+err);
+							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 						} else {
 							isLocalVideoPlaying = true;
 							writeToChat("Server", "Webcamstream connecting...");
@@ -1379,134 +1379,135 @@ var waitCnt = 0;
 function renderAllRooms(roomList) {
 	console.log(roomList);
 	$("#roomListContent tbody").empty();
-	if(!mySFU.connectedToMainPeer) {
-		$("#addNewRoomPanel").hide();
-		var points = "";
-		waitCnt = waitCnt >=4 ? 1 : waitCnt+1;
-		for(var i=0;i<waitCnt;i++) {
-			points+=". ";
-		}
-		$("#roomListContent tbody").text("Loading roomlist"+points);
-		setTimeout(function() {
-			renderAllRooms(roomList)
-		}, 500)
-		return;
-	}
-	$("#addNewRoomPanel").show();
-	if (JSON.stringify(roomList) == "{}") {
-		$("#roomListContent tbody").text("No room on this Server!");
-	} else {
-		for (var i in roomList) {
-			(function () {
-				var room = roomList[i];
-				if (room["roomName"]) {
-					var roomNameSplit = room["roomName"] ? room["roomName"].split("###") : "NA";
-					var roomName = roomNameSplit[0];
-					var roomNameToShow = roomName.split('_').join(' ');
-					var roomLockIcon = "";
-					if (room["hasPassword"])
-						roomLockIcon = '<i class="fa fa-lock" aria-hidden="true"></i>';
+	$("#roomListContent tbody").text("Waiting...");
 
-					var roomId = room["_id"];
-					var userInRoom = "";
-					var usersInRoomCnt = room["user"] ? room["user"].length : 0;
-					if (room["user"]) {
-						for (var k = 0; k < room["user"].length; k++) {
-							userInRoom += room["user"][k]["username"] + "\n";
-						}
-					}
-					var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
-						'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
-						'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
-						'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +
-						'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class="badge">' + usersInRoomCnt + '</span></td>' +
-						'</tr>');
+	var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
+	navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
+		localAudioStream = stream;
+		initRenderRooms();
+	}, function () {
+		initRenderRooms();
+	});
+	$("#roomListContent tbody").empty();
 
-					if (roomLockIcon != "") {
-						roomListEntry.find(".usersInRoomTd").empty();
-					}
+	function initRenderRooms() {
 
+		$("#addNewRoomPanel").show();
+		if (JSON.stringify(roomList) == "{}") {
+			$("#roomListContent tbody").text("No room on this Server!");
+		} else {
+			for (var i in roomList) {
+				(function () {
+					var room = roomList[i];
+					if (room["roomName"]) {
+						var roomNameSplit = room["roomName"] ? room["roomName"].split("###") : "NA";
+						var roomName = roomNameSplit[0];
+						var roomNameToShow = roomName.split('_').join(' ');
+						var roomLockIcon = "";
+						if (room["hasPassword"])
+							roomLockIcon = '<i class="fa fa-lock" aria-hidden="true"></i>';
 
-					roomListEntry.mouseenter(function () {
-						$(this).find(".roomToTrashBtn").show();
-						$(this).find(".clickToEnter").show();
-					});
-					roomListEntry.mouseleave(function () {
-						$(this).find(".roomToTrashBtn").hide();
-						$(this).find(".clickToEnter").hide();
-					});
-					roomListEntry.find(".roomToTrashBtn").click(function (e) {
-						e.preventDefault();
-						if (!room["user"] || room["user"].length == 0) {
-							sendDeleteNewRoom(room["roomName"], roomId);
-						} else {
-							alert("Room is not empty!");
-						}
-						return false;
-					});
-
-					$("#roomListContent tbody").append(roomListEntry);
-					roomListEntry.click(function (event) {
-						if (!$(event.target).hasClass("roomToTrashBtn, roomPassword")) {
-							if (room["hasPassword"]) {
-								var localStoragePW = localStorage.getItem("pw");
-								if (localStoragePW) {
-									$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: localStoragePW }).done(function (data) {
-										if (!data) {
-											showPwPromt();
-										} else {
-											room["roomName"] = room["roomName"] + "" + cleanString(localStoragePW);
-											joinRoom(room);
-										}
-									}).fail(function () {
-										alert("To many failed connection requests. Try again in a few minutes!");
-									});
-								} else {
-									showPwPromt();
-								}
-								function showPwPromt() {
-									$(".roomPassword").remove();
-									var input = $('<input style="color: black;" class="roomPassword form-control" type="password" placeholder="password">');
-									roomListEntry.find(".clickTr").html(input);
-									input.focus();
-									input.keydown(function (e) {
-										if (e.which == 13) {
-											var pw = input.val();
-											$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: pw }).done(function (data) {
-												if (data) {
-													localStorage.setItem("pw", pw);
-													room["roomName"] = room["roomName"] + "" + cleanString(pw);
-													joinRoom(room);
-												} else {
-													alert("Wrong password!");
-												}
-											}).fail(function () {
-												alert("To many failed connection requests. Try again in a few minutes!");
-											});
-										}
-									})
-								}
-							} else {
-								joinRoom(room);
+						var roomId = room["_id"];
+						var userInRoom = "";
+						var usersInRoomCnt = room["user"] ? room["user"].length : 0;
+						if (room["user"]) {
+							for (var k = 0; k < room["user"].length; k++) {
+								userInRoom += room["user"][k]["username"] + "\n";
 							}
 						}
-					});
+						var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
+							'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
+							'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
+							'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +
+							'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class="badge">' + usersInRoomCnt + '</span></td>' +
+							'</tr>');
+
+						if (roomLockIcon != "") {
+							roomListEntry.find(".usersInRoomTd").empty();
+						}
+
+
+						roomListEntry.mouseenter(function () {
+							$(this).find(".roomToTrashBtn").show();
+							$(this).find(".clickToEnter").show();
+						});
+						roomListEntry.mouseleave(function () {
+							$(this).find(".roomToTrashBtn").hide();
+							$(this).find(".clickToEnter").hide();
+						});
+						roomListEntry.find(".roomToTrashBtn").click(function (e) {
+							e.preventDefault();
+							if (!room["user"] || room["user"].length == 0) {
+								sendDeleteNewRoom(room["roomName"], roomId);
+							} else {
+								alert("Room is not empty!");
+							}
+							return false;
+						});
+
+						$("#roomListContent tbody").append(roomListEntry);
+						roomListEntry.click(function (event) {
+							if (!$(event.target).hasClass("roomToTrashBtn, roomPassword")) {
+								if (room["hasPassword"]) {
+									var localStoragePW = localStorage.getItem("pw");
+									if (localStoragePW) {
+										$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: localStoragePW }).done(function (data) {
+											if (!data) {
+												showPwPromt();
+											} else {
+												room["roomName"] = room["roomName"] + "" + cleanString(localStoragePW);
+												joinRoom(room);
+											}
+										}).fail(function () {
+											alert("To many failed connection requests. Try again in a few minutes!");
+										});
+									} else {
+										showPwPromt();
+									}
+									function showPwPromt() {
+										$(".roomPassword").remove();
+										var input = $('<input style="color: black;" class="roomPassword form-control" type="password" placeholder="password">');
+										roomListEntry.find(".clickTr").html(input);
+										input.focus();
+										input.keydown(function (e) {
+											if (e.which == 13) {
+												var pw = input.val();
+												$.get(subdir + "/isRoomPWCorrect", { roomName: room["roomName"], roomPassword: pw }).done(function (data) {
+													if (data) {
+														localStorage.setItem("pw", pw);
+														room["roomName"] = room["roomName"] + "" + cleanString(pw);
+														joinRoom(room);
+													} else {
+														alert("Wrong password!");
+													}
+												}).fail(function () {
+													alert("To many failed connection requests. Try again in a few minutes!");
+												});
+											}
+										})
+									}
+								} else {
+									joinRoom(room);
+								}
+							}
+						});
+					}
+				})();
+			}
+			//Join a room directly if url get parameter is set   
+			if (!roomImIn) {
+				var roomQ = getQueryVariable("room");
+				if (roomQ && roomQ != "" && username && username != "dummy") {
+					$("#directRoomName").text(roomQ);
+					$('#connectModal').modal({ backdrop: 'static', keyboard: false });
+					$('#connectModal').find("#acceptDirectConnect").click(function () {
+						$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
+					})
 				}
-			})();
-		}
-		//Join a room directly if url get parameter is set   
-		if (!roomImIn) {
-			var roomQ = getQueryVariable("room");
-			if (roomQ && roomQ != "" && username && username != "dummy") {
-				$("#directRoomName").text(roomQ);
-				$('#connectModal').modal({backdrop: 'static', keyboard: false});
-				$('#connectModal').find("#acceptDirectConnect").click(function(){
-					$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
-				})
 			}
 		}
+		filterRooms();
 	}
-	filterRooms();
 }
 
 function filterRooms() {
@@ -1530,7 +1531,7 @@ function joinRoom(room) {
 
 	roomImIn = room;
 	setModerator("0");
-	history.pushState({}, null, "?room="+roomImIn["roomName"].split("###")[0]); //Change url to roomlink
+	history.pushState({}, null, "?room=" + roomImIn["roomName"].split("###")[0]); //Change url to roomlink
 
 	whiteboard.loadWhiteboard("#whiteboardContainer", {
 		whiteboardId: room["roomName"],
@@ -1796,8 +1797,8 @@ function joinRoom(room) {
 		dragCounter = 0;
 		whiteboard.dropIndicator.hide();
 	});
-	
-	if(window.location.href.indexOf("reutlingen-university")!==-1) { //Load etherpad into Iframe on correct url
+
+	if (window.location.href.indexOf("reutlingen-university") !== -1) { //Load etherpad into Iframe on correct url
 		$("#etherpadIframe").attr("src", "https://accelerator.reutlingen-university.de/etherpad/p/" + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
 	}
 }
@@ -1815,7 +1816,7 @@ var countDownInterval = 0;
 var time = 0;
 //Write something to the chat (But cleans it first)
 function writeToChat(clientName, text, noClean, intent) {
-	
+
 	clientName = cleanString(clientName);
 
 	if (!noClean)

@@ -1,5 +1,6 @@
 //@ts-check
 function ezSFU(socket, newConfig = {}) {
+    var _this = this;
     var sfuConfig = {}
     for (var i in newConfig) {
         sfuConfig[i] = newConfig[i];
@@ -22,15 +23,14 @@ function ezSFU(socket, newConfig = {}) {
         for (var i in this.mappedEvents[eventname]) {
             this.mappedEvents[eventname][i](arguments[1], arguments[2], arguments[3])
         }
-        console.log(eventname + ":" + JSON.stringify(arguments[1]))
     };
-    this.makeNewPeer = function (peerId, connectedCallback, iceServers) {
+    this.makeNewPeer = function (peerId, connectedCallback, iceServers, stream) {
         var _this = this;
         if (_this.peers[peerId]) {
             return console.log("Already connected to this peer!");
         }
 
-        _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers })
+        _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers, stream : stream })
         _this.peers[peerId].on('error', err => console.log('error', err))
 
         _this.peers[peerId].on('signaling', data => {
@@ -101,10 +101,6 @@ function ezSFU(socket, newConfig = {}) {
             })
 
             socket.on("sfu_onIceServers", function (iceServers) {
-                _this.makeNewPeer("main", function () {
-                    //Connected callback
-                    _this.connectedToMainPeer = true;
-                }, iceServers);
                 _this.currentIceServers = iceServers;
             })
 
@@ -134,23 +130,17 @@ function ezSFU(socket, newConfig = {}) {
         });
     };
     this.joinRoom = function (username, roomname, callback) {
-        var _this = this;
         socket.emit("sfu_joinRoom", {
             roomname: roomname,
             username: username
         }, function (iceServers) {
             console.log("iceServers", iceServers)
-            var joinI = setInterval(function () {
-                if (_this.connectedToMainPeer) { //Make sure the peer connection is active
-                    clearInterval(joinI);
-                    console.log("JOINED!");
-                    callback();
-                }
-            }, 10)
+            _this.currentIceServers = iceServers;
+            console.log("JOINED!");
+            callback();
         });
     };
     this.unpublishStream = function (stream) {
-        var _this = this;
         socket.emit("sfu_unpublishStream", stream.id.replace("{", "").replace("}", ""), function (err) {
             if (err) console.log(err);
         });
@@ -199,32 +189,28 @@ function ezSFU(socket, newConfig = {}) {
     this.subscribeToStream = function (streamId, callback) {
         var _this = this;
         var instanceTo = _this.allStreamAttributes[streamId] ? _this.allStreamAttributes[streamId]["instanceTo"] : "";
-        if (instanceTo == "main")
-            socket.emit("sfu_subscribeToStream", streamId, callback);
-        else { //Stream is on a loadbalancer
-            if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
-                console.log("REQEST THE STREAM!!", streamId)
-                socket.emit("sfu_reqStreamFromLB", {
-                    "instanceFrom": instanceTo,
-                    "streamId": streamId,
-                }, callback);
-            } else if (_this.peers[instanceTo]) { //We already started a connection so wait for it to connect
-                setTimeout(function () {
-                    _this.subscribeToStream(streamId, callback);
-                }, 100)
-            } else {
-                //We need to connect to the instance first
-                _this.makeNewPeer(instanceTo, function () {
-                    //Connected callback
-                    console.log("LOADBALANCER CONNECTED!!!");
-                }, _this.currentIceServers);
+        if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
+            console.log("REQEST THE STREAM!!", streamId)
+            socket.emit("sfu_reqStreamFromLB", {
+                "instanceFrom": instanceTo,
+                "streamId": streamId,
+            }, callback);
+        } else if (_this.peers[instanceTo]) { //We already started a connection so wait for it to connect
+            setTimeout(function () {
+                _this.subscribeToStream(streamId, callback);
+            }, 100)
+        } else {
+            //We need to connect to the instance first
+            _this.makeNewPeer(instanceTo, function () {
+                //Connected callback
+                console.log("LOADBALANCER CONNECTED (Without stream add)!!!");
+            }, _this.currentIceServers);
 
-                console.log("REQEST THE STREAM!!")
-                socket.emit("sfu_reqStreamFromLB", {
-                    "instanceFrom": instanceTo,
-                    "streamId": streamId,
-                }, callback);
-            }
+            console.log("REQEST THE STREAM!!")
+            socket.emit("sfu_reqStreamFromLB", {
+                "instanceFrom": instanceTo,
+                "streamId": streamId,
+            }, callback);
         }
     };
     this.publishStreamToRoom = function (roomname, stream, callback) {
@@ -256,9 +242,9 @@ function ezSFU(socket, newConfig = {}) {
                     console.log("CONNECT TO LB!!!");
                     _this.makeNewPeer(instanceTo, function () {
                         //Connected callback
-                        console.log("LOADBALANCER CONNECTED!!!");
-                        _this.peers[instanceTo].addStream(stream);
-                    }, _this.currentIceServers);
+                        console.log("LOADBALANCER CONNECTED (With streamadd)!!!");
+                        //_this.peers[instanceTo].addStream();
+                    }, _this.currentIceServers, stream);
 
                     socket.emit("sfu_reqPeerConnectionToLB", {
                         "instanceTo": instanceTo

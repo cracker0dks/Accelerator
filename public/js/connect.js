@@ -236,75 +236,67 @@ var loadSFUConnection = function (roomToConnect) {
 
             writeToChat("Server", "Try to access microfone!");
 
-            function startLocalAudioStream() {
-                var constraints = prevAudioInputDevice ? { deviceId: { exact: prevAudioInputDevice } } : true;
-
-                navigator.getUserMedia({ audio: constraints, video: false }, (stream) => {
-                    stream["attributes"] = { socketId: ownSocketId, username: username };
-                    localAudioStream = stream;
-                    mySFU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
-                        if (err) {
-                            writeToChat("ERROR", "Stream could not be published! Error: " + err);
-                        } else {
-                            writeToChat("Server", "Local Audiostream Connected!");
-                            writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
-                            $("#" + ownSocketId).find(".UserRightTD").css({ "background": "rgba(3, 169, 244, 0)" });
-                            if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
-                                showTour("introBasicTour", false); //start intro tour
-                            }
-                            setLocalStorage("introBasicTourShown", true);
-
-                            //Calc the current volume!
-                            var audioAontext = window.AudioContext || window.webkitAudioContext;
-                            var context = new audioAontext();
-                            var microphone = context.createMediaStreamSource(stream);
-                            var dest = context.createMediaStreamDestination();
-
-                            gainNode = context.createGain();
-
-                            var analyser = context.createAnalyser();
-                            analyser.fftSize = 2048;
-                            var bufferLength = analyser.frequencyBinCount;
-                            var dataArray = new Uint8Array(bufferLength);
-                            analyser.getByteTimeDomainData(dataArray);
-
-                            var audioVolume = 0;
-                            var oldAudioVolume = 0;
-                            function calcVolume() {
-                                requestAnimationFrame(calcVolume);
-                                analyser.getByteTimeDomainData(dataArray);
-                                var mean = 0;
-                                for (var i = 0; i < dataArray.length; i++) {
-                                    mean += Math.abs(dataArray[i] - 127);
-                                }
-                                mean /= dataArray.length;
-                                mean = Math.round(mean);
-                                if (mean < 2)
-                                    audioVolume = 0;
-                                else if (mean < 5)
-                                    audioVolume = 1;
-                                else
-                                    audioVolume = 2;
-
-                                if (audioVolume != oldAudioVolume) {
-                                    sendAudioVolume(audioVolume);
-                                    oldAudioVolume = audioVolume;
-                                }
-                            }
-                            calcVolume();
-                            microphone.connect(gainNode);
-                            gainNode.connect(analyser); //get sound  
-                            analyser.connect(dest);
-                            stream = dest.stream;
-                            //Calc the current volume END!
+            if(localAudioStream) {
+                mySFU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
+                    if (err) {
+                        writeToChat("ERROR", "Stream could not be published! Error: " + err);
+                    } else {
+                        writeToChat("Server", "Local Audiostream Connected!");
+                        writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
+                        $("#" + ownSocketId).find(".UserRightTD").css({ "background": "rgba(3, 169, 244, 0)" });
+                        if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
+                            showTour("introBasicTour", false); //start intro tour
                         }
-                    });
-                }, (err) => {
-                    writeToChat("WARNING", "Access to microphone rejected or device not available! This is not a problem if you don't want to talk.");
-                })
-            }
+                        setLocalStorage("introBasicTourShown", true);
 
-            setTimeout(startLocalAudioStream, 300);
+                        //Calc the current volume!
+                        var audioAontext = window.AudioContext || window.webkitAudioContext;
+                        var context = new audioAontext();
+                        var microphone = context.createMediaStreamSource(stream);
+                        var dest = context.createMediaStreamDestination();
+
+                        gainNode = context.createGain();
+
+                        var analyser = context.createAnalyser();
+                        analyser.fftSize = 2048;
+                        var bufferLength = analyser.frequencyBinCount;
+                        var dataArray = new Uint8Array(bufferLength);
+                        analyser.getByteTimeDomainData(dataArray);
+
+                        var audioVolume = 0;
+                        var oldAudioVolume = 0;
+                        function calcVolume() {
+                            requestAnimationFrame(calcVolume);
+                            analyser.getByteTimeDomainData(dataArray);
+                            var mean = 0;
+                            for (var i = 0; i < dataArray.length; i++) {
+                                mean += Math.abs(dataArray[i] - 127);
+                            }
+                            mean /= dataArray.length;
+                            mean = Math.round(mean);
+                            if (mean < 2)
+                                audioVolume = 0;
+                            else if (mean < 5)
+                                audioVolume = 1;
+                            else
+                                audioVolume = 2;
+
+                            if (audioVolume != oldAudioVolume) {
+                                sendAudioVolume(audioVolume);
+                                oldAudioVolume = audioVolume;
+                            }
+                        }
+                        calcVolume();
+                        microphone.connect(gainNode);
+                        gainNode.connect(analyser); //get sound  
+                        analyser.connect(dest);
+                        stream = dest.stream;
+                        //Calc the current volume END!
+                    }
+                });
+            } else {
+                writeToChat("ERROR", "Problem to get your Audio. If you want to talk, go back to the Roomlist and do the Audiosetup.");
+            }
         }
     })
 }
@@ -771,7 +763,6 @@ function initSocketIO() {
         signaling_socket.on('noRightsToDeleteRoom', function () {
             alert("No rights to delete this room");
         });
-
 
         signaling_socket.on('getAllRooms', function (allRooms) {
             renderAllRooms(allRooms);
