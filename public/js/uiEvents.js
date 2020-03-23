@@ -17,6 +17,7 @@ $(function () { //Document ready
 	$.material.init();
 	if (!signaling_socket)
 		initSocketIO(); //Init SocketIO Server
+		
 	showPage("#loginPage");
 	/* LOGIN PAGE */
 	$("#loginBtn").click(function () {
@@ -33,16 +34,18 @@ $(function () { //Document ready
 				// 	$('#inputPassword').popover('toggle');
 			} else {
 				setUserName(username, password);
-				showPage("#roomPage");
+				showPage("#accessMicPage");
 				var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
 				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 					localAudioStream = stream;
+					showPage("#roomPage");
+					sendGetAllRooms();
 				}, function (err) {
+					showPage("#roomPage");
 					alert("Audio input error. Run the Audio / Video Setup to fix this.");
+					sendGetAllRooms();
 					console.log(err);
 				});
-
-				sendGetAllRooms();
 			}
 			$("#notConnected").hide();
 		} else {
@@ -373,7 +376,7 @@ $(function () { //Document ready
 				track.stop();
 			});
 		}, function (err) {
-			alert("Error getting usermedia!")
+			alert("Error getting usermedia! Connect a microphone and allow the access in your browser.")
 			console.log(err)
 		});
 
