@@ -24,7 +24,7 @@ for (var i = 3; i < urlSplit.length; i++) {
     subdir = subdir + '/' + urlSplit[i];
 }
 
-var loadMCUConnection = function (roomToConnect) {
+var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
 
     ownColor = getLocalStorage("color");
     if (!ownColor)
@@ -216,8 +216,8 @@ var loadMCUConnection = function (roomToConnect) {
             if(localAudioStream) {
                 myMCU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
                     if (err) {
-                        writeToChat("ERROR", "Stream could not be published! Error: " + err);
-                        initOtherStreams();
+                        $("#joinRoomError").text("Error: Could not connect to room. Try to reload the page and connect again.");
+                        console.log("ERROR", "Stream could not be published!: ", err)
                     } else {
                         writeToChat("Server", "Local Audiostream Connected!");
                         writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
@@ -274,11 +274,12 @@ var loadMCUConnection = function (roomToConnect) {
                     }
                 });
             } else {
-                writeToChat("ERROR", "Problem to get your Audio. If you want to talk, go back to the Roomlist and do the Audiosetup.");
+                writeToChat("ERROR", "Problem to getting your Audio. If you want to talk, go back to the Roomlist and do the Audiosetup!");
                 initOtherStreams();
             }
 
             function initOtherStreams() {
+                connectionReadyCallback();
                 myMCU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
                     console.log(allStreamsFromRoom);
                     for (var i in allStreamsFromRoom) {

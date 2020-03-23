@@ -111,7 +111,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <!--- Room Page ---------------------------------------------------------------------------------------------------!-->
@@ -189,13 +188,25 @@
     <!---accessMicPage -----------------------------------------------------------------------------------------------------------!-->
     <div class="page" id="accessMicPage">
         <div class="row">
-            <div class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
-                <br><br><br><br><br><br><br><br><br><br><br><br>
-                <h2 style="color:white">↖ Please allow microphone access <i class="fa fa-microphone" aria-hidden="true"></i></h2>
+            <div style="margin-top: 15%;" class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+                <h2 style="color:white">↖ Please allow microphone access <i class="fa fa-microphone"
+                        aria-hidden="true"></i></h2>
             </div>
         </div>
     </div>
     <!---END accessMicPage -----------------------------------------------------------------------------------------------------------!-->
+
+    <!---joinRoomPage -----------------------------------------------------------------------------------------------------------!-->
+    <div class="page" id="joinRoomPage">
+        <div class="row">
+            <div style="margin-top: 15%;" class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+                <h2 style="color:white">Connecting to room, please wait... <i class="fa fa-plug" aria-hidden="true"></i>
+                </h2>
+                <div style="color:white" id="joinRoomError"></div>
+            </div>
+        </div>
+    </div>
+    <!---END joinRoomPage -----------------------------------------------------------------------------------------------------------!-->
 
     <!---MainPage -----------------------------------------------------------------------------------------------------------!-->
     <div id="mainPage" class="container-fluid page">
@@ -1080,6 +1091,8 @@
             </div>
         </div>
     </div>
+    <!---END MainPage -----------------------------------------------------------------------------------------------------------!-->
+
     <!-- SETUP CHECK Modal -!-->
     <div id="setUpCheckModal" class="modal">
         <div class="modal-dialog">

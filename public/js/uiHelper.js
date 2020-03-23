@@ -1510,13 +1510,20 @@ function filterRooms() {
 }
 
 function joinRoom(room) {
+	roomImIn = room;
+	showPage("#joinRoomPage");
+	loadMCUConnection(room, function() {
+		//connectionReadyCallback
+		renderMainPage(room);
+	});
+}
+
+function renderMainPage(room) {
 	roomJoinTime = new Date().getTime();
 	showPage("#mainPage");
-	loadMCUConnection(room);
 
 	//$("#roomSipNumberPlaceholder").text('07129-9219994 Roomnumber: ' + room["sipnumber"] + ' (Free from German landline / Kostenlos aus dem Deutschen Festnetz)');
 
-	roomImIn = room;
 	setModerator("0");
 	history.pushState({}, null, "?room=" + roomImIn["roomName"].split("###")[0]); //Change url to roomlink
 
