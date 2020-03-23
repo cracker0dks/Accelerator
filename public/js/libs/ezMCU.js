@@ -1,9 +1,9 @@
 //@ts-check
-function ezSFU(socket, newConfig = {}) {
+function ezMCU(socket, newConfig = {}) {
     var _this = this;
-    var sfuConfig = {}
+    var mcuConfig = {}
     for (var i in newConfig) {
-        sfuConfig[i] = newConfig[i];
+        mcuConfig[i] = newConfig[i];
     }
     this.socket = socket;
     this.mappedEvents = {};
@@ -34,7 +34,7 @@ function ezSFU(socket, newConfig = {}) {
 
         _this.peers[peerId].on('signaling', data => {
             //console.log("SENDING SIGNALING OUT >", data)
-            socket.emit("sfu_signaling", { instanceTo: peerId, data: data })
+            socket.emit("mcu_signaling", { instanceTo: peerId, data: data })
         })
 
         _this.peers[peerId].on('stream', stream => {
@@ -63,9 +63,9 @@ function ezSFU(socket, newConfig = {}) {
     this.init = function () {
         var _this = this;
         socket.on("connect", function () {
-            console.log("sfu socket connected");
+            console.log("mcu socket connected");
 
-            socket.on("sfu_signaling", function (content) {
+            socket.on("mcu_signaling", function (content) {
 
                 var data = content["data"];
                 //console.log("SENDING SIGNALING IN <", data)
@@ -77,34 +77,34 @@ function ezSFU(socket, newConfig = {}) {
                 }
             })
 
-            socket.on("sfu_onUserJoinedRoom", function (content) {
+            socket.on("mcu_onUserJoinedRoom", function (content) {
                 _this.emitEvent("userJoinedRoom", content);
             })
 
-            socket.on("sfu_onUserDisconnectedFromRoom", function (socketId) {
+            socket.on("mcu_onUserDisconnectedFromRoom", function (socketId) {
                 _this.emitEvent("userDisconnectedFromRoom", socketId);
             })
 
-            socket.on("sfu_onStreamUnpublished", function (streamAttributes) {
+            socket.on("mcu_onStreamUnpublished", function (streamAttributes) {
                 _this.emitEvent("streamUnpublished", streamAttributes);
             })
 
-            socket.on("sfu_recordingStarted", function (streamId) {
+            socket.on("mcu_recordingStarted", function (streamId) {
                 _this.emitEvent("recordingStarted", streamId);
             })
 
-            socket.on("sfu_recordingDone", function (content) {
+            socket.on("mcu_recordingDone", function (content) {
                 var streamId = content.streamId;
                 var filename = content.filename;
                 _this.emitEvent("recordingDone", streamId, filename);
             })
 
-            socket.on("sfu_onIceServers", function (iceServers) {
+            socket.on("mcu_onIceServers", function (iceServers) {
                 _this.currentIceServers = iceServers;
             })
 
-            socket.on("sfu_onNewStreamPublished", function (content) {
-                console.log("sfu_onNewStreamPublished", content)
+            socket.on("mcu_onNewStreamPublished", function (content) {
+                console.log("mcu_onNewStreamPublished", content)
                 // var username = content["username"];
                 // var socketId = content["socketId"];
                 // var roomname = content["roomname"];
@@ -129,7 +129,7 @@ function ezSFU(socket, newConfig = {}) {
         });
     };
     this.joinRoom = function (username, roomname, callback) {
-        socket.emit("sfu_joinRoom", {
+        socket.emit("mcu_joinRoom", {
             roomname: roomname,
             username: username
         }, function (iceServers) {
@@ -140,7 +140,7 @@ function ezSFU(socket, newConfig = {}) {
         });
     };
     this.unpublishStream = function (stream) {
-        socket.emit("sfu_unpublishStream", stream.id.replace("{", "").replace("}", ""), function (err) {
+        socket.emit("mcu_unpublishStream", stream.id.replace("{", "").replace("}", ""), function (err) {
             if (err) console.log(err);
         });
         for (var i in stream.getAudioTracks()) {
@@ -172,7 +172,7 @@ function ezSFU(socket, newConfig = {}) {
     };
     this.getAllStreamsFromRoom = function (roomname, callback) {
         var _this = this;
-        socket.emit("sfu_getAllStreamsFromRoom", roomname, function (content) {
+        socket.emit("mcu_getAllStreamsFromRoom", roomname, function (content) {
             var activeStreamAttrs = {};
             for (var i in content) {
                 if (content[i].active) {
@@ -190,7 +190,7 @@ function ezSFU(socket, newConfig = {}) {
         var instanceTo = _this.allStreamAttributes[streamId] ? _this.allStreamAttributes[streamId]["instanceTo"] : "";
         if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
             console.log("REQEST THE STREAM!!", streamId)
-            socket.emit("sfu_reqStreamFromLB", {
+            socket.emit("mcu_reqStreamFromLB", {
                 "instanceFrom": instanceTo,
                 "streamId": streamId,
             }, callback);
@@ -206,7 +206,7 @@ function ezSFU(socket, newConfig = {}) {
             }, _this.currentIceServers);
 
             console.log("REQEST THE STREAM!!")
-            socket.emit("sfu_reqStreamFromLB", {
+            socket.emit("mcu_reqStreamFromLB", {
                 "instanceFrom": instanceTo,
                 "streamId": streamId,
             }, callback);
@@ -221,7 +221,7 @@ function ezSFU(socket, newConfig = {}) {
         }
         streamAttributes["roomname"] = roomname;
         streamAttributes["streamId"] = stream.id.replace("{", "").replace("}", "");
-        socket.emit("sfu_registerStream", streamAttributes, function (err, setStreamAttributes) {
+        socket.emit("mcu_registerStream", streamAttributes, function (err, setStreamAttributes) {
             console.log("setStreamAttributes", setStreamAttributes)
             if (err) {
                 callback(err)
@@ -246,7 +246,7 @@ function ezSFU(socket, newConfig = {}) {
                         callback();
                     }, _this.currentIceServers, stream);
 
-                    socket.emit("sfu_reqPeerConnectionToLB", {
+                    socket.emit("mcu_reqPeerConnectionToLB", {
                         "instanceTo": instanceTo
                     });
                 } else {
@@ -258,6 +258,6 @@ function ezSFU(socket, newConfig = {}) {
 
     };
     this.recordStream = function (streamId) {
-        socket.emit("sfu_recordStream", streamId.replace("{", "").replace("}", ""));
+        socket.emit("mcu_recordStream", streamId.replace("{", "").replace("}", ""));
     }
 }

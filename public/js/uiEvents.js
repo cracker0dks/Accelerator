@@ -623,7 +623,7 @@ $(function () { //Document ready
 				stream["streamAttributes"] = { "screenshare": true };
 				screen_stream = stream;
 				if (stream) {
-					mySFU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
+					myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
 						if (err) {
 							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 							$("#startScreenShareBtn").removeAttr("disabled");
@@ -653,7 +653,7 @@ $(function () { //Document ready
 
 			})();
 		} else {
-			mySFU.unpublishStream(screen_stream)
+			myMCU.unpublishStream(screen_stream)
 			screen_publishing = false;
 			$("#startScreenShareBtn").css("position", "relative");
 			$("#startScreenShareBtn").text("start screenshare!");

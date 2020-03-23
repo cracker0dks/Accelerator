@@ -32,7 +32,8 @@ var server = https.createServer({
 
 var io = require('socket.io').listen(server);
 
-var ezSFU = require('./acc_server_modules/ezSFU/s_ezSignalingServer').init(io, config["sfuConfig"]);
+config["mcuConfig"]["masterPort"] = httpsPort;
+var ezMCU = require('./acc_server_modules/ezMCU/s_ezMCUsignaling').init(io, config["mcuConfig"]);
 
 console.log("Webserver & socketserver running on port:" + httpsPort);
 

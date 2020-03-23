@@ -1,15 +1,23 @@
 $(document).ready(function () {
-	$("#loadSFUBtn").click(function () {
+	$("#loadMCUBtn").click(function () {
 		start()
 	})
 })
-function start() {
-	var masterIp = "127.0.0.1:443"; //Or hostname
-	var socket = io('https://' + masterIp, { secure: true, reconnect: true, rejectUnauthorized: false });
-	var loadBalancerAuthKey = "abc"; //Auth key to connect to the master as loadBalancer
-	var lbConfig = {
-		enabled: true, //set to false and the main server does not handle any streams (An other loadbalancer has to be online)
+
+var mcuConfig = {
+	enabled: true,
+	loadBalancerAuthKey : "abc", //Auth key to connect to the master as loadBalancer
+	masterIpAndPort : "127.0.0.1:443" //IP Or hostname and port
+}
+
+function setMCUConfig(config) {
+	for(var i in config) {
+		mcuConfig[i] = config[i];
 	}
+}
+
+function start() {
+	var socket = io('https://' + mcuConfig.masterIpAndPort, { secure: true, reconnect: true, rejectUnauthorized: false });
 
 	var ac = new AudioContext();
 
@@ -31,19 +39,19 @@ function start() {
 			allStreams = {};
 		});
 
-		socket.on('sfu_onIceServers', function (newIceServers) {
+		socket.on('mcu_onIceServers', function (newIceServers) {
 			iceServers = newIceServers;
 		});
 
-		socket.on('sfu_onStreamUnpublished', function (streamAttr) {
+		socket.on('mcu_onStreamUnpublished', function (streamAttr) {
 			var streamId = streamAttr["streamId"];
 			if (allStreams[streamId]) {
 				delete allStreams[streamId];
 			}
 		});
 
-		socket.on('sfu_reqSteam', function (content) {
-			//console.log("sfu_reqSteam", content)
+		socket.on('mcu_reqSteam', function (content) {
+			//console.log("mcu_reqSteam", content)
 			var streamId = content.streamId;
 			var clientSocketId = content.clientSocketId;
 			if (allStreams[streamId]) {
@@ -79,8 +87,8 @@ function start() {
 			}
 		});
 
-		socket.on('sfu_reqPeerConnectionToLB', function (content) {
-			//console.log("sfu_reqPeerConnectionToLB", content)
+		socket.on('mcu_reqPeerConnectionToLB', function (content) {
+			//console.log("mcu_reqPeerConnectionToLB", content)
 			var clientSocketId = content.clientSocketId;
 
 			if (!allPeers[clientSocketId]) {
@@ -90,9 +98,9 @@ function start() {
 			}
 		});
 
-		socket.emit("sfu_registerLoadBalancer", loadBalancerAuthKey, lbConfig);
+		socket.emit("mcu_registerLoadBalancer", mcuConfig.loadBalancerAuthKey, mcuConfig);
 
-		socket.on('sfu_signaling', function (content) {
+		socket.on('mcu_signaling', function (content) {
 			var data = content["data"];
 			var clientSocketId = content["clientSocketId"];
 			if (allPeers[clientSocketId])
@@ -124,7 +132,7 @@ function start() {
 			localPeer.on('signaling', data => {
 				allPeers[clientSocketId]["createdAnswer"] = true;
 				//console.log('SIGNAL', JSON.stringify(data))
-				socket.emit("sfu_signaling", { instanceTo: "clientSocket", "clientSocketId": clientSocketId, data: data });
+				socket.emit("mcu_signaling", { instanceTo: "clientSocket", "clientSocketId": clientSocketId, data: data });
 			})
 
 			localPeer.on('stream', stream => {
@@ -148,12 +156,12 @@ function start() {
 					streamId: streamId
 				}
 				//console.log(retObj)
-				socket.emit("sfu_streamIsActive", loadBalancerAuthKey, retObj) //to main instance
+				socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 			});
 		}
 
 		setInterval(function () { //Every 10h get current IceServers
-			socket.emit("sfu_reqCurrentIceServers", loadBalancerAuthKey, { enabled: enabled });
+			socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey, { enabled: enabled });
 		}, 1000 * 60 * 60 * 10);
 	});
 

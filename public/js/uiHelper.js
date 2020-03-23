@@ -139,7 +139,7 @@ function addUserPItem(content) {
 							navigator.getUserMedia(config, (stream) => {
 								stream["streamAttributes"] = { socketId: ownSocketId, itemId: itemId, username: username };
 								pitemWebcamStreams[itemId] = stream;
-								mySFU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
+								myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
 									if (err) {
 										writeToChat("ERROR", "Stream could not be published! Error: " + err);
 									} else {
@@ -1056,7 +1056,7 @@ function addUserToPanel(id, username) {
 					localVideoStrm = stream;
 					localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
 					writeToChat("Pusblish video stream:" + stream.id)
-					mySFU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
+					myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
 						if (err) {
 							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 						} else {
@@ -1073,7 +1073,7 @@ function addUserToPanel(id, username) {
 
 			} else {
 				isLocalVideoPlaying = false;
-				mySFU.unpublishStream(localVideoStrm);
+				myMCU.unpublishStream(localVideoStrm);
 				localVideoStrm = null;
 				$(_this).css({ "color": "rgb(142, 142, 142)" });
 				$(_this).attr("title", "Start webcam");
@@ -1512,7 +1512,7 @@ function filterRooms() {
 function joinRoom(room) {
 	roomJoinTime = new Date().getTime();
 	showPage("#mainPage");
-	loadSFUConnection(room);
+	loadMCUConnection(room);
 
 	//$("#roomSipNumberPlaceholder").text('07129-9219994 Roomnumber: ' + room["sipnumber"] + ' (Free from German landline / Kostenlos aus dem Deutschen Festnetz)');
 
@@ -2031,8 +2031,8 @@ function refreshMuteUnmuteAll() {
 				}
 			} else {
 				var found = false;
-				for(var i in mySFU.allStreamAttributes) {
-					if(mySFU.allStreamAttributes[i].socketId == socketId) {
+				for(var i in myMCU.allStreamAttributes) {
+					if(myMCU.allStreamAttributes[i].socketId == socketId) {
 						found = true;
 					}
 				}
@@ -2054,7 +2054,7 @@ function refreshMuteUnmuteAll() {
 				gainNode.gain.value = 0;
 			}
 			if (socketId == ownSocketId && localAudioStream && !localAudioStream.audioMuted) {
-				mySFU.muteMediaStream(true, localAudioStream);
+				myMCU.muteMediaStream(true, localAudioStream);
 			}
 		} else {
 			$(this).find(".UserRightTD").css({ "background": "#03a9f442" });
@@ -2062,7 +2062,7 @@ function refreshMuteUnmuteAll() {
 				gainNode.gain.value = 1;
 			}
 			if (socketId == ownSocketId && localAudioStream && localAudioStream.audioMuted) {
-				mySFU.muteMediaStream(false, localAudioStream);
+				myMCU.muteMediaStream(false, localAudioStream);
 			}
 
 		}

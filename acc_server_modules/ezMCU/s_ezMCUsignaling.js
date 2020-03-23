@@ -1,7 +1,7 @@
 //@ts-check
 
 /* -----------------------------
-Signaling Server to manage different SFUs
+Signaling Server to manage different MCUs
  --------------------------- */
 var crypto = require('crypto');
 var puppeteer = require('puppeteer');
@@ -10,9 +10,14 @@ var allStreams = {}; //Contains all the streams on this instance
 var allStreamAttributes = {}; //Constains all the stream Attr (also from streams on other instances)
 var loadBalancersSockets = {};
 
-var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
-
-    var orgIceServer = JSON.parse(JSON.stringify(newConfig.webRtcConfig.iceServers));
+var init = async function (io, newConfig) {
+    var mcuConfig = {
+        loadBalancerAuthKey: "asd"
+    }
+    for (var i in newConfig) {
+        mcuConfig[i] = newConfig[i];
+    }
+    var orgIceServer = JSON.parse(JSON.stringify(mcuConfig.webRtcConfig.iceServers));
 
     io.sockets.on('connection', function (socket) {
         let myStreamIds = [];
@@ -22,24 +27,24 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         socket.on("disconnect", function () {
             for (let i = 0; i < myStreamIds.length; i++) {
                 if (allStreams[myStreamIds[i]]) {
-                    socket.to(allStreams[myStreamIds[i]]["roomname"]).emit("sfu_onStreamUnpublished", allStreamAttributes[myStreamIds[i]]);
+                    socket.to(allStreams[myStreamIds[i]]["roomname"]).emit("mcu_onStreamUnpublished", allStreamAttributes[myStreamIds[i]]);
                     for (var k in loadBalancersSockets) {
-                        loadBalancersSockets[k].emit("sfu_onStreamUnpublished", allStreamAttributes[myStreamIds[i]])
+                        loadBalancersSockets[k].emit("mcu_onStreamUnpublished", allStreamAttributes[myStreamIds[i]])
                     }
                 }
                 delete allStreams[myStreamIds[i]];
                 delete allStreamAttributes[myStreamIds[i]];
             }
             for (let roomname in myRooms) {
-                socket.to(roomname).emit("sfu_onUserDisconnectedFromRoom", socket.id);
+                socket.to(roomname).emit("mcu_onUserDisconnectedFromRoom", socket.id);
             }
             for (var k in loadBalancersSockets) {
-                loadBalancersSockets[k].emit("sfu_onUserDisconnectedFromRoom", socket.id)
+                loadBalancersSockets[k].emit("mcu_onUserDisconnectedFromRoom", socket.id)
             }
 
             for (var k in allStreamAttributes) {
                 if (allStreamAttributes[k]["instanceTo"] == socket.id) { //Remove streams if loadbalancer disconnects
-                    socket.to(allStreamAttributes[k]["roomname"]).emit("sfu_onStreamUnpublished", allStreamAttributes[k]);
+                    socket.to(allStreamAttributes[k]["roomname"]).emit("mcu_onStreamUnpublished", allStreamAttributes[k]);
                     delete allStreamAttributes[k];
                 }
             }
@@ -63,14 +68,14 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
                 }
             }
 
-            newConfig.webRtcConfig.iceServers = returnIce;
+            mcuConfig.webRtcConfig.iceServers = returnIce;
             return returnIce;
 
         }
 
-        socket.emit("sfu_onIceServers", getCurrentIceServers())
+        socket.emit("mcu_onIceServers", getCurrentIceServers())
 
-        socket.on("sfu_joinRoom", function (content, callback) { //call to join a room
+        socket.on("mcu_joinRoom", function (content, callback) { //call to join a room
             var roomname = content["roomname"].trim() || "";
             myRooms[roomname] = roomname;
 
@@ -83,22 +88,22 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         });
 
         //Handel signaling between client and server peers
-        socket.on("sfu_signaling", function (content) {
+        socket.on("mcu_signaling", function (content) {
             var instanceTo = content["instanceTo"];
             if (loadBalancersSockets[instanceTo]) {
                 content["clientSocketId"] = socket.id;
-                loadBalancersSockets[instanceTo].emit("sfu_signaling", content);
+                loadBalancersSockets[instanceTo].emit("mcu_signaling", content);
             } else if (instanceTo == "clientSocket") {
                 var clientSocketId = content["clientSocketId"];
                 content["instanceFrom"] = socket.id;
-                io.to(clientSocketId).emit("sfu_signaling", content);
+                io.to(clientSocketId).emit("mcu_signaling", content);
             } else {
                 console.log("instance not found at signaling:", instanceTo);
             }
         })
 
-        socket.on("sfu_registerStream", function (streamAttributes, callback) {
-            //console.log("sfu_registerStream", streamAttributes)
+        socket.on("mcu_registerStream", function (streamAttributes, callback) {
+            //console.log("mcu_registerStream", streamAttributes)
             if (!allStreams[streamAttributes["streamId"]]) { //Stream is not there yet
                 streamAttributes["socketId"] = socket.id;
                 findBestStreamingInstance(streamAttributes, function (err, instance) { //Get the destination where the user should stream to!
@@ -116,7 +121,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             }
         })
 
-        socket.on("sfu_updateStreamAttributes", function (streamAttributes, callback) {
+        socket.on("mcu_updateStreamAttributes", function (streamAttributes, callback) {
             //console.log("subStream", streamAttributes)
             if (allStreams[streamAttributes["streamId"]] && myStreamIds.includes(streamAttributes["streamId"])) { //Check if stream is there and owned by this user
                 streamAttributes["socketId"] = socket.id;
@@ -128,16 +133,16 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             }
         })
 
-        socket.on("sfu_unpublishStream", function (streamId, callback) {
+        socket.on("mcu_unpublishStream", function (streamId, callback) {
             if (myStreamIds.includes(streamId)) { //Check if stream is there and owned by this user
                 if (allStreamAttributes[streamId] && allStreamAttributes[streamId]["roomname"]) { //Check if stream has attr
-                    socket.to(allStreamAttributes[streamId]["roomname"]).emit("sfu_onStreamUnpublished", allStreamAttributes[streamId]);
+                    socket.to(allStreamAttributes[streamId]["roomname"]).emit("mcu_onStreamUnpublished", allStreamAttributes[streamId]);
                     for (var k in loadBalancersSockets) {
-                        loadBalancersSockets[k].emit("sfu_onStreamUnpublished", allStreamAttributes[streamId])
+                        loadBalancersSockets[k].emit("mcu_onStreamUnpublished", allStreamAttributes[streamId])
                     }
                 }
                 if (allStreamAttributes[streamId]) {
-                    socket.emit("sfu_onStreamUnpublished", allStreamAttributes[streamId])
+                    socket.emit("mcu_onStreamUnpublished", allStreamAttributes[streamId])
                 }
 
                 delete allStreams[streamId];
@@ -148,7 +153,7 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
             }
         })
 
-        socket.on("sfu_getAllStreamsFromRoom", function (roomname, callback) {
+        socket.on("mcu_getAllStreamsFromRoom", function (roomname, callback) {
             var retArr = []
             for (var lsid in allStreamAttributes) {
                 if (allStreamAttributes[lsid]["roomname"] == roomname) {
@@ -159,45 +164,45 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         })
 
         //LOAD BALANCER STUFF
-        socket.on("sfu_registerLoadBalancer", function (lbAuthKey, attributes) {
-            if (newConfig["loadBalancerAuthKey"] && newConfig["loadBalancerAuthKey"] == lbAuthKey) {
+        socket.on("mcu_registerLoadBalancer", function (lbAuthKey, attributes) {
+            if (mcuConfig["loadBalancerAuthKey"] == lbAuthKey) {
                 loadBalancersSockets[socket.id] = socket;
                 console.log("New Loadbalancer connected: ", socket.id);
             }
         });
 
-        socket.on("sfu_reqCurrentIceServers", function (lbAuthKey) {
-            if (newConfig["loadBalancerAuthKey"] && newConfig["loadBalancerAuthKey"] == lbAuthKey) {
-                socket.emit("sfu_onIceServers", getCurrentIceServers())
+        socket.on("mcu_reqCurrentIceServers", function (lbAuthKey) {
+            if (mcuConfig["loadBalancerAuthKey"] && mcuConfig["loadBalancerAuthKey"] == lbAuthKey) {
+                socket.emit("mcu_onIceServers", getCurrentIceServers())
             }
         })
 
-        socket.on("sfu_streamIsActive", function (lbAuthKey, content) {
+        socket.on("mcu_streamIsActive", function (lbAuthKey, content) {
             var streamId = content.streamId
-            if (newConfig["loadBalancerAuthKey"] && newConfig["loadBalancerAuthKey"] == lbAuthKey) {
+            if (mcuConfig["loadBalancerAuthKey"] && mcuConfig["loadBalancerAuthKey"] == lbAuthKey) {
                 if (allStreamAttributes[streamId]) {
                     allStreamAttributes[streamId].hasVideo = content.hasVideo;
                     allStreamAttributes[streamId].hasAudio = content.hasAudio;
                     allStreamAttributes[streamId]["active"] = true;
                     if (allStreamAttributes[streamId]["roomname"]) {
-                        socket.to(allStreamAttributes[streamId]["roomname"]).emit("sfu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in
+                        socket.to(allStreamAttributes[streamId]["roomname"]).emit("mcu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in
                     }
-                    
-                    socket.emit("sfu_onNewStreamPublished", allStreamAttributes[streamId]) //to yourself
+
+                    socket.emit("mcu_onNewStreamPublished", allStreamAttributes[streamId]) //to yourself
                 }
             }
         })
 
-        socket.on("sfu_reqStreamFromLB", function (content) {
+        socket.on("mcu_reqStreamFromLB", function (content) {
             var instanceFrom = content["instanceFrom"];
             content["clientSocketId"] = socket.id;
-            loadBalancersSockets[instanceFrom].emit("sfu_reqSteam", content);
+            loadBalancersSockets[instanceFrom].emit("mcu_reqSteam", content);
         });
 
-        socket.on("sfu_reqPeerConnectionToLB", function (content) {
+        socket.on("mcu_reqPeerConnectionToLB", function (content) {
             var instanceTo = content["instanceTo"];
             content["clientSocketId"] = socket.id;
-            loadBalancersSockets[instanceTo].emit("sfu_reqPeerConnectionToLB", content);
+            loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content);
         });
 
         //END - LOAD BALANCER STUFF
@@ -208,13 +213,36 @@ var init = function (io, newConfig = { loadBalancerAuthKey: null }) {
         for (var i in loadBalancersSockets) { //Find a fitting free loadbalancer
             instanceId = i;
         }
-        if(!instanceId) {
+        if (!instanceId) {
             callback("No streaming instance found!");
         } else {
             callback(null, instanceId);
         }
-        
+
     }
+
+    const browser = await puppeteer.launch({
+        "ignoreHTTPSErrors": true,
+        args: ['--no-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.goto('https://127.0.0.1:'+mcuConfig.masterPort+'/ezMCU/mcuLb.html');
+
+    page.on('console', msg => {
+        for (let i = 0; i < msg.args().length; ++i) {
+            console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+        }
+    });
+    await page.waitFor('#loadMCUBtn');
+    await page.click('body');
+
+    var mcuLbConfig = {
+        loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
+        masterIpAndPort: '127.0.0.1:' + mcuConfig.masterPort
+    }
+
+    await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
+    await page.click('#loadMCUBtn');
 }
 
 function getTURNCredentials(name, secret) {
@@ -231,26 +259,6 @@ function getTURNCredentials(name, secret) {
         password: password
     };
 }
-
-(async function () {
-    const browser = await puppeteer.launch({
-        "ignoreHTTPSErrors": true,
-        args: ['--no-sandbox']
-    });
-    const page = await browser.newPage();
-    await page.goto('https://127.0.0.1/webSFU/sfu.html');
-
-    page.on('console', msg => {
-        for (let i = 0; i < msg.args().length; ++i) {
-            console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
-        }
-    });
-    await page.waitFor('#loadSFUBtn');
-    await page.click('body');
-    await page.click('#loadSFUBtn');
-
-    console.log("STARTED MAIN LOADBALANCER")
-})()
 
 module.exports = {
     init: init

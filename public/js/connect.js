@@ -5,7 +5,7 @@ var gainNode = null;
 var currentTab = "#homeScreen";
 var userPItems = [];
 var all3DObjects = [];
-var mySFU;
+var myMCU;
 
 var room, screen_stream;
 var screen_publishing = false;
@@ -24,14 +24,14 @@ for (var i = 3; i < urlSplit.length; i++) {
     subdir = subdir + '/' + urlSplit[i];
 }
 
-var loadSFUConnection = function (roomToConnect) {
+var loadMCUConnection = function (roomToConnect) {
 
     ownColor = getLocalStorage("color");
     if (!ownColor)
         ownColor = getRandomColor();
     setUserColor(ownSocketId, ownColor);
 
-    mySFU.joinRoom(username, roomToConnect["roomName"], function (err) {
+    myMCU.joinRoom(username, roomToConnect["roomName"], function (err) {
         if (err) {
             writeToChat(err);
         } else {
@@ -43,7 +43,7 @@ var loadSFUConnection = function (roomToConnect) {
                 "color": ownColor
             });
 
-            mySFU.on("newStreamPublished", function (content) {
+            myMCU.on("newStreamPublished", function (content) {
                 console.log(content)
                 // var roomname = content["roomname"];
                 // var attributes = content["attributes"];
@@ -51,7 +51,7 @@ var loadSFUConnection = function (roomToConnect) {
                 var streamId = content["streamId"];
 
                 if (streamId != localAudioStream.id.replace("{", "").replace("}", "")) {
-                    mySFU.subscribeToStream(streamId, function (err) {
+                    myMCU.subscribeToStream(streamId, function (err) {
                         if (err) {
                             $("#" + streamId).remove();
                             writeToChat("StreamError", "Was not able to add stream:" + streamId);
@@ -63,13 +63,13 @@ var loadSFUConnection = function (roomToConnect) {
                 }
             })
 
-            mySFU.on("streamAdded", function (stream) {
+            myMCU.on("streamAdded", function (stream) {
                 console.log(stream)
 
                 if(!stream.hasVideo && stream.hasAudio) {
                     console.log("ADD GLOBAL AUDIO!")
                     $("#mediaC").append('<div id="audio' + streamId + '" class="audiocontainer" style="width: 320px; height: 217px; display:none;"></div>');
-                    mySFU.showMediaStream("audio" + streamId, stream);
+                    myMCU.showMediaStream("audio" + streamId, stream);
 
                     if (getBrowser() == "chrome-stable") {
                         if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
@@ -99,7 +99,7 @@ var loadSFUConnection = function (roomToConnect) {
                     function showTheScreen() {
                         if (currentTab == "#screenShare") { //Dont show screenshare on wrong tab
                             $("#screenShareStream").empty();
-                            mySFU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
+                            myMCU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
 
 
                             var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
@@ -157,7 +157,7 @@ var loadSFUConnection = function (roomToConnect) {
                         }
 
                         $("#" + streamAttr["itemId"]).find(".innerContent").html('<div id="video' + streamId + '" class="" style="width: 100%; height: 100%; z-index:10;"></div>');
-                        mySFU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
+                        myMCU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
 
                     } else {
                         if (streamSocketId == ownSocketId) {
@@ -168,7 +168,7 @@ var loadSFUConnection = function (roomToConnect) {
                         }
                         var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + streamSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
                         $("#" + streamSocketId).find(".videoContainer").append(videoElement);
-                        mySFU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+                        myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
                         $("#" + streamSocketId).find(".webcamfullscreen").show();
                         $("#" + streamSocketId).find(".popoutVideoBtn").show();
                     }
@@ -178,7 +178,7 @@ var loadSFUConnection = function (roomToConnect) {
 
             refreshMuteUnmuteAll();
 
-            mySFU.on("streamUnpublished", function (streamAttributes) {
+            myMCU.on("streamUnpublished", function (streamAttributes) {
                 console.log("streamUnpublished", streamAttributes)
                 var socketId = streamAttributes.socketId;
                 var streamId = streamAttributes.streamId;
@@ -207,14 +207,14 @@ var loadSFUConnection = function (roomToConnect) {
                 }
             })
 
-            mySFU.on("disconnect", function () {
+            myMCU.on("disconnect", function () {
                 writeToChat("ERROR", 'Network to server disconnected! If you encounter problems, try to refresh the page.');
             });
 
             writeToChat("Server", "Try to stream microfone!");
 
             if(localAudioStream) {
-                mySFU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
+                myMCU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
                     if (err) {
                         writeToChat("ERROR", "Stream could not be published! Error: " + err);
                         initOtherStreams();
@@ -279,13 +279,13 @@ var loadSFUConnection = function (roomToConnect) {
             }
 
             function initOtherStreams() {
-                mySFU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
+                myMCU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
                     console.log(allStreamsFromRoom);
                     for (var i in allStreamsFromRoom) {
                         if (ownSocketId != allStreamsFromRoom[i].socketId) { //Dont subscribe to own stream
                             (function () {
                                 if ($("#" + allStreamsFromRoom[i].streamId).length == 0) {
-                                    mySFU.subscribeToStream(allStreamsFromRoom[i]["streamId"], function (err) {
+                                    myMCU.subscribeToStream(allStreamsFromRoom[i]["streamId"], function (err) {
                                         if (err) {
                                             writeToChat("StreamError", "Was not able to add stream from:" + allStreamsFromRoom[i].username);
                                         }
@@ -707,8 +707,8 @@ function initSocketIO() {
         signaling_socket = io();
     }
 
-    mySFU = new ezSFU(signaling_socket);
-    mySFU.init();
+    myMCU = new ezMCU(signaling_socket);
+    myMCU.init();
 
     signaling_socket.on('connect', function () {
         console.log("Socket connected!");
@@ -1024,7 +1024,7 @@ function initSocketIO() {
                 }
             }
             if (pitemWebcamStreams[content.itemId]) {
-                mySFU.unpublishStream(pitemWebcamStreams[content.itemId])
+                myMCU.unpublishStream(pitemWebcamStreams[content.itemId])
                 delete pitemWebcamStreams[content.itemId];
             }
         });
