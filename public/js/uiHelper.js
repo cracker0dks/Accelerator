@@ -1134,6 +1134,7 @@ function addUserToPanel(id, username) {
 		}
 	});
 	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
+
 }
 
 function loadPraesis(praesis) {
@@ -1573,7 +1574,8 @@ function renderMainPage(room) {
 
 	//$("#roomSipNumberPlaceholder").text('07129-9219994 Roomnumber: ' + room["sipnumber"] + ' (Free from German landline / Kostenlos aus dem Deutschen Festnetz)');
 
-	setModerator("0");
+	setModerator(roomImIn["moderator"] || "0");
+
 	history.pushState({}, null, "?room=" + roomImIn["roomName"].split("###")[0]); //Change url to roomlink
 
 	whiteboard.loadWhiteboard("#whiteboardContainer", {

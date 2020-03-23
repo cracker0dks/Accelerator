@@ -719,14 +719,6 @@ function initSocketIO() {
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();
             }
-
-            if (roomImIn["moderator"] == remotSocketId) {
-                setModerator(roomImIn["moderator"]);
-            }
-
-            if (roomImIn["moderator"] == ownSocketId) {
-                setModerator(roomImIn["moderator"]);
-            }
         });
 
         signaling_socket.on('removePeer', function (remoteSocketId) {
