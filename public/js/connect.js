@@ -50,7 +50,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                 var username = content["username"];
                 var streamId = content["streamId"];
 
-                if (streamId != localAudioStream.id.replace("{", "").replace("}", "")) {
+                if (localAudioStream && streamId != localAudioStream.id.replace("{", "").replace("}", "")) {
                     myMCU.subscribeToStream(streamId, function (err) {
                         if (err) {
                             $("#" + streamId).remove();
