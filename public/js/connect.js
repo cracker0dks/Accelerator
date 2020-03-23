@@ -129,7 +129,13 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                             $("#" + streamAttr["itemId"]).find(".saveFrameBtn").click(function () {
                                 var _this = this;
                                 $(_this).hide();
-                                var url = stream.getVideoFrameURL();
+                                var videoEl = document.getElementById(streamId);
+                                const canvas = document.createElement("canvas");
+                                canvas.width = videoEl.clientWidth;
+                                canvas.height = videoEl.clientHeight;
+                                canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+                                var url = canvas.toDataURL();
                                 writeToChat("Server", "Frame is uploading...");
                                 $.ajax({
                                     type: 'POST',
