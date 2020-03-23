@@ -630,10 +630,9 @@ $(function () { //Document ready
 							$("#screenshareQuallyDiv").show();
 						} else {
 							screen_publishing = true;
+							apendScreenshareStream(stream, { streamSocketId : ownSocketId});
 						}
 					});
-
-
 				} else {
 					writeToChat("ERROR", "Access to screen rejected!");
 					$("#startScreenShareBtn").removeAttr("disabled", "false");

@@ -160,7 +160,9 @@ function ezMCU(socket, newConfig = {}) {
         var streamId = stream.id.replace("{", "").replace("}", "")
         var mediaEl = null;
 
-        mediaEl = stream.hasVideo ? document.createElement('video') : document.createElement('audio');
+        var videoTracks = stream.getVideoTracks();
+        var hasVideo = videoTracks.length>0 ? true : false;
+        mediaEl = hasVideo ? document.createElement('video') : document.createElement('audio');
 
         mediaEl.setAttribute("style", css);
         mediaEl.setAttribute("autoplay", "autoplay");

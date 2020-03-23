@@ -145,6 +145,7 @@ function addUserPItem(content) {
 									} else {
 										writeToChat("Server", "Webcamstream connecting...");
 										drop.find(".innerContent").html('<br><br>connecting...');
+
 									}
 								});
 							}, (err) => {
@@ -1054,14 +1055,24 @@ function addUserToPanel(id, username) {
 				writeToChat("Server", "Try to access webcam!");
 				navigator.getUserMedia({ audio: false, video: true }, (stream) => {
 					localVideoStrm = stream;
+					var streamId = stream.id.replace('{', "").replace('}', "")
 					localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
-					writeToChat("Pusblish video stream:" + stream.id)
+					writeToChat("Pusblish video stream:" + streamId)
 					myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
 						if (err) {
 							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 						} else {
 							isLocalVideoPlaying = true;
 							writeToChat("Server", "Webcamstream connecting...");
+							$("#" + ownSocketId).find(".shareOwnVideo").show();
+							$("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
+							$("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
+
+							var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
+							$("#" + ownSocketId).find(".videoContainer").append(videoElement);
+							myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+							$("#" + ownSocketId).find(".webcamfullscreen").show();
+							$("#" + ownSocketId).find(".popoutVideoBtn").show();
 						};
 					});
 				}, (err) => {
@@ -1170,6 +1181,44 @@ function loadPraesis(praesis) {
 		};
 		addRow(name);
 	}
+}
+
+function apendScreenshareStream(stream, streamAttr) {
+	console.log("ADD SCREENSHARE!")
+	var streamSocketId = streamAttr.streamSocketId;
+	if (streamSocketId == ownSocketId) {
+		$("#startScreenShareBtn").removeAttr("disabled");
+		writeToChat("Server", "Screenshare Connected!");
+		$("#startScreenShareBtn").css("position", "initial");
+		$("#startScreenShareBtn").text("stop screen share!");
+	}
+	$(".wait4ScreenShareTxt").hide();
+	$("#screenShareStream").show();
+	$("#screenShareStream").empty();
+
+	function showTheScreen() {
+		if (currentTab == "#screenShare") { //Dont show screenshare on wrong tab
+			$("#screenShareStream").empty();
+			myMCU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
+
+
+			var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
+			fullScreenBtn.click(function () {
+				var video = $("#screenShareStream video")[0];
+				if (video.requestFullscreen) {
+					video.requestFullscreen();
+				} else if (video.mozRequestFullScreen) {
+					video.mozRequestFullScreen(); // Firefox
+				} else if (video.webkitRequestFullscreen) {
+					video.webkitRequestFullscreen(); // Chrome and Safari
+				}
+			});
+			$("#screenShareStream").append(fullScreenBtn);
+		} else {
+			setTimeout(showTheScreen, 1000);
+		}
+	}
+	showTheScreen();
 }
 
 var gPraesi = null;
@@ -1512,7 +1561,7 @@ function filterRooms() {
 function joinRoom(room) {
 	roomImIn = room;
 	showPage("#joinRoomPage");
-	loadMCUConnection(room, function() {
+	loadMCUConnection(room, function () {
 		//connectionReadyCallback
 		renderMainPage(room);
 	});
@@ -2038,8 +2087,8 @@ function refreshMuteUnmuteAll() {
 				}
 			} else {
 				var found = false;
-				for(var i in myMCU.allStreamAttributes) {
-					if(myMCU.allStreamAttributes[i].socketId == socketId) {
+				for (var i in myMCU.allStreamAttributes) {
+					if (myMCU.allStreamAttributes[i].socketId == socketId) {
 						found = true;
 					}
 				}

@@ -47,10 +47,11 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                 console.log(content)
                 // var roomname = content["roomname"];
                 // var attributes = content["attributes"];
-                var username = content["username"];
                 var streamId = content["streamId"];
+                var socketId = content["socketId"];
+                var hasVideo = content["hasVideo"];
 
-                if (localAudioStream && streamId != localAudioStream.id.replace("{", "").replace("}", "")) {
+                if (ownSocketId != socketId || content["itemId"]) {
                     myMCU.subscribeToStream(streamId, function (err) {
                         if (err) {
                             $("#" + streamId).remove();
@@ -60,13 +61,18 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                             console.log("StreamInfo", "Connected to stream:" + streamId);
                         }
                     })
+                } else {
+                    if (hasVideo) {
+                        writeToChat("Server", "Videostream connected!");
+                    }
+
                 }
             })
 
             myMCU.on("streamAdded", function (stream) {
                 console.log(stream)
 
-                if(!stream.hasVideo && stream.hasAudio) {
+                if (!stream.hasVideo && stream.hasAudio) {
                     console.log("ADD GLOBAL AUDIO!")
                     $("#mediaC").append('<div id="audio' + streamId + '" class="audiocontainer" style="width: 320px; height: 217px; display:none;"></div>');
                     myMCU.showMediaStream("audio" + streamId, stream);
@@ -80,45 +86,12 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                     }
                     return;
                 }
-                
+
                 var streamAttr = stream.streamAttributes;
                 var streamSocketId = streamAttr.socketId;
                 var streamId = stream.id.replace("{", "").replace("}", "")
                 if (streamAttr && streamAttr.screenshare) {   //Screenshare
-                    console.log("ADD SCREENSHARE!")
-                    if (streamSocketId == ownSocketId) {
-                        $("#startScreenShareBtn").removeAttr("disabled");
-                        writeToChat("Server", "Screenstream Connected!");
-                        $("#startScreenShareBtn").css("position", "initial");
-                        $("#startScreenShareBtn").text("stop screen share!");
-                    }
-                    $(".wait4ScreenShareTxt").hide();
-                    $("#screenShareStream").show();
-                    $("#screenShareStream").empty();
-
-                    function showTheScreen() {
-                        if (currentTab == "#screenShare") { //Dont show screenshare on wrong tab
-                            $("#screenShareStream").empty();
-                            myMCU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
-
-
-                            var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
-                            fullScreenBtn.click(function () {
-                                var video = $("#screenShareStream video")[0];
-                                if (video.requestFullscreen) {
-                                    video.requestFullscreen();
-                                } else if (video.mozRequestFullScreen) {
-                                    video.mozRequestFullScreen(); // Firefox
-                                } else if (video.webkitRequestFullscreen) {
-                                    video.webkitRequestFullscreen(); // Chrome and Safari
-                                }
-                            });
-                            $("#screenShareStream").append(fullScreenBtn);
-                        } else {
-                            setTimeout(showTheScreen, 1000);
-                        }
-                    }
-                    showTheScreen();
+                    apendScreenshareStream(stream, streamAttr);
                 } else if (stream.hasVideo) {  //Video Stream
                     console.log("ADD VIDEO!")
                     $("#video" + streamId).remove(); //just in case so no double cam
@@ -166,12 +139,6 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         myMCU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
 
                     } else {
-                        if (streamSocketId == ownSocketId) {
-                            $("#" + ownSocketId).find(".shareOwnVideo").show();
-                            $("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
-                            $("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
-                            writeToChat("Server", "Webcamstream connected!");
-                        }
                         var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + streamSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
                         $("#" + streamSocketId).find(".videoContainer").append(videoElement);
                         myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
@@ -219,7 +186,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
 
             writeToChat("Server", "Try to stream microfone!");
 
-            if(localAudioStream) {
+            if (localAudioStream) {
                 myMCU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
                     if (err) {
                         $("#joinRoomError").text("Error: Could not connect to room. Try to reload the page and connect again.");
