@@ -1258,6 +1258,9 @@ process.on('SIGINT', function (code) {
 
 //catches uncaught exceptions
 process.on('uncaughtException', function (code) {
-    console.log(code);
-    process.exit();
+    console.log("We encouter an error... wait for config to be write then exit!")
+    setTimeout(function () {
+        console.log(code);
+        process.exit();
+    }, 1000)
 });
