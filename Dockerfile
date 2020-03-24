@@ -22,6 +22,14 @@ WORKDIR /opt/app
 COPY ./package.json /opt/app
 RUN npm install
 
+RUN npm i puppeteer \
+    # Add user so we don't need --no-sandbox.
+    # same layer as npm install to keep re-chowned files from using up several hundred MBs more space
+    && groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
+    && mkdir -p /home/pptruser/Downloads \
+    && chown -R pptruser:pptruser /home/pptruser \
+    && chown -R pptruser:pptruser /node_modules
+
 # Bundle app source
 COPY . /opt/app
 
