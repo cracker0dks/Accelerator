@@ -52,6 +52,8 @@ On the first start a new folder "/config" will be generated. Take a look at "/co
 ### GoodToKnow ###
 
 * Audio/Video is not Peer2Peer so it will use some server CPU
+* Max users per loadbalancer is about 256.
+* Video is disabled in rooms with more than 6 People due to hight load.
 * Firefox sometimes has some issues with the WebRTC audio/video, use chrome to be save
 * If you are running without docker, conversion to PDF presentaions (From Powerpoint and other Docs) will not work without installing "unoconv" on your own 
 * Setup a TURN Server if your clients are behind Firewalls and NATs (See config, setup below)
