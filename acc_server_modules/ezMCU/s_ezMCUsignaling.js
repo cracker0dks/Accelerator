@@ -222,27 +222,54 @@ var init = async function (io, newConfig) {
     }
 
     const browser = await puppeteer.launch({
+        headless: true,
         "ignoreHTTPSErrors": true,
-        args: ['--no-sandbox']
+        args: [
+            '--ignore-certificate-errors',
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-setuid-sandbox'
+        ]
     });
-    const page = await browser.newPage();
-    await page.goto('https://127.0.0.1:'+mcuConfig.masterPort+'/ezMCU/mcuLb.html');
 
-    page.on('console', msg => {
-        for (let i = 0; i < msg.args().length; ++i) {
-            console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+    var mcuStartedWithoutError = false;
+    async function startUpMcu() {
+        const page = await browser.newPage();
+        try {
+            await page.goto('https://127.0.0.1:' + mcuConfig.masterPort + '/ezMCU/mcuLb.html');
+
+            page.on('console', msg => {
+                for (let i = 0; i < msg.args().length; ++i) {
+                    console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+                }
+            });
+            page.on('error', msg => {
+                throw msg;
+            });
+            await page.waitFor('#loadMCUBtn');
+            await page.click('body');
+
+            var mcuLbConfig = {
+                loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
+                masterIpAndPort: '127.0.0.1:' + mcuConfig.masterPort
+            }
+
+            await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
+            await page.click('#loadMCUBtn');
+            setTimeout(function () { //Wait 10sec to spin it up and ensure no error
+                mcuStartedWithoutError = true;
+            }, 1000 * 10)
+        } catch (e) {
+            console.log("MCU ERROR: ", e);
+            console.log("Restart MCU!")
+            if (mcuStartedWithoutError) { //Startup the mcu if it crashes while running (should not happen, just in case)
+                startUpMcu();
+            }
+            mcuStartedWithoutError = false;
         }
-    });
-    await page.waitFor('#loadMCUBtn');
-    await page.click('body');
-
-    var mcuLbConfig = {
-        loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-        masterIpAndPort: '127.0.0.1:' + mcuConfig.masterPort
     }
-
-    await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
-    await page.click('#loadMCUBtn');
+    startUpMcu();
 }
 
 function getTURNCredentials(name, secret) {
