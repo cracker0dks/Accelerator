@@ -29,7 +29,7 @@ var whiteboard = {
 		sendFunction: null,
 		canvasWidth: 3000,
 		canvasHeight: 2000,
-		backgroundGridUrl: './img/KtEBa2.png'
+		backgroundGridUrl: './img/KtEBa3.png'
 	},
 	loadWhiteboard: function (whiteboardContainer, newSettings) {
 		var svgns = "http://www.w3.org/2000/svg";
