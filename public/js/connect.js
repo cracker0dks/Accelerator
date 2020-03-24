@@ -5,7 +5,7 @@ var gainNode = null;
 var currentTab = "#homeScreen";
 var userPItems = [];
 var all3DObjects = [];
-var mySFU;
+var myMCU;
 
 var room, screen_stream;
 var screen_publishing = false;
@@ -24,14 +24,14 @@ for (var i = 3; i < urlSplit.length; i++) {
     subdir = subdir + '/' + urlSplit[i];
 }
 
-var loadSFUConnection = function (roomToConnect) {
+var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
 
     ownColor = getLocalStorage("color");
     if (!ownColor)
         ownColor = getRandomColor();
     setUserColor(ownSocketId, ownColor);
 
-    mySFU.joinRoom(username, roomToConnect["roomName"], function (err) {
+    myMCU.joinRoom(username, roomToConnect["roomName"], function (err) {
         if (err) {
             writeToChat(err);
         } else {
@@ -43,34 +43,16 @@ var loadSFUConnection = function (roomToConnect) {
                 "color": ownColor
             });
 
-            setTimeout(function () { //Delay getting all streams a little
-                mySFU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
-                    console.log(allStreamsFromRoom);
-                    for (var i in allStreamsFromRoom) {
-                        if (ownSocketId != allStreamsFromRoom[i].socketId) { //Dont subscribe to own stream
-                            (function () {
-                                if ($("#" + allStreamsFromRoom[i].streamId).length == 0) {
-                                    mySFU.subscribeToStream(allStreamsFromRoom[i]["streamId"], function (err) {
-                                        if (err) {
-                                            writeToChat("StreamError", "Was not able to add stream from:" + allStreamsFromRoom[i].username);
-                                        }
-                                    })
-                                }
-                            })();
-                        }
-                    }
-                })
-            }, 100)
-
-            mySFU.on("newStreamPublished", function (content) {
+            myMCU.on("newStreamPublished", function (content) {
                 console.log(content)
                 // var roomname = content["roomname"];
                 // var attributes = content["attributes"];
-                var username = content["username"];
                 var streamId = content["streamId"];
+                var socketId = content["socketId"];
+                var hasVideo = content["hasVideo"];
 
-                if (streamId != localAudioStream.id.replace("{", "").replace("}", "")) {
-                    mySFU.subscribeToStream(streamId, function (err) {
+                if (ownSocketId != socketId || content["itemId"]) {
+                    myMCU.subscribeToStream(streamId, function (err) {
                         if (err) {
                             $("#" + streamId).remove();
                             writeToChat("StreamError", "Was not able to add stream:" + streamId);
@@ -79,49 +61,37 @@ var loadSFUConnection = function (roomToConnect) {
                             console.log("StreamInfo", "Connected to stream:" + streamId);
                         }
                     })
+                } else {
+                    if (hasVideo) {
+                        writeToChat("Server", "Videostream connected!");
+                    }
+
                 }
             })
 
-            mySFU.on("streamAdded", function (stream) {
+            myMCU.on("streamAdded", function (stream) {
                 console.log(stream)
+
+                if (!stream.hasVideo && stream.hasAudio) {
+                    console.log("ADD GLOBAL AUDIO!")
+                    $("#mediaC").append('<div id="audio' + streamId + '" class="audiocontainer" style="width: 320px; height: 217px; display:none;"></div>');
+                    myMCU.showMediaStream("audio" + streamId, stream);
+
+                    if (getBrowser() == "chrome-stable") {
+                        if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
+                            $('#audio' + streamId).find("audio")[0].setSinkId(prevOutputDevice); //Set audio output chrome  
+                        } else {
+                            $('#audio' + streamId).find("audio")[0].setSinkId("default"); //Set audio output device to default in chrome  
+                        }
+                    }
+                    return;
+                }
+
                 var streamAttr = stream.streamAttributes;
                 var streamSocketId = streamAttr.socketId;
                 var streamId = stream.id.replace("{", "").replace("}", "")
                 if (streamAttr && streamAttr.screenshare) {   //Screenshare
-                    console.log("ADD SCREENSHARE!")
-                    if (streamSocketId == ownSocketId) {
-                        $("#startScreenShareBtn").removeAttr("disabled");
-                        writeToChat("Server", "Screenstream Connected!");
-                        $("#startScreenShareBtn").css("position", "initial");
-                        $("#startScreenShareBtn").text("stop screen share!");
-                    }
-                    $(".wait4ScreenShareTxt").hide();
-                    $("#screenShareStream").show();
-                    $("#screenShareStream").empty();
-
-                    function showTheScreen() {
-                        if (currentTab == "#screenShare") { //Dont show screenshare on wrong tab
-                            $("#screenShareStream").empty();
-                            mySFU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
-
-
-                            var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
-                            fullScreenBtn.click(function () {
-                                var video = $("#screenShareStream video")[0];
-                                if (video.requestFullscreen) {
-                                    video.requestFullscreen();
-                                } else if (video.mozRequestFullScreen) {
-                                    video.mozRequestFullScreen(); // Firefox
-                                } else if (video.webkitRequestFullscreen) {
-                                    video.webkitRequestFullscreen(); // Chrome and Safari
-                                }
-                            });
-                            $("#screenShareStream").append(fullScreenBtn);
-                        } else {
-                            setTimeout(showTheScreen, 1000);
-                        }
-                    }
-                    showTheScreen();
+                    apendScreenshareStream(stream, streamAttr);
                 } else if (stream.hasVideo) {  //Video Stream
                     console.log("ADD VIDEO!")
                     $("#video" + streamId).remove(); //just in case so no double cam
@@ -166,48 +136,22 @@ var loadSFUConnection = function (roomToConnect) {
                         }
 
                         $("#" + streamAttr["itemId"]).find(".innerContent").html('<div id="video' + streamId + '" class="" style="width: 100%; height: 100%; z-index:10;"></div>');
-                        mySFU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
+                        myMCU.showMediaStream("video" + streamId, stream, 'height:225px; position: relative; top:0px;');
 
                     } else {
-                        if (streamSocketId == ownSocketId) {
-                            $("#" + ownSocketId).find(".shareOwnVideo").show();
-                            $("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
-                            $("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
-                            writeToChat("Server", "Webcamstream connected!");
-                        }
                         var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + streamSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
                         $("#" + streamSocketId).find(".videoContainer").append(videoElement);
-                        mySFU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+                        myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
                         $("#" + streamSocketId).find(".webcamfullscreen").show();
                         $("#" + streamSocketId).find(".popoutVideoBtn").show();
                     }
 
-                } else if (stream.hasAudio) { //Audio Stream
-                    console.log("ADD AUDIO!")
-                    var username = streamAttr ? streamAttr["username"] : null;
-                    $("#mediaC").append('<div id="audio' + streamId + '" username="' + username + '" streamSocketId="' + streamSocketId + '" class="audiocontainer socketId' + streamSocketId + '" style="width: 320px; height: 217px; display:none;"></div>');
-                    mySFU.showMediaStream("audio" + streamId, stream);
-                    if ($("#" + streamSocketId).length == 0) {
-                        sendGetUserInfos(streamSocketId);
-                    }
-
-                    $('.socketId' + streamSocketId + ' audio').prop("muted", "true");
-
-                    if (getBrowser() == "chrome-stable") {
-                        if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
-                            $('#audio' + streamId).find("audio")[0].setSinkId(prevOutputDevice); //Set audio output chrome  
-                        } else {
-                            $('#audio' + streamId).find("audio")[0].setSinkId("default"); //Set audio output device to default in chrome  
-                        }
-
-                    }
                 }
             });
 
-            setTimeout(function () {
-                refreshMuteUnmuteAll();
-            }, 500);
-            mySFU.on("streamUnpublished", function (streamAttributes) {
+            refreshMuteUnmuteAll();
+
+            myMCU.on("streamUnpublished", function (streamAttributes) {
                 console.log("streamUnpublished", streamAttributes)
                 var socketId = streamAttributes.socketId;
                 var streamId = streamAttributes.streamId;
@@ -236,81 +180,96 @@ var loadSFUConnection = function (roomToConnect) {
                 }
             })
 
-            mySFU.on("disconnect", function (streamExtraContent) {
+            myMCU.on("disconnect", function () {
                 writeToChat("ERROR", 'Network to server disconnected! If you encounter problems, try to refresh the page.');
             });
 
-            writeToChat("Server", "Try to access microfone!");
+            writeToChat("Server", "Try to stream microfone!");
 
-            function startLocalAudioStream() {
-                var constraints = prevAudioInputDevice ? { deviceId: { exact: prevAudioInputDevice } } : true;
-
-                navigator.getUserMedia({ audio: constraints, video: false }, (stream) => {
-                    stream["attributes"] = { socketId: ownSocketId, username: username };
-                    localAudioStream = stream;
-                    mySFU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
-                        if (err) {
-                            writeToChat("ERROR", "Stream could not be published! Error: " + err);
-                        } else {
-                            writeToChat("Server", "Local Audiostream Connected!");
-                            writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
-                            $("#" + ownSocketId).find(".UserRightTD").css({ "background": "rgba(3, 169, 244, 0)" });
-                            if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
-                                showTour("introBasicTour", false); //start intro tour
-                            }
-                            setLocalStorage("introBasicTourShown", true);
-
-                            //Calc the current volume!
-                            var audioAontext = window.AudioContext || window.webkitAudioContext;
-                            var context = new audioAontext();
-                            var microphone = context.createMediaStreamSource(stream);
-                            var dest = context.createMediaStreamDestination();
-
-                            gainNode = context.createGain();
-
-                            var analyser = context.createAnalyser();
-                            analyser.fftSize = 2048;
-                            var bufferLength = analyser.frequencyBinCount;
-                            var dataArray = new Uint8Array(bufferLength);
-                            analyser.getByteTimeDomainData(dataArray);
-
-                            var audioVolume = 0;
-                            var oldAudioVolume = 0;
-                            function calcVolume() {
-                                requestAnimationFrame(calcVolume);
-                                analyser.getByteTimeDomainData(dataArray);
-                                var mean = 0;
-                                for (var i = 0; i < dataArray.length; i++) {
-                                    mean += Math.abs(dataArray[i] - 127);
-                                }
-                                mean /= dataArray.length;
-                                mean = Math.round(mean);
-                                if (mean < 2)
-                                    audioVolume = 0;
-                                else if (mean < 5)
-                                    audioVolume = 1;
-                                else
-                                    audioVolume = 2;
-
-                                if (audioVolume != oldAudioVolume) {
-                                    sendAudioVolume(audioVolume);
-                                    oldAudioVolume = audioVolume;
-                                }
-                            }
-                            calcVolume();
-                            microphone.connect(gainNode);
-                            gainNode.connect(analyser); //get sound  
-                            analyser.connect(dest);
-                            stream = dest.stream;
-                            //Calc the current volume END!
+            if (localAudioStream) {
+                myMCU.publishStreamToRoom(roomToConnect["roomName"], localAudioStream, function (err) {
+                    if (err) {
+                        $("#joinRoomError").text("Error: Could not connect to room. Try to reload the page and connect again.");
+                        console.log("ERROR", "Stream could not be published!: ", err)
+                    } else {
+                        writeToChat("Server", "Local Audiostream Connected!");
+                        writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
+                        $("#" + ownSocketId).find(".UserRightTD").css({ "background": "rgba(3, 169, 244, 0)" });
+                        if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
+                            showTour("introBasicTour", false); //start intro tour
                         }
-                    });
-                }, (err) => {
-                    writeToChat("WARNING", "Access to microphone rejected or device not available! This is not a problem if you don't want to talk.");
-                })
+                        setLocalStorage("introBasicTourShown", true);
+
+                        //Calc the current volume!
+                        var audioAontext = window.AudioContext || window.webkitAudioContext;
+                        var context = new audioAontext();
+                        var microphone = context.createMediaStreamSource(localAudioStream);
+                        var dest = context.createMediaStreamDestination();
+
+                        gainNode = context.createGain();
+
+                        var analyser = context.createAnalyser();
+                        analyser.fftSize = 2048;
+                        var bufferLength = analyser.frequencyBinCount;
+                        var dataArray = new Uint8Array(bufferLength);
+                        analyser.getByteTimeDomainData(dataArray);
+
+                        var audioVolume = 0;
+                        var oldAudioVolume = 0;
+                        function calcVolume() {
+                            requestAnimationFrame(calcVolume);
+                            analyser.getByteTimeDomainData(dataArray);
+                            var mean = 0;
+                            for (var i = 0; i < dataArray.length; i++) {
+                                mean += Math.abs(dataArray[i] - 127);
+                            }
+                            mean /= dataArray.length;
+                            mean = Math.round(mean);
+                            if (mean < 2)
+                                audioVolume = 0;
+                            else if (mean < 5)
+                                audioVolume = 1;
+                            else
+                                audioVolume = 2;
+
+                            if (audioVolume != oldAudioVolume) {
+                                sendAudioVolume(audioVolume);
+                                oldAudioVolume = audioVolume;
+                            }
+                        }
+                        calcVolume();
+                        microphone.connect(gainNode);
+                        gainNode.connect(analyser); //get sound  
+                        analyser.connect(dest);
+                        //localAudioStream = dest.stream;
+                        //Calc the current volume END!
+                        initOtherStreams();
+                    }
+                });
+            } else {
+                writeToChat("ERROR", "Problem to getting your Audio. If you want to talk, go back to the Roomlist and do the Audiosetup!");
+                initOtherStreams();
             }
 
-            setTimeout(startLocalAudioStream, 300);
+            function initOtherStreams() {
+                connectionReadyCallback();
+                myMCU.getAllStreamsFromRoom(roomToConnect["roomName"], function (allStreamsFromRoom) {
+                    console.log(allStreamsFromRoom);
+                    for (var i in allStreamsFromRoom) {
+                        if (ownSocketId != allStreamsFromRoom[i].socketId) { //Dont subscribe to own stream
+                            (function () {
+                                if ($("#" + allStreamsFromRoom[i].streamId).length == 0) {
+                                    myMCU.subscribeToStream(allStreamsFromRoom[i]["streamId"], function (err) {
+                                        if (err) {
+                                            writeToChat("StreamError", "Was not able to add stream from:" + allStreamsFromRoom[i].username);
+                                        }
+                                    })
+                                }
+                            })();
+                        }
+                    }
+                })
+            }
         }
     })
 }
@@ -722,8 +681,8 @@ function initSocketIO() {
         signaling_socket = io();
     }
 
-    mySFU = new ezSFU(signaling_socket);
-    mySFU.init();
+    myMCU = new ezMCU(signaling_socket);
+    myMCU.init();
 
     signaling_socket.on('connect', function () {
         console.log("Socket connected!");
@@ -760,24 +719,17 @@ function initSocketIO() {
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();
             }
-
-            if (roomImIn["moderator"] == remotSocketId) {
-                setModerator(roomImIn["moderator"]);
-            }
-
-            if (roomImIn["moderator"] == ownSocketId) {
-                setModerator(roomImIn["moderator"]);
-            }
+            showHideVideoOptions("add");
         });
 
         signaling_socket.on('removePeer', function (remoteSocketId) {
             removeUserFromPage(remoteSocketId);
+            showHideVideoOptions("remove");
         });
 
         signaling_socket.on('noRightsToDeleteRoom', function () {
             alert("No rights to delete this room");
         });
-
 
         signaling_socket.on('getAllRooms', function (allRooms) {
             renderAllRooms(allRooms);
@@ -1040,7 +992,7 @@ function initSocketIO() {
                 }
             }
             if (pitemWebcamStreams[content.itemId]) {
-                mySFU.unpublishStream(pitemWebcamStreams[content.itemId])
+                myMCU.unpublishStream(pitemWebcamStreams[content.itemId])
                 delete pitemWebcamStreams[content.itemId];
             }
         });

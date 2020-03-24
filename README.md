@@ -1,5 +1,5 @@
 # Accelerator
-Free Online Conference and Collaboration Tool with build in WebRTC SFU running in NodeJS
+Free Online Conference and Collaboration Tool with build in WebRTC MCU/SFU running in NodeJS
 
 ![previmg](/public/images/acc.png)
 
@@ -14,7 +14,7 @@ Free Online Conference and Collaboration Tool with build in WebRTC SFU running i
 - [x] User interactions with draggable items (like Textboxes, Drawings...)
 - [x] Fileshare
 - [x] Text Chat
-- [x] WebRTC SFU in Node (Own implementation with [node webrtc](https://github.com/node-webrtc/node-webrtc))
+- [x] WebRTC MCU in Node (Own implementation with AudioAPI on ChromeStack)
 - [x] Configurable with own STUN / TURN Server (Setup below)
 - [x] much more...
 
@@ -25,6 +25,8 @@ Free Online Conference and Collaboration Tool with build in WebRTC SFU running i
 2. run: npm install
 3. run: node server.js
 4. surf to: https://127.0.0.1
+
+Note: On some linux systems you need to install some extra deps to run puppeteer: [here](https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md).
 
 ### Docker Installation ###
 1. build . -t acc
@@ -44,7 +46,6 @@ On the first start a new folder "/config" will be generated. Take a look at "/co
 - [ ] Better error feedback
 - [ ] More, better docs
 - [ ] Better Etherpad configuration
-- [ ] Implement Audio as MCU and Video as SFU
 - [ ] Recording of Audio/Video (Prototyp working)
 - [ ] Convert WebRTC Streams to RTMP so we can stream to youtube/twitch live (Prototyp working)
 
@@ -54,7 +55,7 @@ On the first start a new folder "/config" will be generated. Take a look at "/co
 * Firefox sometimes has some issues with the WebRTC audio/video, use chrome to be save
 * If you are running without docker, conversion to PDF presentaions (From Powerpoint and other Docs) will not work without installing "unoconv" on your own 
 * Setup a TURN Server if your clients are behind Firewalls and NATs (See config, setup below)
-* This was/is a student project and was build in 1 Semester so don't expect enterprise code :)
+* This was/is a student project and was build in one Semester so don't expect enterprise code :)
 
 ### TURN Setup/Configuration ###
 1. Setup your TURN Container on an extra Server: [HowTo](https://github.com/cracker0dks/turn-server-docker-image/blob/master/README.md)

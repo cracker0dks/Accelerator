@@ -17,6 +17,7 @@ $(function () { //Document ready
 	$.material.init();
 	if (!signaling_socket)
 		initSocketIO(); //Init SocketIO Server
+		
 	showPage("#loginPage");
 	/* LOGIN PAGE */
 	$("#loginBtn").click(function () {
@@ -33,8 +34,18 @@ $(function () { //Document ready
 				// 	$('#inputPassword').popover('toggle');
 			} else {
 				setUserName(username, password);
-				showPage("#roomPage");
-				sendGetAllRooms();
+				showPage("#accessMicPage");
+				var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
+				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
+					localAudioStream = stream;
+					showPage("#roomPage");
+					sendGetAllRooms();
+				}, function (err) {
+					showPage("#roomPage");
+					alert("Audio input error. Run the Audio / Video Setup to fix this.");
+					sendGetAllRooms();
+					console.log(err);
+				});
 			}
 			$("#notConnected").hide();
 		} else {
@@ -132,8 +143,10 @@ $(function () { //Document ready
 		var oscillator = null;
 		var oneOutputDevice = false;
 		var oneVideoInput = false;
-		var audioInputProgressBar = $('<progress value="0" max="100" style="width: 300px;">0</progress>')
-		navigator.getUserMedia({ audio: true, video: false }, async function (stream) {
+		var audioInputProgressBar = $('<progress value="0" max="100" style="width: 300px;">0</progress>');
+
+		var constraints = prevAudioInputDevice ? { deviceId: { exact: prevAudioInputDevice } } : true;
+		navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 			var audioOutputSelect = $('<select style="width: 300px;"></select>');
 			var audioInputSelect = $('<select style="width: 300px;"></select>');
 			var videoInputSelect = $('<select style="width: 300px;"></select>');
@@ -314,7 +327,7 @@ $(function () { //Document ready
 				$("#webcamInputDevs").html('No video device found!');
 			}
 
-			$('#setUpCheckModal').modal('show');
+			$('#setUpCheckModal').modal({backdrop: 'static', keyboard: false});
 			$('#setUpCheckModal').on('hidden.bs.modal', function () {
 				if (testAudioStream) {
 					testAudioStream.getTracks().forEach(function (track) {
@@ -345,11 +358,15 @@ $(function () { //Document ready
 				prevAudioInputDevice = audioInputSelect.val();
 				localStorage.setItem("prevAudioInputDevice", audioInputSelect.val())
 
+				var constraints = { deviceId: { exact: audioInputSelect.val() } };
+				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
+					localAudioStream = stream;
+				});
+
 				if (oneVideoInput) {
 					prevVideoInputDevice = videoInputSelect.val()
 					localStorage.setItem("prevVideoInputDevice", videoInputSelect.val())
 				}
-
 
 				$('#setUpCheckModal').modal('hide');
 			})
@@ -359,7 +376,7 @@ $(function () { //Document ready
 				track.stop();
 			});
 		}, function (err) {
-			alert("Error getting usermedia!")
+			alert("Error getting usermedia! Connect a microphone and allow the access in your browser.")
 			console.log(err)
 		});
 
@@ -606,17 +623,16 @@ $(function () { //Document ready
 				stream["streamAttributes"] = { "screenshare": true };
 				screen_stream = stream;
 				if (stream) {
-					mySFU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
+					myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
 						if (err) {
 							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 							$("#startScreenShareBtn").removeAttr("disabled");
 							$("#screenshareQuallyDiv").show();
 						} else {
 							screen_publishing = true;
+							apendScreenshareStream(stream, { streamSocketId : ownSocketId});
 						}
 					});
-
-
 				} else {
 					writeToChat("ERROR", "Access to screen rejected!");
 					$("#startScreenShareBtn").removeAttr("disabled", "false");
@@ -636,7 +652,7 @@ $(function () { //Document ready
 
 			})();
 		} else {
-			mySFU.unpublishStream(screen_stream)
+			myMCU.unpublishStream(screen_stream)
 			screen_publishing = false;
 			$("#startScreenShareBtn").css("position", "relative");
 			$("#startScreenShareBtn").text("start screenshare!");

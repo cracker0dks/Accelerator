@@ -23,6 +23,8 @@ function initEzWebRTC(initiator, config) {
         }
     }
 
+    console.log("Make new peer!", initiator, rtcConfig)
+    //Make new peer
     var pc = new wrtc.RTCPeerConnection(rtcConfig);
 
     pc.onsignalingstatechange = function (event) {
@@ -64,7 +66,7 @@ function initEzWebRTC(initiator, config) {
         }
     };
 
-    pc.onnegotiationneeded = function() {
+    pc.onnegotiationneeded = function () {
         negotiate();
     }
 
@@ -161,7 +163,7 @@ function initEzWebRTC(initiator, config) {
     }
 
     async function negotiate() {
-        //console.log("negotiate")
+        //console.log("negotiate", initiator)
         if (initiator) {
             const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
             if (pc.signalingState != "stable") return;
@@ -181,7 +183,7 @@ function initEzWebRTC(initiator, config) {
                         _this.addTransceiver(transceiver.sender.track.kind)
                     }
                 })
-            } catch(e) {
+            } catch (e) {
                 console.log("Faild to add transriver!", e)
             }
         }

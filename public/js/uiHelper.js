@@ -139,12 +139,13 @@ function addUserPItem(content) {
 							navigator.getUserMedia(config, (stream) => {
 								stream["streamAttributes"] = { socketId: ownSocketId, itemId: itemId, username: username };
 								pitemWebcamStreams[itemId] = stream;
-								mySFU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
+								myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
 									if (err) {
-										writeToChat("ERROR", "Stream could not be published! Error: "+err);
+										writeToChat("ERROR", "Stream could not be published! Error: " + err);
 									} else {
 										writeToChat("Server", "Webcamstream connecting...");
 										drop.find(".innerContent").html('<br><br>connecting...');
+
 									}
 								});
 							}, (err) => {
@@ -583,7 +584,7 @@ function setUserColor(id, color) {
 			var pad = $("#etherpadIframe")[0].contentWindow.pad; //Update Etherpad colors as well
 			pad.notifyChangeColor(ownColor);
 			pad.myUserInfo.globalUserColor = ownColor;
-		} catch(e) {
+		} catch (e) {
 			console.log("Could not access Etherpad IFRAME to set colors!")
 		}
 	}
@@ -779,6 +780,8 @@ function setModerator(id) {
 		screen_stream.close();
 		screen_publishing = false;
 	}
+
+	showHideVideoOptions()
 }
 
 var silence = false;
@@ -1054,14 +1057,25 @@ function addUserToPanel(id, username) {
 				writeToChat("Server", "Try to access webcam!");
 				navigator.getUserMedia({ audio: false, video: true }, (stream) => {
 					localVideoStrm = stream;
+					var streamId = stream.id.replace('{', "").replace('}', "")
 					localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
-					writeToChat("Pusblish video stream:" + stream.id)
-					mySFU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
+					writeToChat("Pusblish video stream:" + streamId)
+					myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
 						if (err) {
-							writeToChat("ERROR", "Stream could not be published! Error: "+err);
+							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 						} else {
 							isLocalVideoPlaying = true;
 							writeToChat("Server", "Webcamstream connecting...");
+							$("#" + ownSocketId).find(".shareOwnVideo").show();
+							$("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
+							$("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
+							$("#" + ownSocketId).find(".shareOwnVideo").addClass('camBtnActive');
+
+							var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
+							$("#" + ownSocketId).find(".videoContainer").append(videoElement);
+							myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+							$("#" + ownSocketId).find(".webcamfullscreen").show();
+							$("#" + ownSocketId).find(".popoutVideoBtn").show();
 						};
 					});
 				}, (err) => {
@@ -1072,11 +1086,12 @@ function addUserToPanel(id, username) {
 				})
 
 			} else {
+				myMCU.unpublishStream(localVideoStrm);
 				isLocalVideoPlaying = false;
-				mySFU.unpublishStream(localVideoStrm);
 				localVideoStrm = null;
 				$(_this).css({ "color": "rgb(142, 142, 142)" });
 				$(_this).attr("title", "Start webcam");
+				$(_this).removeClass("camBtnActive");				
 				$(_this).show();
 			}
 		});
@@ -1122,6 +1137,7 @@ function addUserToPanel(id, username) {
 			newUser.find(".userIcon").attr("src", "./profilePics/" + username);
 		}
 	});
+
 	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
 }
 
@@ -1170,6 +1186,62 @@ function loadPraesis(praesis) {
 		};
 		addRow(name);
 	}
+}
+
+function showHideVideoOptions(action) { //Stop videosharing with more than 6 Users
+	var userCnt = $("#leftContainer").find(".userdiv").length;
+	$("#userCnt").text(userCnt);
+	if (userCnt > 6 && roomImIn["moderator"] != ownSocketId) { //Hide cams if more than 6 users //no hide for moderator
+		$("#videoCameraBtn").hide();
+		$(".camBtnActive").click(); //Stop active cams
+		$(".shareOwnVideo").hide();
+	} else {
+		$("#videoCameraBtn").show();
+		$(".shareOwnVideo").show();
+	}
+	if(action == "add" && userCnt == 7) {
+		writeToChat("Info", "Videosharing was disabled for none moderators. (Disabled for more than 6 people)");
+	} else if(action == "remove" && userCnt == 6) {
+		writeToChat("Info", "Videosharing is enabled again. (6 or less people)");
+	}
+}
+
+function apendScreenshareStream(stream, streamAttr) {
+	console.log("ADD SCREENSHARE!")
+	var streamSocketId = streamAttr.streamSocketId;
+	if (streamSocketId == ownSocketId) {
+		$("#startScreenShareBtn").removeAttr("disabled");
+		writeToChat("Server", "Screenshare Connected!");
+		$("#startScreenShareBtn").css("position", "initial");
+		$("#startScreenShareBtn").text("stop screen share!");
+	}
+	$(".wait4ScreenShareTxt").hide();
+	$("#screenShareStream").show();
+	$("#screenShareStream").empty();
+
+	function showTheScreen() {
+		if (currentTab == "#screenShare") { //Dont show screenshare on wrong tab
+			$("#screenShareStream").empty();
+			myMCU.showMediaStream("screenShareStream", stream, "width: 100%; max-height: 80vh;");
+
+
+			var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
+			fullScreenBtn.click(function () {
+				var video = $("#screenShareStream video")[0];
+				if (video.requestFullscreen) {
+					video.requestFullscreen();
+				} else if (video.mozRequestFullScreen) {
+					video.mozRequestFullScreen(); // Firefox
+				} else if (video.webkitRequestFullscreen) {
+					video.webkitRequestFullscreen(); // Chrome and Safari
+				}
+			});
+			$("#screenShareStream").append(fullScreenBtn);
+		} else {
+			setTimeout(showTheScreen, 1000);
+		}
+	}
+	showTheScreen();
 }
 
 var gPraesi = null;
@@ -1379,19 +1451,7 @@ var waitCnt = 0;
 function renderAllRooms(roomList) {
 	console.log(roomList);
 	$("#roomListContent tbody").empty();
-	if(!mySFU.connectedToMainPeer) {
-		$("#addNewRoomPanel").hide();
-		var points = "";
-		waitCnt = waitCnt >=4 ? 1 : waitCnt+1;
-		for(var i=0;i<waitCnt;i++) {
-			points+=". ";
-		}
-		$("#roomListContent tbody").text("Loading roomlist"+points);
-		setTimeout(function() {
-			renderAllRooms(roomList)
-		}, 500)
-		return;
-	}
+
 	$("#addNewRoomPanel").show();
 	if (JSON.stringify(roomList) == "{}") {
 		$("#roomListContent tbody").text("No room on this Server!");
@@ -1499,8 +1559,8 @@ function renderAllRooms(roomList) {
 			var roomQ = getQueryVariable("room");
 			if (roomQ && roomQ != "" && username && username != "dummy") {
 				$("#directRoomName").text(roomQ);
-				$('#connectModal').modal({backdrop: 'static', keyboard: false});
-				$('#connectModal').find("#acceptDirectConnect").click(function(){
+				$('#connectModal').modal({ backdrop: 'static', keyboard: false });
+				$('#connectModal').find("#acceptDirectConnect").click(function () {
 					$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
 				})
 			}
@@ -1522,15 +1582,23 @@ function filterRooms() {
 }
 
 function joinRoom(room) {
+	roomImIn = room;
+	showPage("#joinRoomPage");
+	loadMCUConnection(room, function () {
+		//connectionReadyCallback
+		renderMainPage(room);
+	});
+}
+
+function renderMainPage(room) {
 	roomJoinTime = new Date().getTime();
 	showPage("#mainPage");
-	loadSFUConnection(room);
 
 	//$("#roomSipNumberPlaceholder").text('07129-9219994 Roomnumber: ' + room["sipnumber"] + ' (Free from German landline / Kostenlos aus dem Deutschen Festnetz)');
 
-	roomImIn = room;
-	setModerator("0");
-	history.pushState({}, null, "?room="+roomImIn["roomName"].split("###")[0]); //Change url to roomlink
+	setModerator(roomImIn["moderator"] || "0");
+
+	history.pushState({}, null, "?room=" + roomImIn["roomName"].split("###")[0]); //Change url to roomlink
 
 	whiteboard.loadWhiteboard("#whiteboardContainer", {
 		whiteboardId: room["roomName"],
@@ -1796,8 +1864,8 @@ function joinRoom(room) {
 		dragCounter = 0;
 		whiteboard.dropIndicator.hide();
 	});
-	
-	if(window.location.href.indexOf("reutlingen-university")!==-1) { //Load etherpad into Iframe on correct url
+
+	if (window.location.href.indexOf("reutlingen-university") !== -1) { //Load etherpad into Iframe on correct url
 		$("#etherpadIframe").attr("src", "https://accelerator.reutlingen-university.de/etherpad/p/" + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
 	}
 }
@@ -1815,7 +1883,7 @@ var countDownInterval = 0;
 var time = 0;
 //Write something to the chat (But cleans it first)
 function writeToChat(clientName, text, noClean, intent) {
-	
+
 	clientName = cleanString(clientName);
 
 	if (!noClean)
@@ -2042,7 +2110,13 @@ function refreshMuteUnmuteAll() {
 					audioElement.prop('muted', muted);
 				}
 			} else {
-				muted = "error"
+				var found = false;
+				for (var i in myMCU.allStreamAttributes) {
+					if (myMCU.allStreamAttributes[i].socketId == socketId) {
+						found = true;
+					}
+				}
+				muted = !found ? "error" : muted;
 			}
 		}
 
@@ -2060,16 +2134,15 @@ function refreshMuteUnmuteAll() {
 				gainNode.gain.value = 0;
 			}
 			if (socketId == ownSocketId && localAudioStream && !localAudioStream.audioMuted) {
-				mySFU.muteMediaStream(true, localAudioStream);
+				myMCU.muteMediaStream(true, localAudioStream);
 			}
-
 		} else {
 			$(this).find(".UserRightTD").css({ "background": "#03a9f442" });
 			if (socketId == ownSocketId && gainNode) {
 				gainNode.gain.value = 1;
 			}
 			if (socketId == ownSocketId && localAudioStream && localAudioStream.audioMuted) {
-				mySFU.muteMediaStream(false, localAudioStream);
+				myMCU.muteMediaStream(false, localAudioStream);
 			}
 
 		}

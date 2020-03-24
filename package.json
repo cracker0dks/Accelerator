@@ -22,9 +22,8 @@
     "fluent-ffmpeg": "^2.1.2",
     "formidable": "^1.2.2",
     "fs-extra": "^8.1.0",
-    "os-utils": "0.0.14",
+    "puppeteer": "^2.1.1",
     "socket.io": "^2.3.0",
-    "wrtc": "^0.4.4",
     "yauzl": "^2.10.0"
   },
   "author": "Raphael Fritsch",
