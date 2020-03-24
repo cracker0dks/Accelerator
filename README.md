@@ -26,6 +26,8 @@ Free Online Conference and Collaboration Tool with build in WebRTC MCU/SFU runni
 3. run: node server.js
 4. surf to: https://127.0.0.1
 
+Note: On some linux systems you need to install some extra deps to run puppeteer: [here](https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md).
+
 ### Docker Installation ###
 1. build . -t acc
 2. run: docker run -d --net=host acc
