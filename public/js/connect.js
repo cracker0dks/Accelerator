@@ -719,10 +719,12 @@ function initSocketIO() {
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();
             }
+            showHideVideoOptions("add");
         });
 
         signaling_socket.on('removePeer', function (remoteSocketId) {
             removeUserFromPage(remoteSocketId);
+            showHideVideoOptions("remove");
         });
 
         signaling_socket.on('noRightsToDeleteRoom', function () {

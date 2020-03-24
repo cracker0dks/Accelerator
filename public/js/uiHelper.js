@@ -780,6 +780,8 @@ function setModerator(id) {
 		screen_stream.close();
 		screen_publishing = false;
 	}
+
+	showHideVideoOptions()
 }
 
 var silence = false;
@@ -1067,6 +1069,7 @@ function addUserToPanel(id, username) {
 							$("#" + ownSocketId).find(".shareOwnVideo").show();
 							$("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
 							$("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
+							$("#" + ownSocketId).find(".shareOwnVideo").addClass('camBtnActive');
 
 							var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
 							$("#" + ownSocketId).find(".videoContainer").append(videoElement);
@@ -1083,11 +1086,12 @@ function addUserToPanel(id, username) {
 				})
 
 			} else {
-				isLocalVideoPlaying = false;
 				myMCU.unpublishStream(localVideoStrm);
+				isLocalVideoPlaying = false;
 				localVideoStrm = null;
 				$(_this).css({ "color": "rgb(142, 142, 142)" });
 				$(_this).attr("title", "Start webcam");
+				$(_this).removeClass("camBtnActive");				
 				$(_this).show();
 			}
 		});
@@ -1133,8 +1137,8 @@ function addUserToPanel(id, username) {
 			newUser.find(".userIcon").attr("src", "./profilePics/" + username);
 		}
 	});
-	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
 
+	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
 }
 
 function loadPraesis(praesis) {
@@ -1181,6 +1185,24 @@ function loadPraesis(praesis) {
 			$("#praesiTable tbody").append(tr);
 		};
 		addRow(name);
+	}
+}
+
+function showHideVideoOptions(action) { //Stop videosharing with more than 6 Users
+	var userCnt = $("#leftContainer").find(".userdiv").length;
+	$("#userCnt").text(userCnt);
+	if (userCnt > 6 && roomImIn["moderator"] != ownSocketId) { //Hide cams if more than 6 users //no hide for moderator
+		$("#videoCameraBtn").hide();
+		$(".camBtnActive").click(); //Stop active cams
+		$(".shareOwnVideo").hide();
+	} else {
+		$("#videoCameraBtn").show();
+		$(".shareOwnVideo").show();
+	}
+	if(action == "add" && userCnt == 7) {
+		writeToChat("Info", "Videosharing was disabled for none moderators. (Disabled for more than 6 people)");
+	} else if(action == "remove" && userCnt == 6) {
+		writeToChat("Info", "Videosharing is enabled again. (6 or less people)");
 	}
 }
 
