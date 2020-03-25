@@ -3,7 +3,14 @@ FROM node:13
 MAINTAINER fh-reutlingen
 
 #INSTALL DEPS for doc/pdf convertion
-RUN apt-get update && apt-get install -y unoconv nano
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  unoconv \
+  libreoffice-writer \
+  libreoffice-draw \
+  libreoffice-calc \
+  libreoffice-impress \
+  nano
 
 #INSTALL Deps for puppeteer
 RUN apt-get install -y wget gnupg \
