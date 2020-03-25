@@ -6,12 +6,12 @@ $(document).ready(function () {
 
 var mcuConfig = {
 	enabled: true,
-	loadBalancerAuthKey : "abc", //Auth key to connect to the master as loadBalancer
-	masterIpAndPort : "127.0.0.1:443" //IP Or hostname and port
+	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
+	masterIpAndPort: "127.0.0.1:443" //IP Or hostname and port
 }
 
 function setMCUConfig(config) {
-	for(var i in config) {
+	for (var i in config) {
 		mcuConfig[i] = config[i];
 	}
 }
@@ -37,6 +37,8 @@ function start() {
 			}
 			allPeers = {};
 			allStreams = {};
+			allStreamDestinations = {};
+			allStreamSources = {};
 		});
 
 		socket.on('mcu_onIceServers', function (newIceServers) {
@@ -105,7 +107,7 @@ function start() {
 		});
 
 		function createNewPeer(clientSocketId, callback) {
-
+			var peerAudioStreamSrcs = [];
 			var dest = ac.createMediaStreamDestination();
 			allStreamDestinations[clientSocketId] = dest;
 
@@ -117,8 +119,18 @@ function start() {
 			});
 
 			localPeer.on('disconnect', () => {
+				for (var i in peerAudioStreamSrcs) {
+					if (allStreamSources[i]) {
+						allStreamSources[i].disconnect();
+						delete allStreamSources[i];
+					}
+				}
 				allPeers[clientSocketId].destroy();
 				delete allPeers[clientSocketId];
+				if (allStreamDestinations[clientSocketId]) {
+					allStreamDestinations[clientSocketId].disconnect();
+					delete allStreamDestinations[clientSocketId];
+				}
 			})
 
 			localPeer.on('connect', () => {
@@ -142,6 +154,7 @@ function start() {
 				if (videoTracks == 0) { //Only audio
 					var scr = ac.createMediaStreamSource(stream);
 					allStreamSources[streamId] = scr;
+					peerAudioStreamSrcs[streamId] = streamId;
 
 					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
