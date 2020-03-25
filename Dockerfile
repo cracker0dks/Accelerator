@@ -35,6 +35,7 @@ RUN npm i puppeteer \
     && groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
     && mkdir -p /home/pptruser/Downloads \
     && chown -R pptruser:pptruser /home/pptruser \
+    && mkdir -p /node_modules \
     && chown -R pptruser:pptruser /node_modules
 
 # Bundle app source
