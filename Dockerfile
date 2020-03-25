@@ -9,8 +9,7 @@ RUN apt-get update \
   libreoffice-writer \
   libreoffice-draw \
   libreoffice-calc \
-  libreoffice-impress \
-  nano
+  libreoffice-impress
 
 #INSTALL Deps for puppeteer
 RUN apt-get install -y wget gnupg \
