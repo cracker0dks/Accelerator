@@ -75,9 +75,6 @@ function start() {
 				} else if (audioTracks.length > 0) {
 					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
 						allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
-
-						var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
-						mediaEl[0].srcObject = allStreamDestinations[clientSocketId].stream;
 					} else {
 						console.log("missing src or dest to connect audio!")
 					}
@@ -126,7 +123,7 @@ function start() {
 
 			localPeer.on('connect', () => {
 				callback();
-				console.log("CONNECTED", clientSocketId)
+				//console.log("CONNECTED", clientSocketId)
 			})
 
 			localPeer.on('signaling', data => {

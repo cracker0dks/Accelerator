@@ -23,7 +23,6 @@ function initEzWebRTC(initiator, config) {
         }
     }
 
-    console.log("Make new peer!", initiator, rtcConfig)
     //Make new peer
     var pc = new wrtc.RTCPeerConnection(rtcConfig);
 
