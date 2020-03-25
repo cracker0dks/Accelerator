@@ -237,7 +237,7 @@ var init = async function (io, newConfig) {
     async function startUpMcu() {
         const page = await browser.newPage();
         try {
-            await page.goto('https://127.0.0.1:' + mcuConfig.masterPort + '/ezMCU/mcuLb.html');
+            await page.goto('http://127.0.0.1:' + mcuConfig.masterPort + '/ezMCU/mcuLb.html');
 
             page.on('console', msg => {
                 for (let i = 0; i < msg.args().length; ++i) {
@@ -252,7 +252,8 @@ var init = async function (io, newConfig) {
 
             var mcuLbConfig = {
                 loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-                masterIpAndPort: '127.0.0.1:' + mcuConfig.masterPort
+                masterURLAndPort: 'http://127.0.0.1:' + mcuConfig.masterPort,
+                secure : false
             }
 
             await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);

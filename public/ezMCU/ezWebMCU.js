@@ -7,7 +7,8 @@ $(document).ready(function () {
 var mcuConfig = {
 	enabled: true,
 	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
-	masterIpAndPort: "127.0.0.1:443" //IP Or hostname and port
+	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
+	secure : false
 }
 
 function setMCUConfig(config) {
@@ -17,7 +18,7 @@ function setMCUConfig(config) {
 }
 
 function start() {
-	var socket = io('https://' + mcuConfig.masterIpAndPort, { secure: true, reconnect: true, rejectUnauthorized: false });
+	var socket = io(mcuConfig.masterURLAndPort, { secure: mcuConfig.secure, reconnect: true, rejectUnauthorized: false });
 
 	var ac = new AudioContext();
 

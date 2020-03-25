@@ -1,7 +1,7 @@
 var fs = require('fs');
 
 var defaultConfig = {
-	"https": { "port": 443 },
+	"http": { "port": 8080 },
 	"mcuConfig": {
 		webRtcConfig: { //This is the configs for the peer connections
 			iceServers: [

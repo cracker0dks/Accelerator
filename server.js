@@ -5,12 +5,12 @@
 "use strict";
 var yauzl = require("yauzl");
 var formidable = require('formidable');
-var https = require('https');
+var http = require('http');
 var exec = require('child_process').exec;
 var configLoader = require('./configLoader.js');
 var config = configLoader.getConfigs();
 
-var httpsPort = config["https"]["port"] || 443;
+var httpPort = config["http"]["port"] || 8080;
 
 var express = require('express');
 var fs = require("fs-extra");
@@ -22,20 +22,16 @@ var app = express();
 
 app.use(express.static(__dirname + '/public'));
 
-var privateKey = fs.readFileSync('./cert/key.pem');
-var certificate = fs.readFileSync('./cert/cert.pem');
+var server = http.createServer({
 
-var server = https.createServer({
-    key: privateKey,
-    cert: certificate
-}, app).listen(httpsPort);
+}, app).listen(httpPort);
 
 var io = require('socket.io').listen(server);
 
-config["mcuConfig"]["masterPort"] = httpsPort;
+config["mcuConfig"]["masterPort"] = httpPort;
 var ezMCU = require('./acc_server_modules/ezMCU/s_ezMCUsignaling').init(io, config["mcuConfig"]);
 
-console.log("Webserver & socketserver running on port:" + httpsPort);
+console.log("Webserver & socketserver running on port:" + httpPort);
 
 fs.ensureDir('./public/profilePics/').catch(err => {
     console.log("ERROR: Cant create folder: ./public/profilePics/");
