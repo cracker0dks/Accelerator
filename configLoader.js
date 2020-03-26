@@ -23,7 +23,8 @@ var defaultConfig = {
 		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master
 	},
 	"accConfig": { 
-		"etherpadUrl": "" //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 
+		"etherpadUrl": "", //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 
+		"deleteUnusedRoomsAfterDays": 0, //0 is no deletion at all
 	}
 }
 

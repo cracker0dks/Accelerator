@@ -17,7 +17,7 @@ $(function () { //Document ready
 	$.material.init();
 	if (!signaling_socket)
 		initSocketIO(); //Init SocketIO Server
-		
+
 	showPage("#loginPage");
 	/* LOGIN PAGE */
 	$("#loginBtn").click(function () {
@@ -38,14 +38,26 @@ $(function () { //Document ready
 				var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
 				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 					localAudioStream = stream;
-					showPage("#roomPage");
-					sendGetAllRooms();
+					continueToRoomPage();
 				}, function (err) {
-					showPage("#roomPage");
 					alert("Audio input error. Run the Audio / Video Setup to fix this.");
-					sendGetAllRooms();
+					continueToRoomPage();
 					console.log(err);
 				});
+
+				function continueToRoomPage() {
+					//Join a room directly if url get parameter is set   
+					showPage("#roomPage");
+					sendGetAllRooms();
+					var roomQ = getQueryVariable("room");
+					if (roomQ && roomQ != "" && username && username != "dummy") {
+						$("#directRoomName").text(roomQ);
+						$('#connectModal').modal({ backdrop: 'static', keyboard: false });
+						$('#connectModal').find("#acceptDirectConnect").click(function () {
+							$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
+						})
+					}
+				}
 			}
 			$("#notConnected").hide();
 		} else {
@@ -327,7 +339,7 @@ $(function () { //Document ready
 				$("#webcamInputDevs").html('No video device found!');
 			}
 
-			$('#setUpCheckModal').modal({backdrop: 'static', keyboard: false});
+			$('#setUpCheckModal').modal({ backdrop: 'static', keyboard: false });
 			$('#setUpCheckModal').on('hidden.bs.modal', function () {
 				if (testAudioStream) {
 					testAudioStream.getTracks().forEach(function (track) {
@@ -518,7 +530,7 @@ $(function () { //Document ready
 	});
 
 	$("#logoutBtn").click(function () {
-		var link = window.location.href.split("/?")[0]+'/';
+		var link = window.location.href.split("/?")[0] + '/';
 		window.location.replace(link);
 	});
 
@@ -630,7 +642,7 @@ $(function () { //Document ready
 							$("#screenshareQuallyDiv").show();
 						} else {
 							screen_publishing = true;
-							apendScreenshareStream(stream, { streamSocketId : ownSocketId});
+							apendScreenshareStream(stream, { streamSocketId: ownSocketId });
 						}
 					});
 				} else {

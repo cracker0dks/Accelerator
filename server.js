@@ -88,17 +88,6 @@ app.get('/loadwhiteboard', function (req, res) {
     res.end();
 });
 
-app.get('/isRoomPWCorrect', function (req, res) {
-    var roomName = req["query"]["roomName"];
-    var roomPassword = req["query"]["roomPassword"];
-    var ret = false;
-    if (allRoomAttr[roomName] && allRoomAttr[roomName]["roomPassword"] == roomPassword) {
-        ret = true;
-    }
-    res.send(ret);
-    res.end();
-});
-
 function trim(str) {
     if (typeof (str) == "string") {
         return str.trim();
@@ -147,13 +136,13 @@ io.sockets.on('connection', function (socket) {
             sendToHoleRoom(roomName, 'setModerator', "0");
         }
         delete allSockets[socket.id];
-        delete allRoomAttr[roomName]["users"][socket.id];
-        var cleanRooms = getAllRoomsWithoutPasswords();
-        socket.broadcast.emit('getAllRooms', cleanRooms);
-
-        saveUserPItems();
-
-        snake.startStopSnake(socket.id, roomName, false);
+        if (allRoomAttr[roomName] && allRoomAttr[roomName]["users"]) {
+            delete allRoomAttr[roomName]["users"][socket.id];
+            var cleanRooms = getAllRoomsWithoutPasswords();
+            socket.broadcast.emit('getAllRooms', cleanRooms);
+            saveUserPItems();
+            snake.startStopSnake(socket.id, roomName, false);
+        }
     });
 
     socket.on('getAllRooms', function (config) {
@@ -164,12 +153,21 @@ io.sockets.on('connection', function (socket) {
     socket.on('deleteRoom', function (content, callback) {
         var roomName = content.roomName;
         var creator = allRoomAttr[roomName].creator;
+
         if (creator == userdata["username"]) {
-            delete allRoomAttr[roomName];
-            var cleanRooms = getAllRoomsWithoutPasswords();
-            socket.broadcast.emit('getAllRooms', cleanRooms);
-            socket.emit('getAllRooms', cleanRooms);
-            saveAllRoomAttr();
+            var userCnt = 0;
+            for (var i in allRoomAttr[roomName]["users"]) {
+                userCnt++;
+            }
+            if (userCnt == 0) {
+                deleteRoom(roomName);
+                var cleanRooms = getAllRoomsWithoutPasswords();
+                socket.broadcast.emit('getAllRooms', cleanRooms);
+                socket.emit('getAllRooms', cleanRooms);
+                saveAllRoomAttr();
+            } else {
+                callback("Room is not empty!");
+            }
         } else {
             callback("Insufficient permissions!");
         }
@@ -181,7 +179,15 @@ io.sockets.on('connection', function (socket) {
         var creator = content.creator;
 
         if (!allRoomAttr[roomName]) {
-            allRoomAttr[roomName] = { moderator: null, users: {}, "roomName": roomName, "roomPassword": roomPassword, "creator": creator, "lastVisit": +Date(), "permanent": false }
+            allRoomAttr[roomName] = {
+                "moderator": null,
+                "users": {},
+                "roomName": roomName,
+                "roomPassword": roomPassword,
+                "creator": creator,
+                "lastVisit": +new Date(),
+                "permanent": false
+            }
             var cleanRooms = getAllRoomsWithoutPasswords();
             socket.broadcast.emit('getAllRooms', cleanRooms);
             socket.emit('getAllRooms', cleanRooms);
@@ -202,16 +208,26 @@ io.sockets.on('connection', function (socket) {
         callback(config["accConfig"]);
     });
 
-    socket.on('join', function (content) {
+    socket.on('join', function (content, callback) {
         //console.log("[" + socket.id + "] join ", content);
-        roomName = content.roomName.trim() || "";;
+        roomName = content.roomName.trim() || "";
+        var roomPassword = content.roomPassword;
+
+        if (!allRoomAttr[roomName]) {
+            return callback("Not a vaild roomname!");
+        }
+        if (allRoomAttr[roomName]["roomPassword"] != "" && allRoomAttr[roomName]["roomPassword"] != roomPassword) {
+            return callback("Wrong room password!");
+        }
+
         userdata["username"] = content.username;
         userdata["socketId"] = socket.id;
         userdata["color"] = content.color;
 
         allRoomAttr[roomName]["users"] = allRoomAttr[roomName]["users"] ? allRoomAttr[roomName]["users"] : {};
         allRoomAttr[roomName]["users"][socket.id] = userdata;
-        
+        allRoomAttr[roomName]["lastVisit"] = +new Date();
+
         socket.join(roomName);
 
         var cleanRooms = getAllRoomsWithoutPasswords();
@@ -639,8 +655,7 @@ io.sockets.on('connection', function (socket) {
             sendToHoleRoom(roomName, 'audioVolume', { "userId": socket.id, "vol": vol });
         });
 
-        
-
+        callback()
     });
 
     function isModerator() {
@@ -1093,8 +1108,20 @@ function getAllRoomsWithoutPasswords() {
     return cleanRoomAttr;
 }
 
+function deleteRoom(roomname) {
+    delete allRoomAttr[roomname];
+}
+
 function saveAllRoomAttr() {
     try {
+        var currDate = +new Date();
+        var daysInMillis = config["accConfig"]["deleteUnusedRoomsAfterDays"] * 1000 * 60 * 60 * 24;
+        for (var i in allRoomAttr) {
+            if (!allRoomAttr[i]["permanent"] && config["accConfig"]["deleteUnusedRoomsAfterDays"] != 0 && currDate - allRoomAttr[i]["lastVisit"] > daysInMillis) {
+                deleteRoom(i)
+            }
+        }
+
         var allRoomAttrString = JSON.stringify(allRoomAttr);
         try {
             fs.writeFileSync("./db/allRoomAttr.txt", allRoomAttrString);

@@ -15,7 +15,7 @@ var allSingleFiles = null;
 var localVideoStrm = null;
 var localAudioStream = null;
 var isLocalVideoPlaying = false;
-var roomJoinTime = new Date().getTime();
+var roomJoinTime = +new Date();
 var userLang = navigator.language || navigator.userLanguage;
 
 var url = document.URL.substr(0, document.URL.lastIndexOf('/'));
@@ -36,14 +36,6 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
         if (err) {
             writeToChat(err);
         } else {
-            roomJoinTime = new Date().getTime();
-
-            signaling_socket.emit('join', {
-                "roomName": roomToConnect["roomName"],
-                "username": username,
-                "color": ownColor
-            });
-
             myMCU.on("newStreamPublished", function (content) {
                 console.log(content)
                 // var roomname = content["roomname"];
@@ -736,7 +728,7 @@ function initSocketIO() {
             sendGetUserInfos(remotSocketId);
 
             setUserColor(remotSocketId, color);
-            if ((new Date().getTime() - roomJoinTime) > 5000) { //dont play pling when you join
+            if ((+new Date() - roomJoinTime) > 5000) { //dont play pling when you join
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();
             }

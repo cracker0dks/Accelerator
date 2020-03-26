@@ -109,7 +109,13 @@ div.userTools {
 }
 #roomListContent tr:last-child{
       border-bottom: 1px solid #413939;
-} 
+}
+#serverStatsDiv {
+    position: absolute;
+    left: 4px;
+    bottom: -18px;
+    font-size: 0.5em;
+}
 #groopRoomSearch {
     position: relative;
     top: -10px;
