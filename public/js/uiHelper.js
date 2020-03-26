@@ -1249,7 +1249,7 @@ function loadSlide(name, slideid) {
 	$("#praesiPlaceHolder").hide();
 	if (allLoadedPraesis[name]["type"] == "revealPraesi") {
 		if (currentPraesiName != name || typeof (revealObject) == "undefined") {
-			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"] + '"></iframe>');
+			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="./praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"] + '"></iframe>');
 			$("#praesiDiv").empty();
 			$("#praesiDiv").append(rPraesi);
 			rPraesi.on("load", function () {
