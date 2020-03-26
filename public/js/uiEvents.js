@@ -33,7 +33,7 @@ $(function () { //Document ready
 				// 	$('#inputPassword').popover({ "show": "true", "content" : "Password is empty!", "placement" : "right" });
 				// 	$('#inputPassword').popover('toggle');
 			} else {
-				setUserName(username, password);
+				setUserAttr(username, password);
 				showPage("#accessMicPage");
 				var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
 				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {

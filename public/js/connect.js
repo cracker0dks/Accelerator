@@ -286,9 +286,9 @@ function sendGetAllRooms() {
     }
 }
 
-function setUserName(username, passwort) {
+function setUserAttr(username, passwort) {
     if (isRTCConnected()) {
-        signaling_socket.emit('setUserName', { "username": username, "passwort": passwort, "userLang": userLang });
+        signaling_socket.emit('setUserAttr', { "username": username, "passwort": passwort, "userLang": userLang });
     }
 }
 
@@ -639,7 +639,16 @@ function sendAudioVolume(vol) {
 
 function sendCreateNewRoom(roomName, roomPassword) {
     if (isRTCConnected()) {
-        signaling_socket.emit("createRoom", { "roomName": roomName, "roomPassword": roomPassword });
+        signaling_socket.emit("createRoom", 
+        { 
+            "roomName": roomName, 
+            "roomPassword": roomPassword, 
+            "creator" : username 
+        }, function(err) {
+            if(err) {
+                alert(err)
+            }
+        });
     }
 }
 
@@ -666,6 +675,10 @@ function sendDeleteNewRoom(roomName, roomId) {
         signaling_socket.emit("deleteRoom", {
             "roomName": roomName,
             "roomId": roomId
+        }, function(err) {
+            if(err) {
+                alert(err);
+            }
         });
     }
 }
@@ -725,10 +738,6 @@ function initSocketIO() {
         signaling_socket.on('removePeer', function (remoteSocketId) {
             removeUserFromPage(remoteSocketId);
             showHideVideoOptions("remove");
-        });
-
-        signaling_socket.on('noRightsToDeleteRoom', function () {
-            alert("No rights to delete this room");
         });
 
         signaling_socket.on('getAllRooms', function (allRooms) {

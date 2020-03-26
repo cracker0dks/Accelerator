@@ -47,7 +47,7 @@ fs.ensureDir('./db').catch(err => {
 
 exec("unoconv --listener", { cwd: "./public/praesis/" }, function (error, stdout, stderr) { //Init unoconv
     if (error) {
-        console.log("Warning: unoconv not found! If you are on Dev, this is not a Problem!");
+        console.log("Warning: unoconv not found! If you are on Dev, this is not a problem!");
     }
 })
 
@@ -107,9 +107,9 @@ function trim(str) {
     return "";
 }
 
-var allRoomNames = [];
-var rooms = {};
-var allsockets = {};
+var allRoomAttr = {};
+var allSockets = {};
+var allUserAttr = {};
 var allPraesis = {};
 var currentLoadedPraesis = {};
 var currentLoadedTab = {};
@@ -119,7 +119,6 @@ var allSingleFiles = {};
 var userPItems = {};
 var all3DObjs = {};
 var url3dObjs = {};
-var userConnectionCnt = 0;
 
 setTimeout(function () {
     console.log("--------------------------------------");
@@ -131,7 +130,10 @@ setTimeout(function () {
 /*************************/
 
 io.sockets.on('connection', function (socket) {
+    allSockets[socket.id] = socket;
     var userdata = { "id": socket.id, "username": "" };
+    allUserAttr[socket.id] = userdata;
+
     var roomName = null;
     console.log("[" + socket.id + "] connection accepted");
     socket.on('disconnect', async function () {
@@ -139,13 +141,11 @@ io.sockets.on('connection', function (socket) {
 
         sendToHoleRoom(roomName, 'removePeer', socket.id);
 
-        removeUserFromeRoom(roomName, socket.id);
-
-        if (typeof (rooms[roomName]) != "undefined" && rooms[roomName]["moderator"] == socket.id) {
-            rooms[roomName]["moderator"] = "0";
+        if (typeof (allRoomAttr[roomName]) != "undefined" && allRoomAttr[roomName]["moderator"] == socket.id) {
+            allRoomAttr[roomName]["moderator"] = "0";
             sendToHoleRoom(roomName, 'setModerator', "0");
         }
-        delete allsockets[socket.id];
+        delete allSockets[socket.id];
         var cleanRooms = getAllRoomsWithoutPasswords();
         socket.broadcast.emit('getAllRooms', cleanRooms);
 
@@ -159,40 +159,56 @@ io.sockets.on('connection', function (socket) {
         socket.emit('getAllRooms', cleanRooms);
     });
 
-    socket.on('deleteRoom', function (content) {
-        var roomName = content["roomName"];
-        var roomId = content["roomId"];
-        var creator = rooms[roomName]["creator"];
+    socket.on('deleteRoom', function (content, callback) {
+        var roomName = content.roomName;
+        var creator = allRoomAttr[roomName].creator;
+        console.log(roomName, creator, allRoomAttr[roomName], userdata)
         if (creator == userdata["username"] || userdata["username"] == "raphael" || userdata["username"] == "ph" || userdata["username"] == "gmt" || userdata["username"] == "merk") {
-            delete rooms[roomName];
+            delete allRoomAttr[roomName];
             var cleanRooms = getAllRoomsWithoutPasswords();
             socket.broadcast.emit('getAllRooms', cleanRooms);
             socket.emit('getAllRooms', cleanRooms);
-            saveALlRoomNames();
+            saveAllRoomAttr();
         } else {
-            socket.emit('noRightsToDeleteRoom', null);
+            callback("Insufficient permissions!");
         }
     });
 
-    socket.on('createRoom', function (content) {
-        var roomName = content["roomName"];
-        var roomPassword = content["roomPassword"];
-        rooms[roomName] = { moderator: null, user: [], "roomName": roomName, "roomPassword": roomPassword, "creator": userdata["username"] };
+    socket.on('createRoom', function (content, callback) {
+        var roomName = content.roomName.trim();
+        var roomPassword = content.roomPassword;
+        var creator = content.creator;
 
-        var cleanRooms = getAllRoomsWithoutPasswords();
-        socket.broadcast.emit('getAllRooms', cleanRooms);
-        socket.emit('getAllRooms', cleanRooms);
-        saveALlRoomNames();
+        if (!allRoomAttr[roomName]) {
+            allRoomAttr[roomName] = { moderator: null, users: [], "roomName": roomName, "roomPassword": roomPassword, "creator": creator, "lastVisit": +Date(), "permanent": false }
+            var cleanRooms = getAllRoomsWithoutPasswords();
+            socket.broadcast.emit('getAllRooms', cleanRooms);
+            socket.emit('getAllRooms', cleanRooms);
+            saveAllRoomAttr();
+        } else {
+            callback("A room with this name already exists!")
+        }
+    });
+
+    socket.on('setUserAttr', function (content) {
+        var username = content["username"];
+        var password = content["passwort"];
+        var userLang = content["userLang"];
+        userdata["username"] = username;
+        userdata["userLang"] = userLang + '-' + userLang.toUpperCase();
+        // checkUserNameAndPassword(username, password, function(trueFalse) {
+        // });
+        console.log(content)
     });
 
     socket.on('join', function (content) {
         console.log("[" + socket.id + "] join ", content);
-        roomName = content.roomName;
+        roomName = content.roomName.trim() || "";;
         userdata["username"] = content.username;
         userdata["socketId"] = socket.id;
         userdata["color"] = content.color;
-        allsockets[socket.id] = socket;
-        addUserToRoom(roomName, userdata);
+
+        socket.join(roomName);
 
         var cleanRooms = getAllRoomsWithoutPasswords();
         socket.broadcast.emit('getAllRooms', cleanRooms);
@@ -212,10 +228,10 @@ io.sockets.on('connection', function (socket) {
         if (url3dObjs[roomName])
             socket.emit('show3DObj', url3dObjs[roomName]);
 
-        sendToHoleRoomButNotMe(roomName, socket.id, 'addPeer', { "socketId": socket.id, "username": content.username, "color": userdata["color"] });
-        for (var i = 0; i < rooms[roomName]["user"].length; i++) {
-            var user = rooms[roomName]["user"][i];
-            socket.emit('addPeer', { "socketId": user["socketId"], "username": user["username"], "color": user["color"] });
+        sendToHoleRoomButNotMe(roomName, socket.id, 'addPeer', userdata);
+        var clients = io.sockets.adapter.rooms[roomName].sockets;
+        for (var i in clients) {
+            socket.emit('addPeer', allUserAttr[i]);
         }
 
         if (isClockEnabled[roomName]) {
@@ -260,8 +276,8 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('setModerator', function (socketIdToSet) {
-            if (!rooms[roomName]["moderator"] || rooms[roomName]["moderator"] == "0" || (rooms[roomName]["moderator"] == socket.id && socket.id != socketIdToSet)) {
-                rooms[roomName]["moderator"] = socketIdToSet;
+            if (!allRoomAttr[roomName]["moderator"] || allRoomAttr[roomName]["moderator"] == "0" || (allRoomAttr[roomName]["moderator"] == socket.id && socket.id != socketIdToSet)) {
+                allRoomAttr[roomName]["moderator"] = socketIdToSet;
                 sendToHoleRoom(roomName, 'setModerator', socketIdToSet);
             }
         });
@@ -271,11 +287,7 @@ io.sockets.on('connection', function (socket) {
                 sendToHoleRoom(roomName, 'setGetMicToUser', data);
 
                 //Save mic state
-                for (var i = 0; i < rooms[roomName]["user"].length; i++) {
-                    if (rooms[roomName]["user"][i]["id"] == data["userid"]) {
-                        rooms[roomName]["user"][i]["mic"] = data["mic"];
-                    }
-                }
+                allUserAttr[data["userid"]]["mic"] = data["mic"];
             }
         });
 
@@ -455,7 +467,7 @@ io.sockets.on('connection', function (socket) {
                 allSingleFiles[roomName] = {};
             }
 
-            var userInfo = getUserInfoFromId(socket.id);
+            var userInfo = allUserAttr[socket.id];
             var filename = noteType + "" + (+new Date()) + ".txt";
             fs.writeFile('./public/singlefiles/' + filename, text, function (err) {
                 if (err) {
@@ -555,7 +567,6 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('startStopSnake', function (trueFalse) {
-            var userInfo = getUserInfoFromId(socket.id);
             snake.startStopSnake(socket.id, roomName, trueFalse);
         });
 
@@ -571,11 +582,11 @@ io.sockets.on('connection', function (socket) {
 
 
         socket.on('getUserInfos', function (id) {
-            var infos = getUserInfoFromId(id);
+            var infos = allUserAttr[id];
             if (infos)
                 socket.emit('getUserInfos', infos);
 
-            if (id == rooms[roomName]["moderator"]) {
+            if (id == allRoomAttr[roomName].moderator) {
                 socket.emit('setModerator', id);
             }
         });
@@ -624,23 +635,12 @@ io.sockets.on('connection', function (socket) {
             sendToHoleRoom(roomName, 'audioVolume', { "userId": socket.id, "vol": vol });
         });
 
-
-
-        socket.on('setUserName', function (content) {
-            var username = content["username"];
-            var password = content["passwort"];
-            var userLang = content["userLang"];
-            userdata["username"] = username;
-            userdata["userLang"] = userLang + '-' + userLang.toUpperCase();
-            // checkUserNameAndPassword(username, password, function(trueFalse) {
-            // });
-
-        });
+        
 
     });
 
     function isModerator() {
-        if (rooms[roomName]["moderator"] == socket.id)
+        if (allRoomAttr[roomName]["moderator"] == socket.id)
             return true;
         return false;
     }
@@ -655,25 +655,13 @@ function removePraesi(name, roomName) {
     });
 }
 
-function getAllRoomsWithoutPasswords() {
-    var cleanRooms = JSON.parse(JSON.stringify(rooms));
-    for (var i in cleanRooms) {
-        if (cleanRooms[i]["roomPassword"] != "") {
-            cleanRooms[i]["hasPassword"] = true;
-        }
-
-        delete cleanRooms[i]["roomPassword"];
-    }
-    return cleanRooms;
-}
-
 function progressUploadFormData(formData) {
     var fields = formData.fields;
     var files = formData.files;
     var uploadType = fields["uploadType"];
     var roomName = fields["room"];
     var userId = fields["userId"];
-    var userInfo = getUserInfoFromId(userId);
+    var userInfo = allUserAttr[userId];
     if (!userInfo) {
         console.log("Error: Cant get User infos!");
         return;
@@ -739,7 +727,6 @@ function progressUploadFormData(formData) {
                                     removePraesi(praesiName, roomName);
                                     return;
                                 }
-                                var nameSplit = filesplit[filesplit.length - 1].split(".");
                                 readStream.pipe(fs.createWriteStream(dir + "/" + filesplit[filesplit.length - 1]));
                             });
 
@@ -942,7 +929,6 @@ function progressUploadFormData(formData) {
             var file = files[i];
             try {
                 fs.createReadStream(file.path).pipe(fs.createWriteStream('public/profilePics/' + userInfo.username));
-                var userInfo = getUserInfoFromId(userId);
                 console.log("File Saved:" + file.name);
             } catch (e) {
                 console.log("profilePicFileUploadServerError", e);
@@ -951,7 +937,7 @@ function progressUploadFormData(formData) {
 
         sendToHoleRoom(roomName, 'profilePicChange', { "userId": userId, "username": userInfo.username });
     } else if (uploadType == "3dObj") {
-        var name = trim(fields["name"]);
+        let name = trim(fields["name"]);
         var path = "./public/3dObjs/" + name;
         var fileCtn = 0;
         var file = null;
@@ -1023,50 +1009,16 @@ snake.addGameCallbacks(function (theRoomName, players) {
     sendToHoleRoom(theRoomName, 'showSnakeStats', players);
 });
 
-
 function sendToHoleRoom(roomName, key, content) {
-    if (rooms[roomName] && rooms[roomName]["user"]) {
-        for (var i = 0; i < rooms[roomName]["user"].length; i++) {
-            if (allsockets && rooms[roomName]["user"][i] && rooms[roomName]["user"][i]["socketId"] && allsockets[rooms[roomName]["user"][i]["socketId"]]) {
-                allsockets[rooms[roomName]["user"][i]["socketId"]].emit(key, content);
-            }
-        }
-    }
+    io.in(roomName).emit(key, content)
 }
 
 function sendToHoleRoomButNotMe(roomName, mySocketId, key, content) {
-    for (var i = 0; i < rooms[roomName]["user"].length; i++) {
-        if (rooms[roomName]["user"][i]["socketId"] != mySocketId) {
-            allsockets[rooms[roomName]["user"][i]["socketId"]].emit(key, content);
-        }
-    }
+    allSockets[mySocketId].to(roomName).emit(key, content);
 }
 
 function sendToUserById(userId, key, content) {
-    allsockets[userId].emit(key, content);
-}
-
-function addUserToRoom(roomName, user) {
-    if (typeof (rooms[roomName]) == "undefined")
-        rooms[roomName] = {};
-    if (typeof (rooms[roomName]["user"]) == "undefined")
-        rooms[roomName]["user"] = [];
-    for (var i = 0; i < rooms[roomName]["user"].length; i++) {
-        if (user["socketId"] == rooms[roomName]["user"][i]["socketId"]) {
-            return; //user already in the room
-        }
-    }
-    rooms[roomName]["user"].push(user);
-}
-
-function removeUserFromeRoom(roomName, socketId) {
-    if (rooms[roomName] && rooms[roomName]["user"]) {
-        for (var i = 0; i < rooms[roomName]["user"].length; i++) {
-            if (socketId == rooms[roomName]["user"][i]["socketId"]) {
-                rooms[roomName]["user"].splice(i, 1);
-            }
-        }
-    }
+    allSockets[userId].emit(key, content);
 }
 
 function saveSingleFileTable() {
@@ -1126,44 +1078,44 @@ function loadALlPreasis() {
 }
 loadALlPreasis();
 
-function saveALlRoomNames() {
-    try {
-        var allRoomNames = [];
-        for (var i in rooms) {
-            var creator = rooms[i]["creator"] || "";
-            allRoomNames.push({ "roomName": rooms[i]["roomName"], "roomPassword": rooms[i]["roomPassword"], "creator": creator, "sipnumber": rooms[i]["sipnumber"] })
+function getAllRoomsWithoutPasswords() {
+    var cleanRoomAttr = JSON.parse(JSON.stringify(allRoomAttr));
+    for (var i in cleanRoomAttr) {
+        if (cleanRoomAttr[i]["roomPassword"] != "") {
+            cleanRoomAttr[i]["hasPassword"] = true;
         }
-        var allRoomNamesString = JSON.stringify(allRoomNames);
+        delete cleanRoomAttr[i]["roomPassword"];
+    }
+    return cleanRoomAttr;
+}
+
+function saveAllRoomAttr() {
+    try {
+        var allRoomAttrString = JSON.stringify(allRoomAttr);
         try {
-            fs.writeFileSync("./db/allRoomNames.txt", allRoomNamesString);
+            fs.writeFileSync("./db/allRoomAttr.txt", allRoomAttrString);
         } catch (e) {
             console.log(e);
         }
     } catch (e) {
-        console.log("Faild to save allRoomNames!", e);
+        console.log("Faild to save allRoomAttr!", e);
     }
 }
 
-function loadALlRoomNames(callback) {
-    fs.readFile('./db/allRoomNames.txt', 'utf8', function (err, data) {
+function loadAllRoomAttr() {
+    fs.readFile('./db/allRoomAttr.txt', 'utf8', function (err, data) {
         if (err) {
-            return console.log("warning: File ./db/allRoomNames.txt not found (yet).");
+            return console.log("warning: File ./db/allRoomAttr.txt not found (yet).");
         }
         try {
-            allRoomNames = JSON.parse(data);
-            callback(allRoomNames);
+            allRoomAttr = JSON.parse(data);
         } catch (e) {
-            console.log("error reading ./db/allRoomNames.txt", e);
+            console.log("error reading ./db/allRoomAttr.txt", e);
         }
     });
 }
 
-loadALlRoomNames(function (allRoomNames) {
-    for (var i = 0; i < allRoomNames.length; i++) {
-        var croom = allRoomNames[i];
-        rooms[croom["roomName"]] = { moderator: null, user: [], "roomName": croom["roomName"], "creator": croom["creator"], "roomPassword": croom["roomPassword"], "sipnumber": croom["sipnumber"] };
-    }
-});
+loadAllRoomAttr();
 
 function loadALlUserPItems() {
     fs.readFile('./db/userPItems.txt', 'utf8', function (err, data) {
@@ -1220,26 +1172,6 @@ function save3DObjs() {
         console.log("Faild to save 3DObjs!", e);
     }
 }
-
-function getUserInfoFromId(id) {
-    for (var i in rooms) {
-        if (rooms[i]["user"]) {
-            for (var k = 0; k < rooms[i]["user"].length; k++) {
-                if (rooms[i]["user"][k]["socketId"] == id) {
-                    var ret = {};
-                    for (var j in rooms[i]["user"][k]) {
-                        if (j != "socket") {
-                            ret[j] = rooms[i]["user"][k][j];
-                        }
-                    }
-                    return ret;
-                }
-            }
-        }
-    }
-    return false;
-}
-
 
 // CLEANUP ON EXIT
 process.on('exit', function (code) {
