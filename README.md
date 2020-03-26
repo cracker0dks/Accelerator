@@ -82,17 +82,27 @@ Restart the server.
 
 ### Behind a nginx reverse Proxy ###
 ```
-location /acc/ {
+location /accelerator/ {
 	resolver 127.0.0.1 valid=30s;
 	proxy_set_header HOST $host;
 	proxy_http_version 1.1;
 	proxy_set_header Upgrade $http_upgrade;
 	proxy_set_header Connection upgrade;
-	proxy_pass http://serverIp:port/;
+	proxy_pass http://127.0.0.1:8080/;
 }
 ```
-Because we are running with --net=host, we ca set "serverIp" to the ip of the host.
 
+### Behind an Apache reverse Proxy ### 
+
+```
+<VirtualHost example.org:443>
+...
+# Proxy /accelerator/ to accelerator container
+ProxyPass "/accelerator/" "http://127.0.0.1:8080/"
+ProxyPassReverse "/accelerator/" "http://127.0.0.1:8080/"
+...
+</VirtualHost>
+```
 -------------------------
 
 ### Version 0 based on students project work ###
