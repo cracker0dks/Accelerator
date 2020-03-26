@@ -146,6 +146,7 @@ io.sockets.on('connection', function (socket) {
             sendToHoleRoom(roomName, 'setModerator', "0");
         }
         delete allSockets[socket.id];
+        delete allRoomAttr[roomName]["users"][socket.id];
         var cleanRooms = getAllRoomsWithoutPasswords();
         socket.broadcast.emit('getAllRooms', cleanRooms);
 
@@ -162,7 +163,6 @@ io.sockets.on('connection', function (socket) {
     socket.on('deleteRoom', function (content, callback) {
         var roomName = content.roomName;
         var creator = allRoomAttr[roomName].creator;
-        console.log(roomName, creator, allRoomAttr[roomName], userdata)
         if (creator == userdata["username"] || userdata["username"] == "raphael" || userdata["username"] == "ph" || userdata["username"] == "gmt" || userdata["username"] == "merk") {
             delete allRoomAttr[roomName];
             var cleanRooms = getAllRoomsWithoutPasswords();
@@ -180,7 +180,7 @@ io.sockets.on('connection', function (socket) {
         var creator = content.creator;
 
         if (!allRoomAttr[roomName]) {
-            allRoomAttr[roomName] = { moderator: null, users: [], "roomName": roomName, "roomPassword": roomPassword, "creator": creator, "lastVisit": +Date(), "permanent": false }
+            allRoomAttr[roomName] = { moderator: null, users: {}, "roomName": roomName, "roomPassword": roomPassword, "creator": creator, "lastVisit": +Date(), "permanent": false }
             var cleanRooms = getAllRoomsWithoutPasswords();
             socket.broadcast.emit('getAllRooms', cleanRooms);
             socket.emit('getAllRooms', cleanRooms);
@@ -198,16 +198,18 @@ io.sockets.on('connection', function (socket) {
         userdata["userLang"] = userLang + '-' + userLang.toUpperCase();
         // checkUserNameAndPassword(username, password, function(trueFalse) {
         // });
-        console.log(content)
     });
 
     socket.on('join', function (content) {
-        console.log("[" + socket.id + "] join ", content);
+        //console.log("[" + socket.id + "] join ", content);
         roomName = content.roomName.trim() || "";;
         userdata["username"] = content.username;
         userdata["socketId"] = socket.id;
         userdata["color"] = content.color;
 
+        allRoomAttr[roomName]["users"] = allRoomAttr[roomName]["users"] ? allRoomAttr[roomName]["users"] : {};
+        allRoomAttr[roomName]["users"][socket.id] = userdata;
+        
         socket.join(roomName);
 
         var cleanRooms = getAllRoomsWithoutPasswords();

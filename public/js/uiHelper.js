@@ -1469,17 +1469,16 @@ function renderAllRooms(roomList) {
 
 					var roomId = room["_id"];
 					var userInRoom = "";
-					var usersInRoomCnt = room["user"] ? room["user"].length : 0;
-					if (room["user"]) {
-						for (var k = 0; k < room["user"].length; k++) {
-							userInRoom += room["user"][k]["username"] + "\n";
-						}
+					var usersInRoomCnt = 0;
+					for(var k in room["users"]) {
+						userInRoom += room["users"][k]["username"] + "\n";
+						usersInRoomCnt++;
 					}
 					var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
 						'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
 						'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
 						'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +
-						'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class="badge">' + usersInRoomCnt + '</span></td>' +
+						'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class=""badge"">' + usersInRoomCnt + '</span></td>' +
 						'</tr>');
 
 					if (roomLockIcon != "") {
@@ -1497,7 +1496,7 @@ function renderAllRooms(roomList) {
 					});
 					roomListEntry.find(".roomToTrashBtn").click(function (e) {
 						e.preventDefault();
-						if (!room["user"] || room["user"].length == 0) {
+						if (!room["users"] || roomListEntry.find(".usersInRoomTd").find("badge").text() == '0') {
 							sendDeleteNewRoom(room["roomName"], roomId);
 						} else {
 							alert("Room is not empty!");
