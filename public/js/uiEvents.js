@@ -518,7 +518,7 @@ $(function () { //Document ready
 	});
 
 	$("#logoutBtn").click(function () {
-		var link = window.location.href.split("/?")[0];
+		var link = window.location.href.split("/?")[0]+'/';
 		window.location.replace(link);
 	});
 
