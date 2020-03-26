@@ -1,3 +1,4 @@
+var accSettings = {}; //Serversettings
 var ownSocketId = null;
 var ownColor = null;
 var roomImIn = null;
@@ -288,7 +289,14 @@ function sendGetAllRooms() {
 
 function setUserAttr(username, passwort) {
     if (isRTCConnected()) {
-        signaling_socket.emit('setUserAttr', { "username": username, "passwort": passwort, "userLang": userLang });
+        signaling_socket.emit('setUserAttr',
+            {
+                "username": username,
+                "passwort": passwort,
+                "userLang": userLang
+            }, function (newAccSettings) {
+                accSettings = newAccSettings;
+            });
     }
 }
 
@@ -639,16 +647,16 @@ function sendAudioVolume(vol) {
 
 function sendCreateNewRoom(roomName, roomPassword) {
     if (isRTCConnected()) {
-        signaling_socket.emit("createRoom", 
-        { 
-            "roomName": roomName, 
-            "roomPassword": roomPassword, 
-            "creator" : username 
-        }, function(err) {
-            if(err) {
-                alert(err)
-            }
-        });
+        signaling_socket.emit("createRoom",
+            {
+                "roomName": roomName,
+                "roomPassword": roomPassword,
+                "creator": username
+            }, function (err) {
+                if (err) {
+                    alert(err)
+                }
+            });
     }
 }
 
@@ -675,8 +683,8 @@ function sendDeleteNewRoom(roomName, roomId) {
         signaling_socket.emit("deleteRoom", {
             "roomName": roomName,
             "roomId": roomId
-        }, function(err) {
-            if(err) {
+        }, function (err) {
+            if (err) {
                 alert(err);
             }
         });
@@ -1160,6 +1168,15 @@ function initSocketIO() {
                 $("#startSnake").show();
             } else {
                 $("#startSnake").hide();
+            }
+
+            if (tab == "#browserScreen" && $("#etherpadIframe").attr("src") == "" && accSettings.etherpadUrl != "") {
+                var checkEPTimeout = setInterval(function() {
+                    if($("#etherpadIframe").is(":visible")) {
+                        clearInterval(checkEPTimeout)
+                        $("#etherpadIframe").attr("src", accSettings.etherpadUrl + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
+                    }
+                }, 100)
             }
 
             if ($("#praesiCursorBtn").hasClass("alert-danger")) {

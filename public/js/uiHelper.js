@@ -1864,8 +1864,8 @@ function renderMainPage(room) {
 		whiteboard.dropIndicator.hide();
 	});
 
-	if (window.location.href.indexOf("reutlingen-university") !== -1) { //Load etherpad into Iframe on correct url
-		$("#etherpadIframe").attr("src", "https://accelerator.reutlingen-university.de/etherpad/p/" + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
+	if(accSettings.etherpadUrl == "") {
+		$(".etherpadBtn").hide();
 	}
 }
 

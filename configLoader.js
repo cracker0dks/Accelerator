@@ -21,6 +21,9 @@ var defaultConfig = {
 			]
 		},
 		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master
+	},
+	"accConfig": { 
+		"etherpadUrl": "" //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 
 	}
 }
 

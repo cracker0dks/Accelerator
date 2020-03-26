@@ -92,7 +92,7 @@ app.get('/isRoomPWCorrect', function (req, res) {
     var roomName = req["query"]["roomName"];
     var roomPassword = req["query"]["roomPassword"];
     var ret = false;
-    if (rooms[roomName] && rooms[roomName]["roomPassword"] == roomPassword) {
+    if (allRoomAttr[roomName] && allRoomAttr[roomName]["roomPassword"] == roomPassword) {
         ret = true;
     }
     res.send(ret);
@@ -125,6 +125,7 @@ setTimeout(function () {
     console.log("Accelerator is up and running! YEAH :D");
     console.log("--------------------------------------");
 }, 200);
+
 /*************************/
 /*** INTERESTING STUFF ***/
 /*************************/
@@ -163,7 +164,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('deleteRoom', function (content, callback) {
         var roomName = content.roomName;
         var creator = allRoomAttr[roomName].creator;
-        if (creator == userdata["username"] || userdata["username"] == "raphael" || userdata["username"] == "ph" || userdata["username"] == "gmt" || userdata["username"] == "merk") {
+        if (creator == userdata["username"]) {
             delete allRoomAttr[roomName];
             var cleanRooms = getAllRoomsWithoutPasswords();
             socket.broadcast.emit('getAllRooms', cleanRooms);
@@ -190,7 +191,7 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
-    socket.on('setUserAttr', function (content) {
+    socket.on('setUserAttr', function (content, callback) {
         var username = content["username"];
         var password = content["passwort"];
         var userLang = content["userLang"];
@@ -198,6 +199,7 @@ io.sockets.on('connection', function (socket) {
         userdata["userLang"] = userLang + '-' + userLang.toUpperCase();
         // checkUserNameAndPassword(username, password, function(trueFalse) {
         // });
+        callback(config["accConfig"]);
     });
 
     socket.on('join', function (content) {
