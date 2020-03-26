@@ -24,20 +24,26 @@ Free Online Conference and Collaboration Tool with build in WebRTC MCU/SFU runni
 1. install nodeJs
 2. run: npm install
 3. run: node server.js
-4. surf to: https://127.0.0.1
+4. surf to: http://127.0.0.1:8080
 
-Note: On some linux systems you need to install some extra deps to run puppeteer: [here](https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md).
+Note: 
+* To serve it online you need a reverse proxy and deliver with https (look at "Behind a reverse Proxy" below)
+* On some linux systems you need to install some extra deps to run puppeteer: [here](https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md).
 
 ### Docker Installation ###
 1. build . -t acc
 2. run: docker run -d --net=host acc
-3. surf to https://yourIp
+3. surf to http://yourIp:8080
 
-To have all persistent datas (config, rooms, presentations...) outside of docker, you can run it like this:
+Note: 
+* To serve it online you need a reverse proxy and deliver with https (look at "Behind a reverse Proxy" below)
+* To have all persistent datas (config, rooms, presentations...) outside of docker, you can run it like this:
 
 ```
 docker run -d --name acc --net=host -v /home/acc/config:/opt/app/config -v /home/acc/db:/opt/app/db  -v /home/acc/3dObjs:/opt/app/public/3dObjs -v /home/acc/praesis:/opt/app/public/praesis -v /home/acc/profilePics:/opt/:/opt/app/public/profilePics -v /home/acc/singlefiles:/opt/app/public/singlefiles acc
 ```
+
+
 ### Configuration ###
 On the first start a new folder "/config" will be generated. Take a look at "/config/config.json" for all parameters. Change them if you like, and restart the server. More to come...
 
@@ -82,7 +88,7 @@ location /acc/ {
 	proxy_http_version 1.1;
 	proxy_set_header Upgrade $http_upgrade;
 	proxy_set_header Connection upgrade;
-	proxy_pass https://serverIp:port/;
+	proxy_pass http://serverIp:port/;
 }
 ```
 Because we are running with --net=host, we ca set "serverIp" to the ip of the host.
