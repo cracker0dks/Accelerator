@@ -1148,20 +1148,21 @@ function loadPraesis(praesis) {
 		$("#praesiUpInfo").empty();
 	}, 3000);
 	$("#newPraesiTable").show();
-	if (praesis != {} && praesis != null)
-		$("#praesiTable").append('');
+	if (JSON.stringify(praesis) == "{}")
+		$("#praesiTable tbody").append('<span style="color:gray;">Empty...</span>');
+
+
 	for (var name in praesis) {
 		function addRow(name) {
-			var type = '';
+			var type = 'NA';
 			if (allLoadedPraesis[name]["type"] == "pdfPraesi")
 				type = '<i title="PDF" class="fa fa-file-pdf-o"></i>';
 			else if (allLoadedPraesis[name]["type"] == "revealPraesi")
 				type = '<span title="RevealJs">R</span>';
-			else
-				type = 'NA';
-			var slidesText = allLoadedPraesis[name]["slideCtn"] >0 ? '(Slides: '+allLoadedPraesis[name]["slideCtn"]+')' : '';
+
+			var slidesText = allLoadedPraesis[name]["slideCtn"] > 0 ? '(Slides: ' + allLoadedPraesis[name]["slideCtn"] + ')' : '';
 			var tr = $('<tr>' +
-				'<td>' + name + ' '+slidesText+'</td>' +
+				'<td>' + name + ' ' + slidesText + '</td>' +
 				'<td>' + type + '</td>' +
 				'<td class="praesiSettingsIconTd">' +
 				'<i title="show presentation" class="viewPraesi fa fa-eye"></i>' +
@@ -1473,7 +1474,7 @@ function renderAllRooms(roomList) {
 						usersInRoomCnt++;
 					}
 					globalUserCnt += usersInRoomCnt;
-					roomesUsedCnt = usersInRoomCnt ? roomesUsedCnt+1 : roomesUsedCnt;
+					roomesUsedCnt = usersInRoomCnt ? roomesUsedCnt + 1 : roomesUsedCnt;
 					var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
 						'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
 						'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
@@ -1517,7 +1518,7 @@ function renderAllRooms(roomList) {
 				}
 			})();
 		}
-		$("#serverStatsDiv").html('<span style="padding-right:10px;" title="users"> <i class="fa fa-male"></i> '+globalUserCnt+'</span>  <span title="sessions"><i class="fa fa-users"></i> '+roomesUsedCnt+'</span>')
+		$("#serverStatsDiv").html('<span style="padding-right:10px;" title="users"> <i class="fa fa-male"></i> ' + globalUserCnt + '</span>  <span title="sessions"><i class="fa fa-users"></i> ' + roomesUsedCnt + '</span>')
 	}
 	filterRooms();
 }
