@@ -1289,6 +1289,12 @@ function loadSlide(name, slideid) {
 					if ($(pdfPraesi.contents()).find(".page").length >= 1) {
 						clearInterval(lInt);
 
+						
+						$(pdfPraesi.contents()).find("#viewerContainer").appendTo($(pdfPraesi.contents()).find("body"));
+						$(pdfPraesi.contents()).find("#viewerContainer").css({"top" : "12px", "overflow": "hidden"})
+						$(pdfPraesi.contents()).find(".toolbar").hide();
+						$(pdfPraesi.contents()).find("#sidebarContainer").hide();
+
 						$(pdfPraesi.contents()).find("#pageNumber").val(slideid + 1);
 						var event = new Event('change');
 						$(pdfPraesi.contents()).find("#pageNumber")[0].dispatchEvent(event);
