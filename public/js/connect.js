@@ -364,9 +364,9 @@ function sendLoadPraesis() {
     }
 }
 
-function sendAddPraesi(praesi) {
+function sendAddShowFileAsPresentation(filename) {
     if (isRTCConnected()) {
-        signaling_socket.emit('addPraesi', praesi);
+        signaling_socket.emit('addShowFileAsPresentation', filename);
     }
 }
 
@@ -1163,10 +1163,10 @@ function initSocketIO() {
             }
 
             if (tab == "#browserScreen" && $("#etherpadIframe").attr("src") == "" && accSettings.etherpadUrl != "") {
-                var checkEPTimeout = setInterval(function() {
-                    if($("#etherpadIframe").is(":visible")) {
+                var checkEPTimeout = setInterval(function () {
+                    if ($("#etherpadIframe").is(":visible")) {
                         clearInterval(checkEPTimeout)
-                        setTimeout(function() {
+                        setTimeout(function () {
                             $("#etherpadIframe").attr("src", accSettings.etherpadUrl + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
                         }, 200)
                     }
@@ -1177,6 +1177,9 @@ function initSocketIO() {
                 $("#praesiCursorBtn").click();
                 $("#praesiCursorBtn").click(); //Refresh the cursor
             }
+
+            $('.mainTab.alert-danger').removeClass("alert-danger");
+            $('.mainTab[tabtarget="' + currentTab + '"]').addClass("alert-danger");
         });
 
         signaling_socket.on('audioVolume', function (content) {
@@ -1232,7 +1235,18 @@ function initSocketIO() {
                         $(".allSingleFilesSelect").append('<option value="./singlefiles/' + filename + '">' + filename + '</option>');
                     }
 
-                    if (isImageFileName(filename)) {
+                    if (isPdfFileName(filename)) {
+                        if (!roomImIn || roomImIn["moderator"] != ownSocketId) {
+                            tr.find(".showItemOnTable").addClass("moderatorTools");
+                        }
+                        tr.find(".showItemOnTable").click(function () { //Make element
+                            if (currentTab != "#praesiDiv") {
+                                sendChangeTab("#praesiDiv")
+                            }
+
+                            sendAddShowFileAsPresentation(filename);
+                        });
+                    } else if (isImageFileName(filename)) {
                         tr.find(".showItemOnTable").click(function () { //Make element
                             if (currentTab == "#whiteboardScreen") {
                                 whiteboard.addImgToCanvasByUrl(document.URL.substr(0, document.URL.lastIndexOf('/')) + "/singlefiles/" + filename);

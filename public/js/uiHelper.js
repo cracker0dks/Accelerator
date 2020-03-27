@@ -1247,7 +1247,8 @@ function loadSlide(name, slideid) {
 	$("#praesiPlaceHolder").hide();
 	if (allLoadedPraesis[name]["type"] == "revealPraesi") {
 		if (currentPraesiName != name || typeof (revealObject) == "undefined") {
-			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="./praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"] + '"></iframe>');
+			var praesiUrl = './praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"];
+			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="'+praesiUrl+'"></iframe>');
 			$("#praesiDiv").empty();
 			$("#praesiDiv").append(rPraesi);
 			rPraesi.on("load", function () {
@@ -1279,13 +1280,20 @@ function loadSlide(name, slideid) {
 	} else if (allLoadedPraesis[name]["type"] == "pdfPraesi") {
 		if (currentPraesiName != name || $("#pdfIFrame").length == 0) {
 			$("#praesiDiv").empty();
-			pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"] + '"></iframe>');
+			var praesiUrl = document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"];
+			pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="'+praesiUrl+'"></iframe>');
 			$("#praesiDiv").append(pdfPraesi);
 
 			pdfPraesi.on("load", function () {
 				var lInt = setInterval(function () {
 					if ($(pdfPraesi.contents()).find(".page").length >= 1) {
 						clearInterval(lInt);
+
+						
+						$(pdfPraesi.contents()).find("#viewerContainer").appendTo($(pdfPraesi.contents()).find("body"));
+						$(pdfPraesi.contents()).find("#viewerContainer").css({"top" : "12px", "overflow": "hidden"})
+						$(pdfPraesi.contents()).find(".toolbar").hide();
+						$(pdfPraesi.contents()).find("#sidebarContainer").hide();
 
 						$(pdfPraesi.contents()).find("#pageNumber").val(slideid + 1);
 						var event = new Event('change');
@@ -1536,6 +1544,7 @@ function filterRooms() {
 }
 
 function joinRoom(room, roomPassword) {
+	roomImIn = room;
 	signaling_socket.emit('join', {
 		"roomName": room["roomName"],
 		"username": username,
@@ -1545,7 +1554,6 @@ function joinRoom(room, roomPassword) {
 		if (err) {
 			alert(err);
 		} else {
-			roomImIn = room;
 			showPage("#joinRoomPage");
 			loadMCUConnection(room, function () {
 				//connectionReadyCallback

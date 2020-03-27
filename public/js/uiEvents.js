@@ -998,14 +998,7 @@ $(function () { //Document ready
 			return;
 		}
 
-		if (praesiType == "picPraesi") {
-			for (var i = 0; i < files.length; i++) {
-				if (files[0].type.indexOf("image") === -1) {
-					$("#praesiUpInfo").text("Only images are allowed (Imagepresentation)!");
-					return;
-				}
-			}
-		} else if (praesiType == "revealPraesi") {
+		if (praesiType == "revealPraesi") {
 			if (files.length > 1) {
 				$("#praesiUpInfo").text("Only one zip file is allowed (Reveal presentation)!");
 				return;

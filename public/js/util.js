@@ -35,6 +35,14 @@ function isImageFileName(filename) {
     return false;
 }
 
+function isPdfFileName(filename) {
+    var ending = filename.split(".")[filename.split(".").length-1];
+    if(ending.toLowerCase()=="pdf") {
+        return true;
+    }
+    return false;
+}
+
 function isValidImageUrl(url, callback) {
     var img = new Image();
     var timer = null;
