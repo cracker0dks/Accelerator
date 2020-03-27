@@ -342,6 +342,7 @@ io.sockets.on('connection', function (socket) {
 
                     currentLoadedPraesis[roomName] = content;
                     sendToHoleRoom(roomName, 'loadSlide', content);
+                    saveAllPraesis();
                 });
             } else {
                 currentLoadedPraesis[roomName] = content;
