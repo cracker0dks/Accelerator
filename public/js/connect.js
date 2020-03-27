@@ -1177,6 +1177,9 @@ function initSocketIO() {
                 $("#praesiCursorBtn").click();
                 $("#praesiCursorBtn").click(); //Refresh the cursor
             }
+
+            $('.mainTab.alert-danger').removeClass("alert-danger");
+            $('.mainTab[tabtarget="' + currentTab + '"]').addClass("alert-danger");
         });
 
         signaling_socket.on('audioVolume', function (content) {
