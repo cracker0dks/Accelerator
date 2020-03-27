@@ -587,10 +587,8 @@ $(function () { //Document ready
 	$("#screenShareTabBtn").click(function () {
 		switch (getBrowser()) {
 			case "mozilla":
-				$("#installScreenShareDiv").html('Firefox is ready for Screenshare. Just press the Button above!'); //Firefox dont need an addon anymore
 				break;
 			case "chrome-stable":
-				$("#installScreenShareDiv").html('Chrome is ready for Screenshare. Just press the Button above!') //Firefox dont need an addon anymore
 				break;
 			default:
 				$("#startScreenShareBtn").hide();
@@ -598,14 +596,10 @@ $(function () { //Document ready
 		}
 	});
 
-	if (getBrowser() != "mozilla") {
-		$("#screenshareSourceContainer").hide();
-	}
-
 	$("#startScreenShareBtn").click(function () {
 		if (!screen_publishing) {
 			$("#startScreenShareBtn").attr("disabled", "true");
-			$("#screenshareQuallyDiv").hide();
+			$("#screenshareQuallyTable").hide();
 			$("#startScreenShareBtn").text("please wait...!");
 			writeToChat("Server", "Try to access Screen!");
 			var qIndex = $("#screenshareQually").val();
@@ -624,45 +618,73 @@ $(function () { //Document ready
 				video: { mandatory: newMand }
 			};
 
-			if (getBrowser() == "mozilla") {
-				var sIndex = $("#screenshareSource").val();
-				config["video"]["mediaSource"] = sIndex == 2 ? "window" : "screen";
-			}
+			var sIndex = $("#screenshareSource").val();
 
-			(async function () {
-				writeToChat("Server", "Screenstream Connecting...");
-				var stream = await _startScreenCapture();
-				stream["streamAttributes"] = { "screenshare": true };
-				screen_stream = stream;
-				if (stream) {
+			if (sIndex == 1) {
+				(async function () {
+					writeToChat("Server", "Screenstream Connecting...");
+					var stream;
+					try {
+						stream = await _startScreenCapture();
+					} catch(e) {
+						writeToChat("ERROR", "Access to screen rejected!");
+						$("#startScreenShareBtn").removeAttr("disabled", "false");
+						$("#startScreenShareBtn").text("start screenshare!");
+						$("#screenshareQuallyTable").show();
+						return;
+					}
+					
+					stream["streamAttributes"] = { "screenshare": true };
+					screen_stream = stream;
+					if (stream) {
+						myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
+							if (err) {
+								writeToChat("ERROR", "Stream could not be published! Error: " + err);
+								$("#startScreenShareBtn").removeAttr("disabled");
+								$("#screenshareQuallyTable").show();
+							} else {
+								screen_publishing = true;
+								apendScreenshareStream(stream, { streamSocketId: ownSocketId });
+							}
+						});
+					}
+
+					function _startScreenCapture() {
+						if (navigator.getDisplayMedia) {
+							return navigator.getDisplayMedia(config);
+						} else if (navigator.mediaDevices.getDisplayMedia) {
+							return navigator.mediaDevices.getDisplayMedia(config);
+						} else {
+							return navigator.mediaDevices.getUserMedia(config);
+						}
+					}
+
+				})();
+			} else {
+				var constraints = prevVideoInputDevice ? { deviceId: { exact: prevVideoInputDevice } } : {};
+				constraints["mandatory"] = newMand;
+				navigator.getUserMedia({ audio: false, video: constraints }, function (stream) {
+					stream["streamAttributes"] = { "screenshare": true };
+					screen_stream = stream;
 					myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
 						if (err) {
 							writeToChat("ERROR", "Stream could not be published! Error: " + err);
 							$("#startScreenShareBtn").removeAttr("disabled");
-							$("#screenshareQuallyDiv").show();
+							$("#screenshareQuallyTable").show();
 						} else {
 							screen_publishing = true;
 							apendScreenshareStream(stream, { streamSocketId: ownSocketId });
 						}
 					});
-				} else {
-					writeToChat("ERROR", "Access to screen rejected!");
+				}, function (err) {
+					console.error(err);
+					writeToChat("ERROR", "Access to cam rejected!");
 					$("#startScreenShareBtn").removeAttr("disabled", "false");
 					$("#startScreenShareBtn").text("start screenshare!");
-					$("#screenshareQuallyDiv").show();
-				}
+					$("#screenshareQuallyTable").show();
+				});
+			}
 
-				function _startScreenCapture() {
-					if (navigator.getDisplayMedia) {
-						return navigator.getDisplayMedia(config);
-					} else if (navigator.mediaDevices.getDisplayMedia) {
-						return navigator.mediaDevices.getDisplayMedia(config);
-					} else {
-						return navigator.mediaDevices.getUserMedia(config);
-					}
-				}
-
-			})();
 		} else {
 			myMCU.unpublishStream(screen_stream)
 			screen_publishing = false;

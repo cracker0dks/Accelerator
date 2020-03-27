@@ -153,7 +153,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                     if (screenshare) {
                         $(".wait4ScreenShareTxt").show();
                         if (ownSocketId == roomImIn["moderator"])
-                            $("#screenshareQuallyDiv").show();
+                            $("#screenshareQuallyTable").show();
                         $("#startScreenShareBtn").text("Start Screenshare!");
                         $("#screenShareStream").hide();
                         $("#screenShareStream").empty();

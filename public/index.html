@@ -225,10 +225,10 @@
                 <img style="z-index: -10; position:absolute; top:0px; left:0px; height: 100%; opacity: 0.07;"
                     src="./img/logogross.png">
 
-                    <!--- Moderator Stuff ----!-->
-                    <div class="noPadding col-xs-12" id="moderatorDiv">
-                    </div>
-                    <!--- End Moderator Stuff -!-->
+                <!--- Moderator Stuff ----!-->
+                <div class="noPadding col-xs-12" id="moderatorDiv">
+                </div>
+                <!--- End Moderator Stuff -!-->
 
 
                 <table style="width:100%;">
@@ -243,7 +243,7 @@
                         </td>
                         <td style="color: white; vertical-align: bottom; padding-right: 5px; text-align: right;">
                             <div id="clockWrapper" style="position:relative; top:-1px; left: 0px;"><i
-                                class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
+                                    class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
                         </td>
                         <td style="width: 123px;">
                             <div class="pull-right" id="userControls">
@@ -507,20 +507,33 @@
                                 <div class="praesiPlaceholder" style="width: auto;">
                                     <h1 class="placeHolderHeading wait4ScreenShareTxt"><span>Wait for some
                                             Screenshare...</span></h1>
-                                    <div class="moderatorTools" id="screenshareQuallyDiv">Resolution: <select
-                                            id="screenshareQually">
-                                            <option value="1">1920x1080</option>
-                                            <option value="2">1280x768</option>
-                                            <option value="3">800x600</option>
-                                            <option value="4">640x480</option>
-                                        </select><br>
-                                        <span id="screenshareSourceContainer">
-                                            Source: <select id="screenshareSource">
-                                                <option value="1">Screen</option>
-                                                <option value="2">Window</option>
-                                            </select>
-                                        </span><br>
-                                    </div>
+                                    <table class="moderatorTools" id="screenshareQuallyTable" style="margin-left: auto; margin-right: auto;">
+                                        <tr>
+                                            <td style="text-align: right;">
+                                                Resolution: 
+                                            </td>
+                                            <td>
+                                                <select style="width:100%;" id="screenshareQually">
+                                                    <option value="1">1920x1080</option>
+                                                    <option value="2">1280x768</option>
+                                                    <option value="3">800x600</option>
+                                                    <option value="4">640x480</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: right;">
+                                                Source: 
+                                            </td>
+                                            <td>
+                                                <select style="width:100%;" id="screenshareSource">
+                                                    <option value="1">Screen / Window</option>
+                                                    <option value="2">Camera</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
                                     <button class="btn btn-primary moderatorTools"
                                         id="startScreenShareBtn">StartScreenShare!</button>
                                     <div id="installScreenShareDiv" class="moderatorTools wait4ScreenShareTxt"></div>
