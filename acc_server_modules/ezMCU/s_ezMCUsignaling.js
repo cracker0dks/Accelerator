@@ -263,8 +263,8 @@ var init = async function (io, newConfig) {
             }, 1000 * 10)
         } catch (e) {
             console.log("MCU ERROR: ", e);
-            console.log("Restart MCU!")
             if (mcuStartedWithoutError) { //Startup the mcu if it crashes while running (should not happen, just in case)
+                console.log("Restart MCU!")
                 startUpMcu();
             }
             mcuStartedWithoutError = false;
