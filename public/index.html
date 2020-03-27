@@ -224,10 +224,12 @@
             <div style="max-width: 320px;" class="col-xs-3 col-md-2" id="leftContainer">
                 <img style="z-index: -10; position:absolute; top:0px; left:0px; height: 100%; opacity: 0.07;"
                     src="./img/logogross.png">
-                <!--- Moderator Stuff ----!-->
-                <div class="noPadding col-xs-12" id="moderatorDiv">
-                </div>
-                <!--- End Moderator Stuff -!-->
+
+                    <!--- Moderator Stuff ----!-->
+                    <div class="noPadding col-xs-12" id="moderatorDiv">
+                    </div>
+                    <!--- End Moderator Stuff -!-->
+
 
                 <table style="width:100%;">
                     <tr>
@@ -240,8 +242,8 @@
                                     class="fa fa-sign-out" aria-hidden="true"></i></div>
                         </td>
                         <td style="color: white; vertical-align: bottom; padding-right: 5px; text-align: right;">
-                            <span style="display: none;" title="Phones connected to the Room" id="sipCountContainer"><i
-                                    class="fa fa-phone"></i> <span id="sipCount">0</span></span>
+                            <div id="clockWrapper" style="position:relative; top:-1px; left: 0px;"><i
+                                class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
                         </td>
                         <td style="width: 123px;">
                             <div class="pull-right" id="userControls">
@@ -257,7 +259,6 @@
                         </td>
                     </tr>
                 </table>
-
                 <div class="col-xs-12" id="panelContainer">
                     <div id="userPanel" class="userPanel">
                     </div>
@@ -323,10 +324,6 @@
                                     <img style="height: 25px;" src="./img/3dIconWhiteS.png">
                                     <i style="font-size: 1.3em; left: 4px; top:1px; position: absolute;"
                                         class="fa fa-cog"></i>
-                                </button>
-                                <button id="clockBtn" type="button" title="Enable/Disable clock"
-                                    class="keepActiveBtn toolbar-icon btn btn-default">
-                                    <i class="fa fa-clock-o"></i>
                                 </button>
                             </div>
                             <div class="btn-group buttonToolbar modToolbar moderatorTools" role="group"
@@ -462,9 +459,6 @@
 
                     <!--- MainContainer with Presentation Content Area ------------------------------------------------!-->
                     <div style="overflow: hidden; min-width: 1000px;" class="row" id="mainContainer">
-                        <div id="clockWrapper"
-                            style="display:none; position:absolute; top:0px; left: 5px; color:rgb(230, 230, 230);"><i
-                                class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
                         <div id="toggle_fullscreen" title="fullscreen presentation"
                             style="cursor:pointer; z-index: 10000; position:absolute; top:0px; right: 5px; color:rgb(230, 230, 230);">
                             <i class="fa fa-expand" aria-hidden="true"></i></div>
@@ -952,7 +946,7 @@
                                                         <label>
                                                             <input class="praesiType" type="radio" name="praesiType"
                                                                 value="pdfPraesi" checked="true">
-                                                            PDF Presentation 
+                                                            PDF Presentation
                                                         </label>
                                                         <span style="color: gray;">(recommended)</span>
                                                     </div>

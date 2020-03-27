@@ -384,18 +384,6 @@ var tourPartsDb = {
 	    content: "Click here to manage your 3D-Objects",
 	    placement: "bottom"
 	},
-	"clockBtn" : {
-	    element: "#clockBtn",
-	    title: "Die Uhr",
-	    content: "Klicken Sie hier, um eine Uhr für Sie und alle Teilnehmer einzublenden",
-	    placement: "bottom"
-	},
-	"clockBtnEN" : {
-	    element: "#clockBtn",
-	    title: "Clock Button",
-	    content: "Click here to display the clock for you and your participants",
-	    placement: "bottom"
-	},
 	"praesiStart" : {
 	    element: "#praesiStart",
 	    title: "Erste Folie",
@@ -546,7 +534,6 @@ var toursDb = {
 		// tourPartsDb["screenShareTabBtn"],
 		// tourPartsDb["praesiControl"],
 		// tourPartsDb["3dObjectControl"],
-		// tourPartsDb["clockBtn"],
 		// tourPartsDb["praesiStart"],
 		// tourPartsDb["praesiBack"],
 		// tourPartsDb["praesiNext"],

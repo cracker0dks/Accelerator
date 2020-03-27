@@ -1090,12 +1090,6 @@ $(function () { //Document ready
 		$('#userPicUploadModal').modal('hide');
 	});
 
-	$("#clockBtn").clickToggle(function () {
-		sendShowHideClock(true);
-	}, function () {
-		sendShowHideClock(false);
-	});
-
 	//Manage Toolbar
 	$(".toolbar-icon").click(function () {
 		var status = "";

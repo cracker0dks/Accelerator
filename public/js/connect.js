@@ -352,12 +352,6 @@ function sendSetGetMicToUser(userid, status, disableHandUp) {
     }
 }
 
-function sendShowHideClock(trueFalse) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('showHideClock', trueFalse);
-    }
-}
-
 function sendLoadPraesis() {
     if (isRTCConnected()) {
         signaling_socket.emit('loadPraesis', null);
@@ -1003,14 +997,6 @@ function initSocketIO() {
             if (pitemWebcamStreams[content.itemId]) {
                 myMCU.unpublishStream(pitemWebcamStreams[content.itemId])
                 delete pitemWebcamStreams[content.itemId];
-            }
-        });
-
-        signaling_socket.on('showHideClock', function (trueFalse) {
-            if (trueFalse) {
-                $("#clockWrapper").show();
-            } else {
-                $("#clockWrapper").hide();
             }
         });
 

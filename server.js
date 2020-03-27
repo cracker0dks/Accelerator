@@ -102,7 +102,6 @@ var allUserAttr = {};
 var allPraesis = {};
 var currentLoadedPraesis = {};
 var currentLoadedTab = {};
-var isClockEnabled = {};
 var isUserPItemsLoaded = {};
 var allSingleFiles = {};
 var userPItems = {};
@@ -254,10 +253,6 @@ io.sockets.on('connection', function (socket) {
             socket.emit('addPeer', allUserAttr[i]);
         }
 
-        if (isClockEnabled[roomName]) {
-            socket.emit('showHideClock', true);
-        }
-
         if (currentLoadedTab[roomName]) {
             var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
             socket.emit('changeTab', { "tab": currentLoadedTab[roomName], "userPItems": items });
@@ -378,14 +373,6 @@ io.sockets.on('connection', function (socket) {
         socket.on('revealSlideKey', function (keycode) {
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'revealSlideKey', keycode);
-            }
-        });
-
-
-        socket.on('showHideClock', function (trueFalse) {
-            if (isModerator()) {
-                isClockEnabled[roomName] = trueFalse;
-                sendToHoleRoom(roomName, "showHideClock", trueFalse);
             }
         });
 
