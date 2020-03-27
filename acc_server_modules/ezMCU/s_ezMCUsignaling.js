@@ -274,7 +274,7 @@ var init = async function (io, newConfig) {
 }
 
 function getTURNCredentials(name, secret) {
-    var unixTimeStamp = parseInt((Date.now() / 1000) + "") + 36 * 3600,   // this credential would be valid for the next 36 hours
+    var unixTimeStamp = parseInt((+new Date() / 1000) + "") + 48 * 3600,   // this credential would be valid for the next 48 hours
         username = [unixTimeStamp, name].join(':'),
         password,
         hmac = crypto.createHmac('sha1', secret);
