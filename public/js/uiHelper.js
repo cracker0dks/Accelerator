@@ -1716,7 +1716,7 @@ function renderMainPage() {
 		}
 	});
 
-	$.get("/loadwhiteboard", { wid: roomImIn["roomName"].replace(/[^0-9a-z]/gi, '') }).done(function (data) {
+	$.get("./loadwhiteboard", { wid: roomImIn["roomName"].replace(/[^0-9a-z]/gi, '') }).done(function (data) {
 		whiteboard.loadData(data)
 	});
 
