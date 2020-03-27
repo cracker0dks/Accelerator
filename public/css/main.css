@@ -837,7 +837,7 @@ hr {
 
 #silenceBtn{
     padding-top: 8px;
-    padding-bottom: 3.5px;
+    padding-bottom: 4px;
 }
 
 .mdi-av-volume-off {
@@ -944,7 +944,7 @@ hr {
     font-size: 3em !important;
     left: 2px;
     position: absolute;
-    top: 6px;
+    top: 14px;
 }
 
 .fileUpload {
