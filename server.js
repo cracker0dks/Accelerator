@@ -315,6 +315,39 @@ io.sockets.on('connection', function (socket) {
             sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
         });
 
+        socket.on('addShowFileAsPresentation', function (filename) {
+            var praesiName = filename.replace(/[^a-zA-Z0-9 ]/g, "");
+            var content = {
+                "name": praesiName,
+                "slideid": 0
+            }
+            if (!allPraesis[roomName][praesiName]) {
+                var path = "./public/praesis/" + roomName.split("###")[0] + "/" + praesiName
+
+                fs.ensureDir(path, function (err) {
+                    if (err) {
+                        console.error(err);
+                        removePraesi(praesiName, roomName);
+                        return;
+                    }
+                    fs.createReadStream("./public/singlefiles/" + filename).pipe(fs.createWriteStream(path + '/' + filename));
+
+                    allPraesis[roomName][praesiName] = {
+                        "name": praesiName,
+                        "type": "pdfPraesi",
+                        "filename": filename
+                    };
+                    sendToHoleRoom(roomName, 'loadPraesis', allPraesis[roomName]);
+
+                    currentLoadedPraesis[roomName] = content;
+                    sendToHoleRoom(roomName, 'loadSlide', content);
+                });
+            } else {
+                currentLoadedPraesis[roomName] = content;
+                sendToHoleRoom(roomName, 'loadSlide', content);
+            }
+        });
+
         socket.on('deletePraesi', function (name) {
             if (isModerator()) {
                 removePraesi(name, roomName);

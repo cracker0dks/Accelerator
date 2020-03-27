@@ -1247,7 +1247,8 @@ function loadSlide(name, slideid) {
 	$("#praesiPlaceHolder").hide();
 	if (allLoadedPraesis[name]["type"] == "revealPraesi") {
 		if (currentPraesiName != name || typeof (revealObject) == "undefined") {
-			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="./praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"] + '"></iframe>');
+			var praesiUrl = './praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"];
+			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="'+praesiUrl+'"></iframe>');
 			$("#praesiDiv").empty();
 			$("#praesiDiv").append(rPraesi);
 			rPraesi.on("load", function () {
@@ -1279,7 +1280,8 @@ function loadSlide(name, slideid) {
 	} else if (allLoadedPraesis[name]["type"] == "pdfPraesi") {
 		if (currentPraesiName != name || $("#pdfIFrame").length == 0) {
 			$("#praesiDiv").empty();
-			pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"] + '"></iframe>');
+			var praesiUrl = document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"];
+			pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="'+praesiUrl+'"></iframe>');
 			$("#praesiDiv").append(pdfPraesi);
 
 			pdfPraesi.on("load", function () {
