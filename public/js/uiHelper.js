@@ -1159,12 +1159,9 @@ function loadPraesis(praesis) {
 				type = '<span title="RevealJs">R</span>';
 			else
 				type = 'NA';
-			var slideCnt = 'NA';
-			if (typeof (allLoadedPraesis[name]["slideCtn"]) != "undefined")
-				slideCnt = allLoadedPraesis[name]["slideCtn"];
+			var slidesText = allLoadedPraesis[name]["slideCtn"] >0 ? '(Slides: '+allLoadedPraesis[name]["slideCtn"]+')' : '';
 			var tr = $('<tr>' +
-				'<td>' + name + '</td>' +
-				'<td>' + slideCnt + '</td>' +
+				'<td>' + name + ' '+slidesText+'</td>' +
 				'<td>' + type + '</td>' +
 				'<td class="praesiSettingsIconTd">' +
 				'<i title="show presentation" class="viewPraesi fa fa-eye"></i>' +

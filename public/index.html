@@ -923,7 +923,6 @@
                                         <thead>
                                             <tr>
                                                 <th><b>Name</b></th>
-                                                <th><b>Slides</b></th>
                                                 <th><b>Type</b></th>
                                                 <th>
                                                 </th>
@@ -947,7 +946,7 @@
                                     <form id="praseiUploadForm" action="#" enctype="multipart/form-data" method="post">
                                         <table id="newPraesiTable" style="width: 100%;">
                                             <tr>
-                                                <td>Typ:</td>
+                                                <td>Type:</td>
                                                 <td>
                                                     <div class="radio radio-info">
                                                         <label>
@@ -979,6 +978,15 @@
                                             </tr>
 
                                             <tr>
+                                                <td>File:</td>
+                                                <td>
+                                                    <input type="text" id="filePlaceholder" readonly=""
+                                                        class="form-control floating-label" placeholder="Browse...">
+                                                    <input name="upload" multiple="multiple" type="file"
+                                                        id="praesiUploadInput">
+                                                </td>
+                                            </tr>
+                                            <tr>
                                                 <td>Name:</td>
                                                 <td>
                                                     <input name="praesiName" id="praesiName" class="form-control"
@@ -990,15 +998,6 @@
                                                 <td>
                                                     <input name="indexFile" id="indexFile" class="form-control"
                                                         type="text" value="index.html" placeholder="index.html">
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>Files:</td>
-                                                <td>
-                                                    <input type="text" id="filePlaceholder" readonly=""
-                                                        class="form-control floating-label" placeholder="Browse...">
-                                                    <input name="upload" multiple="multiple" type="file"
-                                                        id="praesiUploadInput">
                                                 </td>
                                             </tr>
                                             <tr>
