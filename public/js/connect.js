@@ -1166,7 +1166,9 @@ function initSocketIO() {
                 var checkEPTimeout = setInterval(function() {
                     if($("#etherpadIframe").is(":visible")) {
                         clearInterval(checkEPTimeout)
-                        $("#etherpadIframe").attr("src", accSettings.etherpadUrl + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
+                        setTimeout(function() {
+                            $("#etherpadIframe").attr("src", accSettings.etherpadUrl + roomImIn["roomName"].replace("###", "") + "?userName=" + username + "&noColors=false&userColor=" + ownColor);
+                        }, 200)
                     }
                 }, 100)
             }
