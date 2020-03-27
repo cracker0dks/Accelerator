@@ -1291,7 +1291,7 @@ function loadSlide(name, slideid) {
 
 						
 						$(pdfPraesi.contents()).find("#viewerContainer").appendTo($(pdfPraesi.contents()).find("body"));
-						$(pdfPraesi.contents()).find("#viewerContainer").css({"top" : "12px", "overflow": "hidden"})
+						$(pdfPraesi.contents()).find("#viewerContainer").css({"top" : "5px", "overflow": "hidden"})
 						$(pdfPraesi.contents()).find(".toolbar").hide();
 						$(pdfPraesi.contents()).find("#sidebarContainer").hide();
 
