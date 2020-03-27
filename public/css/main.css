@@ -834,18 +834,19 @@ hr {
     color:#FFF;
     font-size:1.7em;
 }
-.alert-danger .mdi-av-volume-off{
-    font-size: 2em !important;
-    left: 9px;
-    padding: 0;
-    position: absolute;
-    top: 3px;
+
+#silenceBtn{
+    padding-top: 8px;
+    padding-bottom: 3.5px;
 }
-.volumeMute{
-    width:48px;
-    height:39px;
-    position:relative;
+
+.mdi-av-volume-off {
+    font-size: 30px;
+	font-weight: 900;
+	line-height: 0.36;
+	margin-top: 6px;
 }
+
 .toolbar-icon-praesi {
     display: inline-block;
     border-radius: 3px;

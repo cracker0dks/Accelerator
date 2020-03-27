@@ -1110,10 +1110,6 @@ $(function () { //Document ready
 			$(this).removeClass("alert-danger");
 
 			if ($(this).find(".mdi-av-volume-off").length > 0) {
-				var i = $($(this).find(".mdi-av-volume-off")[0]);
-				i.removeClass("mdi-av-volume-off");
-				i.addClass("fa");
-				i.addClass("fa-volume-up");
 				status = "not-silence";
 				$.each($("audio"), function () {
 					$(this).prop('muted', false);
@@ -1137,12 +1133,7 @@ $(function () { //Document ready
 		} else {
 			$(this).addClass("alert-danger");
 
-			if ($(this).find(".fa-volume-up").length > 0) {
-				var i = $($(this).find(".fa-volume-up")[0]);
-				i.removeClass("fa");
-				i.removeClass("fa-volume-up");
-				i.addClass("mdi-av-volume-off");
-				$(".volume").addClass("volumeMute");
+			if ($(this).find(".mdi-av-volume-off").length > 0) {
 				status = "silence";
 				$.each($("audio"), function () {
 					$(this).prop('muted', true);
