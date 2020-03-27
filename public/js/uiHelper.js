@@ -1538,6 +1538,7 @@ function filterRooms() {
 }
 
 function joinRoom(room, roomPassword) {
+	roomImIn = room;
 	signaling_socket.emit('join', {
 		"roomName": room["roomName"],
 		"username": username,
@@ -1547,7 +1548,6 @@ function joinRoom(room, roomPassword) {
 		if (err) {
 			alert(err);
 		} else {
-			roomImIn = room;
 			showPage("#joinRoomPage");
 			loadMCUConnection(room, function () {
 				//connectionReadyCallback
