@@ -321,7 +321,7 @@ io.sockets.on('connection', function (socket) {
                 "name": praesiName,
                 "slideid": 0
             }
-            if (!allPraesis[roomName][praesiName]) {
+            if (!allPraesis[roomName] || !allPraesis[roomName][praesiName]) {
                 var path = "./public/praesis/" + roomName.split("###")[0] + "/" + praesiName
 
                 fs.ensureDir(path, function (err) {
@@ -332,6 +332,7 @@ io.sockets.on('connection', function (socket) {
                     }
                     fs.createReadStream("./public/singlefiles/" + filename).pipe(fs.createWriteStream(path + '/' + filename));
 
+                    allPraesis[roomName] = allPraesis[roomName] ? allPraesis[roomName] : {};
                     allPraesis[roomName][praesiName] = {
                         "name": praesiName,
                         "type": "pdfPraesi",
