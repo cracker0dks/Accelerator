@@ -1139,6 +1139,9 @@ function addUserToPanel(id, username) {
 	});
 
 	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
+	if(roomImIn.moderator==ownSocketId) {
+		newUser.find(".changePlace").show();
+	}
 }
 
 function loadPraesis(praesis) {
