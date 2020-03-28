@@ -1272,12 +1272,22 @@ function loadSlide(name, slideid) {
 
 				revealObject.configure({ controls: false, keyboard: false });
 				revealObject.slide(slideid);
+
+				var currentSlide = slideid + 1;
+				var slidesArr = revealObject.getSlides();
+				$("#slidePageDisplayContent").text(currentSlide + ' / ' + slidesArr.length);
+
 				setTimeout(function () {
 					refreshUserPIconsOnScreen(name);
 				}, 1000);
 			});
 		} else {
 			revealObject.slide(slideid);
+
+			var currentSlide = slideid + 1;
+			var slidesArr = revealObject.getSlides();
+			$("#slidePageDisplayContent").text(currentSlide + ' / ' + slidesArr.length);
+
 			refreshUserPIconsOnScreen(name);
 		}
 	} else if (allLoadedPraesis[name]["type"] == "pdfPraesi") {
