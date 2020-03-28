@@ -71,7 +71,7 @@ function start() {
 			}
 
 			function pipeStream() {
-				var audioTracks = allStreams[streamId].getAudioTracks(); //Here do some things...
+				var audioTracks = allStreams[streamId].getAudioTracks();
 				var videoTracks = allStreams[streamId].getVideoTracks();
 				if (videoTracks.length > 0) {
 					allPeers[clientSocketId].addStream(allStreams[streamId]);
@@ -140,7 +140,6 @@ function start() {
 			})
 
 			localPeer.on('signaling', data => {
-				allPeers[clientSocketId]["createdAnswer"] = true;
 				//console.log('SIGNAL', JSON.stringify(data))
 				socket.emit("mcu_signaling", { instanceTo: "clientSocket", "clientSocketId": clientSocketId, data: data });
 			})
