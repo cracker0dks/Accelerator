@@ -288,10 +288,22 @@
                                     class="praesiTab mainTab toolbar-icon btn btn-default">
                                     <img style="height: 25px;" src="./img/presentation.svg">
                                 </button>
+                                <div class="praesiUpload" id="praesiSettingsWrapper">
+                                    <span class="praesiUpload" id="praesiSettingsContent"
+                                        style="position: relative; top:-1px; cursor: pointer;">
+                                        <i class="fa fa-cog praesiUpload"></i>
+                                    </span>
+                                </div>
                                 <button title="Presentations" tabtarget="#3dScreen" title="Show 3D Objects" id="show3d"
                                     type="button" class="praesiTab mainTab toolbar-icon btn btn-default">
                                     <img style="height: 25px;" src="./img/3dIconWhiteS.png">
                                 </button>
+                                <div class="3dObjUpload" id="d3praesiSettingsWrapper">
+                                    <span class="3dObjUpload" id="d3praesiSettingsContent"
+                                        style="position: relative; top:-1px; cursor: pointer;">
+                                        <i class="fa fa-cog 3dObjUpload"></i>
+                                    </span>
+                                </div>
                                 <button title="Etherpad" tabtarget="#browserScreen" type="button"
                                     class="mainTab etherpadBtn toolbar-icon btn btn-default clap">
                                     <i class="fa fa-file-text-o" id="etherpadBtn"></i>
@@ -308,23 +320,9 @@
                                     type="button" class="mainTab toolbar-icon btn btn-default">
                                     <i class="fa fa-desktop"></i>
                                 </button>
+
                             </div>
-                            <div class="btn-group contentOptions buttonToolbar modToolbar moderatorTools" role="group"
-                                aria-label="...">
-                                <button style="position: relative;" type="button"
-                                    title="Open Presentation Control Modal"
-                                    class="praesiUpload toolbar-icon btn btn-default" id="praesicontrol">
-                                    <img style="height: 25px;" src="./img/presentation.svg"><i
-                                        style="font-size: 1.3em; left: 4px; top:1px; position: absolute;"
-                                        class="fa fa-cog"></i>
-                                </button>
-                                <button title="Presentations" title="Show 3D Object Control Modal" type="button"
-                                    class="3dObjUpload toolbar-icon btn btn-default" id="3dObjectControl">
-                                    <img style="height: 25px;" src="./img/3dIconWhiteS.png">
-                                    <i style="font-size: 1.3em; left: 4px; top:1px; position: absolute;"
-                                        class="fa fa-cog"></i>
-                                </button>
-                            </div>
+
                             <div class="btn-group buttonToolbar modToolbar moderatorTools" role="group"
                                 aria-label="...">
                                 <button id="praesiStart" title="Jump to the start of the presentation" type="button"
@@ -339,6 +337,10 @@
                                     class="notActiveBtn toolbar-icon btn btn-default">
                                     <i class="fa fa-step-forward"></i>
                                 </button>
+                                <div class="moderatorTools" id="slidePageDisplayWrapper">
+                                    <span id="slidePageDisplayContent" style="position: relative; top:-1px;">0 /
+                                        0</span>
+                                </div>
                                 <button id="praesiENd" title="Jump to the end of the presentation" type="button"
                                     class="notActiveBtn toolbar-icon btn btn-default clap">
                                     <i class="fa fa-fast-forward"></i>
@@ -730,8 +732,8 @@
 
                     <!--BottomContainer with UserControl and ChatArea -------------------------------------------------!-->
                     <div id="bottomContainer" class="container-fluid">
-                        <div id="clockWrapper" style="position:absolute; top: 38px; left: 8px; color: gray;"><i
-                            class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
+                        <div id="clockWrapper" style="position:absolute; top: 28px; left: 8px; color: gray;"><i
+                                class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
                         <div id="controllbarWrapper" class="row">
                             <div class="col-xs-6 col-xs-offset-3">
                                 <div class="toolbarWrapper">

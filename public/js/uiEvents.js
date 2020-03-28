@@ -413,10 +413,6 @@ $(function () { //Document ready
 	});
 
 	//ModToolbar Click Effect
-	$('#uploadPraesis').on('hidden.bs.modal', function () {
-		$(".praesiUpload").removeClass("alert-danger");
-	});
-
 	$(".notActiveBtn").mousedown(function () {
 		$(this).addClass("alert-danger");
 	});

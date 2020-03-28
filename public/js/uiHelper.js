@@ -1139,7 +1139,7 @@ function addUserToPanel(id, username) {
 	});
 
 	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
-	if(roomImIn.moderator==ownSocketId) {
+	if (roomImIn.moderator == ownSocketId) {
 		newUser.find(".changePlace").show();
 	}
 }
@@ -1251,7 +1251,7 @@ function loadSlide(name, slideid) {
 	if (allLoadedPraesis[name]["type"] == "revealPraesi") {
 		if (currentPraesiName != name || typeof (revealObject) == "undefined") {
 			var praesiUrl = './praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["indexFile"];
-			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="'+praesiUrl+'"></iframe>');
+			rPraesi = $('<iframe id="revealIFrame" style="width: 100%; height: 730px;" src="' + praesiUrl + '"></iframe>');
 			$("#praesiDiv").empty();
 			$("#praesiDiv").append(rPraesi);
 			rPraesi.on("load", function () {
@@ -1282,55 +1282,67 @@ function loadSlide(name, slideid) {
 		}
 	} else if (allLoadedPraesis[name]["type"] == "pdfPraesi") {
 		if (currentPraesiName != name || $("#pdfIFrame").length == 0) {
-			$("#praesiDiv").empty();
-			var praesiUrl = document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"];
-			pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="'+praesiUrl+'"></iframe>');
-			$("#praesiDiv").append(pdfPraesi);
+			if ($("#praesiDiv").is(":visible")) {
+				$("#praesiDiv").empty();
+				var praesiUrl = document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"];
+				pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="' + praesiUrl + '"></iframe>');
+				$("#praesiDiv").append(pdfPraesi);
 
-			pdfPraesi.on("load", function () {
-				var lInt = setInterval(function () {
-					if ($(pdfPraesi.contents()).find(".page").length >= 1) {
-						clearInterval(lInt);
+				pdfPraesi.on("load", function () {
+					var lInt = setInterval(function () {
+						if ($(pdfPraesi.contents()).find(".page").length >= 1) {
+							clearInterval(lInt);
 
-						
-						$(pdfPraesi.contents()).find("#viewerContainer").appendTo($(pdfPraesi.contents()).find("body"));
-						$(pdfPraesi.contents()).find("#viewerContainer").css({"top" : "5px", "overflow": "hidden"})
-						$(pdfPraesi.contents()).find(".toolbar").hide();
-						$(pdfPraesi.contents()).find("#sidebarContainer").hide();
 
-						$(pdfPraesi.contents()).find("#pageNumber").val(slideid + 1);
-						var event = new Event('change');
-						$(pdfPraesi.contents()).find("#pageNumber")[0].dispatchEvent(event);
+							$(pdfPraesi.contents()).find("#viewerContainer").appendTo($(pdfPraesi.contents()).find("body"));
+							$(pdfPraesi.contents()).find("#viewerContainer").css({ "top": "5px", "overflow": "hidden" })
+							$(pdfPraesi.contents()).find(".toolbar").hide();
+							$(pdfPraesi.contents()).find("#sidebarContainer").hide();
 
-						var event = new Event('change');
-						$(pdfPraesi.contents()).find("#scaleSelect").val("page-fit");
-						$(pdfPraesi.contents()).find("#scaleSelect")[0].dispatchEvent(event);
+							$(pdfPraesi.contents()).find("#pageNumber").val(slideid + 1);
+							var event = new Event('change');
+							$(pdfPraesi.contents()).find("#pageNumber")[0].dispatchEvent(event);
 
-						$(pdfPraesi.contents()).keyup(function (event) {
-							if ((event.which != 80 || roomImIn["moderator"] == ownSocketId) && event.which != 8) {
-								if (event.which == 39 || event.which == 32) {
-									praesiNext();
-								} else if (event.which == 37) {
-									praesiBack();
+							var event = new Event('change');
+							$(pdfPraesi.contents()).find("#scaleSelect").val("page-fit");
+							$(pdfPraesi.contents()).find("#scaleSelect")[0].dispatchEvent(event);
+
+							$(pdfPraesi.contents()).keyup(function (event) {
+								if ((event.which != 80 || roomImIn["moderator"] == ownSocketId) && event.which != 8) {
+									if (event.which == 39 || event.which == 32) {
+										praesiNext();
+									} else if (event.which == 37) {
+										praesiBack();
+									}
+									event.preventDefault();
 								}
-								event.preventDefault();
-							}
-						});
+							});
 
-						setTimeout(function () {
-							refreshUserPIconsOnScreen(name);
-						}, 1000);
+							var maxSlides = $(pdfPraesi.contents()).find("#pageNumber").attr("max");
+							$("#slidePageDisplayContent").text('1 / ' + maxSlides);
 
-					}
+							setTimeout(function () {
+								refreshUserPIconsOnScreen(name);
+							}, 1000);
+
+						}
+					}, 100)
+				});
+			} else {
+				setTimeout(function () {
+					loadSlide(name, slideid); //Try to reload when visible
 				}, 100)
-			});
-
+			}
 		} else {
 			$($("#pdfIFrame").contents()).find("#pageNumber").val(slideid + 1);
 			var event = new Event('change');
 			if ($($("#pdfIFrame").contents()).find("#pageNumber")[0]) {
 				$($("#pdfIFrame").contents()).find("#pageNumber")[0].dispatchEvent(event);
 			}
+
+			var currentSlide = $($("#pdfIFrame").contents()).find("#pageNumber").val();
+			var maxSlides = $(pdfPraesi.contents()).find("#pageNumber").attr("max");
+			$("#slidePageDisplayContent").text(currentSlide + ' / ' + maxSlides);
 			refreshUserPIconsOnScreen(name);
 		}
 	} else {

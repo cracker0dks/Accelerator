@@ -406,6 +406,60 @@ div.userTools {
       background: url("../img/chosen-sprite.png") -42px 1px no-repeat;
 }
 
+.btn-group {
+    margin: 5px 1px;
+}
+
+#slidePageDisplayWrapper {
+    position: absolute;
+    bottom: -12px;
+    background: #595959;
+    left: 50px;
+    font-size: 0.8em;
+    height: 12px;
+    display: block;
+    text-align: center;
+    width: 79px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    color: white;
+    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+#praesiSettingsWrapper {
+    position: absolute;
+    bottom: -12px;
+    background: #595959;
+    left: 49px;
+    font-size: 0.7em;
+    height: 12px;
+    display: block;
+    text-align: center;
+    width: 50px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    color: white;
+    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+}
+
+#d3praesiSettingsWrapper {
+    position: absolute;
+    bottom: -12px;
+    background: #595959;
+    left: 100px;
+    font-size: 0.7em;
+    height: 12px;
+    display: block;
+    text-align: center;
+    width: 53px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    color: white;
+    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+}
+
 .groupLimitInput {
     padding-left: 5px;
     width: 40px;
