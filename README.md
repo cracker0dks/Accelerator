@@ -40,7 +40,7 @@ Note:
 * To have all persistent datas (config, rooms, presentations...) outside of docker, you can run it like this:
 
 ```
-docker run -d --name acc --net=host -v /home/acc/config:/opt/app/config -v /home/acc/db:/opt/app/db  -v /home/acc/3dObjs:/opt/app/public/3dObjs -v /home/acc/praesis:/opt/app/public/praesis -v /home/acc/profilePics:/opt/:/opt/app/public/profilePics -v /home/acc/singlefiles:/opt/app/public/singlefiles acc
+docker run -d --name acc --net=host -v /home/acc/config:/app/config -v /home/acc/db:/app/db  -v /home/acc/3dObjs:/app/public/3dObjs -v /home/acc/praesis:/app/public/praesis -v /home/acc/profilePics:/app/public/profilePics -v /home/acc/singlefiles:/app/public/singlefiles acc
 ```
 
 
