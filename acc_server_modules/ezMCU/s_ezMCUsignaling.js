@@ -271,8 +271,6 @@ var init = async function (io, newConfig) {
         async function startUpMcu() {
             const page = await browser.newPage();
             try {
-                await page.goto(masterURL);
-
                 page.on('console', msg => {
                     for (let i = 0; i < msg.args().length; ++i) {
                         console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
@@ -282,6 +280,8 @@ var init = async function (io, newConfig) {
                     console.log("MCU ERROR: ", msg);
                     throw msg;
                 });
+                
+                await page.goto(masterURL);
                 await page.waitFor('#loadMCUBtn');
                 await page.click('body');
 
