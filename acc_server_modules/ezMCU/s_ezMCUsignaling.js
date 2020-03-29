@@ -279,6 +279,7 @@ var init = async function (io, newConfig) {
                     }
                 });
                 page.on('error', msg => {
+                    console.log("MCU ERROR: ", msg);
                     throw msg;
                 });
                 await page.waitFor('#loadMCUBtn');
