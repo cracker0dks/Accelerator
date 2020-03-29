@@ -115,9 +115,14 @@ var url3dObjs = {};
 
 setTimeout(function () {
     console.log("--------------------------------------");
-    console.log("Accelerator is up and running! YEAH :D");
+    if (config["mcuConfig"]["isMaster"]) {
+        console.log("Accelerator MAIN is up and running! YEAH :D");
+    } else {
+        console.log("Accelerator Loadbalancer is up and running! YEAH :D");
+    }
     console.log("--------------------------------------");
 }, 200);
+
 
 /*************************/
 /*** INTERESTING STUFF ***/

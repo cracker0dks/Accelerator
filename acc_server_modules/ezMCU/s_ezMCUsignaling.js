@@ -250,9 +250,9 @@ var init = async function (io, newConfig) {
 
     if (mcuConfig.enableLocalMCU) {
 
-        var masterURL = 'http://127.0.0.1:' + mcuConfig.masterPort + '/ezMCU/mcuLb.html';
+        var masterURL = 'http://127.0.0.1:' + mcuConfig.masterPort;
         if(!mcuConfig.isMaster) { //Is loabalancer
-            masterURL = mcuConfig.masterURL+'/ezMCU/mcuLb.html';
+            masterURL = mcuConfig.masterURL;
         }
 
         const browser = await puppeteer.launch({
@@ -281,13 +281,13 @@ var init = async function (io, newConfig) {
                     throw msg;
                 });
                 
-                await page.goto(masterURL);
+                await page.goto(masterURL+'/ezMCU/mcuLb.html');
                 await page.waitFor('#loadMCUBtn');
                 await page.click('body');
 
                 var mcuLbConfig = {
                     loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-                    masterURLAndPort: 'http://127.0.0.1:' + mcuConfig.masterPort,
+                    masterURLAndPort: masterURL,
                     secure: false
                 }
 
