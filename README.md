@@ -51,9 +51,9 @@ On the first start a new folder "/config" will be generated. Take a look at "/co
 
 - [ ] Better error feedback
 - [ ] More, better docs
-- [ ] Better Etherpad configuration
-- [ ] Recording of Audio/Video (Prototyp working)
-- [ ] Convert WebRTC Streams to RTMP so we can stream to youtube/twitch live (Prototyp working)
+- [ ] SIP Integration
+- [ ] Recording of Audio/Video (Prototype working)
+- [ ] Convert WebRTC Streams to RTMP so we can stream to youtube/twitch live (Prototype working)
 
 ### GoodToKnow ###
 
