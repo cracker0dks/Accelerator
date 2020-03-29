@@ -288,7 +288,7 @@ var init = async function (io, newConfig) {
                 var mcuLbConfig = {
                     loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
                     masterURLAndPort: masterURL,
-                    secure: false
+                    secure: masterURL.startsWith("https://") ? true : false
                 }
 
                 await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
