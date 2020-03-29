@@ -232,7 +232,7 @@ var init = async function (io, newConfig) {
         var lowestStreamCntInstanceId = null;
         for (var i in streamCntPerlb) { //Find a fitting free loadbalancer
             if (!lowestStreamCntInstanceId) {
-                lowestStreamCntInstanceId = streamCntPerlb[i];
+                lowestStreamCntInstanceId = i;
             } else if (streamCntPerlb[i] < streamCntPerlb[lowestStreamCntInstanceId]) {
                 lowestStreamCntInstanceId = i;
             }
