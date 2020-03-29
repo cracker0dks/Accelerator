@@ -104,7 +104,6 @@ dist
 .tern-port
 
 /db
-/public/erizo.js
 /public/praesis
 /public/profilePics
 /public/singlefiles
@@ -113,4 +112,3 @@ dist
 /config
 /public/js/clientConfig.js
 .idea/
-package-lock.json
