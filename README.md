@@ -5,20 +5,18 @@ Free Online Conference and Collaboration Tool with build in WebRTC MCU/SFU runni
 
 ### Available functions ###
 
-- [x] Online Conference with "*unlimited*" participants (Audio / Video)
+- [x] Online Conferences with up to 6 participants per room (all Audio / Video)
+- [x] Online Conferences with up to 250 participants per room (all Audio / only Moderator video)
 - [x] Screenshare
-- [x] Presentations
-- [x] Whiteboard ([can also be hosted standalone](https://github.com/cracker0dks/whiteboard))
+- [x] PDF and HTML5 Presentations
+- [x] Collaborative Whiteboard ([can also be hosted standalone](https://github.com/cracker0dks/whiteboard))
 - [x] Youtube viewer
 - [x] 3D Object viewer
 - [x] User interactions with draggable items (like Textboxes, Drawings...)
 - [x] Fileshare
 - [x] Text Chat
-- [x] WebRTC MCU in Node (Own implementation with AudioAPI on ChromeStack)
-- [x] Configurable with own STUN / TURN Server (Setup below)
+- [x] Etherpad in IFrame (Must be hosted on its own)
 - [x] much more...
-
-- [ ] Etherpad (Must be hosted on its own)
 
 ### Installation without Docker ###
 1. install nodeJs
@@ -43,12 +41,10 @@ Note:
 docker run -d --name acc --net=host -v /home/acc/config:/app/config -v /home/acc/db:/app/db  -v /home/acc/3dObjs:/app/public/3dObjs -v /home/acc/praesis:/app/public/praesis -v /home/acc/profilePics:/app/public/profilePics -v /home/acc/singlefiles:/app/public/singlefiles acc
 ```
 
-
 ### Configuration ###
 On the first start a new folder "/config" will be generated. Take a look at "/config/config.json" for all parameters. Change them if you like, and restart the server. More to come...
 
 ### ToDos ###
-
 - [ ] Better error feedback
 - [ ] More, better docs
 - [ ] SIP Integration
@@ -56,14 +52,25 @@ On the first start a new folder "/config" will be generated. Take a look at "/co
 - [ ] Convert WebRTC Streams to RTMP so we can stream to youtube/twitch live (Prototype working)
 
 ### GoodToKnow ###
-
 * Audio/Video is not Peer2Peer so it will use some server CPU
 * Max users per loadbalancer is about 256.
 * Video is disabled in rooms with more than 6 People due to hight load (Only enabled for moderator).
 * Firefox sometimes has some issues with the WebRTC audio/video, use chrome to be save
 * If you are running without docker, conversion to PDF presentaions (From Powerpoint and other Docs) will not work without installing "unoconv" on your own 
-* Setup a TURN Server if your clients are behind Firewalls and NATs (See config, setup below)
-* This was/is a student project and was build in one Semester so don't expect enterprise code :)
+* Setup a TURN Server if your clients are behind Firewalls and NATs (See configuration/setup below)
+* Self made Audio MCU with AudioApi on Chromium-Stack
+* Videostreams are shared SFU Style
+
+### Loadbalancer Setup/Configuration  ###
+To setup a loadbalancer just start a second Accelerator server on a different server and change this parameters in your /config/config.json
+* "loadBalancerAuthKey": "key", //Change to the same loadBalancerAuthKey as the key on the master server
+* "isMaster": false,
+* "masterURL": "https://myAcceleratorDomain.tl", //Change this to the URL of your main server
+* "enableLocalMCU": true 
+
+Loadbalancing scheduling atm:
+* All users in the same room using the same loadbalancer (Rooms are not balanced over different servers)
+* First stream of room decides which loadbalancer is used for this room (loadbalancer with the least amount of streams at this moment)
 
 ### TURN Setup/Configuration ###
 1. Setup your TURN Container on an extra Server: [HowTo](https://github.com/cracker0dks/turn-server-docker-image/blob/master/README.md)
