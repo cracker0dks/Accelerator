@@ -70,7 +70,7 @@ On the first start a new folder "/config" will be generated. Take a look at "/co
 2. Make a new "iceServers" entry in "/config/config.json"
 ```
 {
-	"url": "turn:IP_TO_TURN:443",
+	"urls": "turn:IP_TO_TURN:443",
 	"turnServerCredential": "authSecret",
 	"username": "webrtcuser"
 }
