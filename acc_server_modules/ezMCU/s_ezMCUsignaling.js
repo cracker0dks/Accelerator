@@ -173,7 +173,8 @@ var init = async function (io, newConfig) {
 
         socket.on("mcu_reqCurrentIceServers", function (lbAuthKey) {
             if (mcuConfig["loadBalancerAuthKey"] && mcuConfig["loadBalancerAuthKey"] == lbAuthKey) {
-                socket.emit("mcu_onIceServers", getCurrentIceServers())
+                var newIceServers = getCurrentIceServers();
+                socket.emit("mcu_onIceServers", newIceServers)
             }
         })
 
@@ -209,68 +210,108 @@ var init = async function (io, newConfig) {
     })
 
     function findBestStreamingInstance(streamAttributes, callback) {
+        var roomname = streamAttributes.roomname;
         var instanceId = null;
-        for (var i in loadBalancersSockets) { //Find a fitting free loadbalancer
-            instanceId = i;
+
+        var streamCntPerlb = {}; //Cnt streams per lb
+        for (var i in loadBalancersSockets) {
+            instanceId = i; //Set it to a latest lb in any case and keep searching
+            streamCntPerlb[i] = 0;
+        }
+
+        for (var k in allStreamAttributes) {
+            if (allStreamAttributes[k].roomname == roomname) { //Find the instance other people from this room are streaming to
+                instanceId = allStreamAttributes[k].instanceTo;
+                callback(null, instanceId); //Keep streams from the same room on the same server
+                console.log("SAME ROOM CALLBACK", instanceId)
+                return;
+            }
+            streamCntPerlb[allStreamAttributes[k].instanceTo]++; //Inc stream count for this lb
+        } //Finish!
+
+        var lowestStreamCntInstanceId = null;
+        for (var i in streamCntPerlb) { //Find a fitting free loadbalancer
+            if (!lowestStreamCntInstanceId) {
+                lowestStreamCntInstanceId = streamCntPerlb[i];
+            } else if (streamCntPerlb[i] < streamCntPerlb[lowestStreamCntInstanceId]) {
+                lowestStreamCntInstanceId = i;
+            }
+        }
+        if (lowestStreamCntInstanceId) {
+            instanceId = lowestStreamCntInstanceId;
         }
         if (!instanceId) {
             callback("No streaming instance found!");
         } else {
+            console.log("NEW LB CALLBACK", instanceId)
             callback(null, instanceId);
         }
-
     }
 
-    const browser = await puppeteer.launch({
-        headless: true,
-        "ignoreHTTPSErrors": true,
-        args: [
-            '--ignore-certificate-errors',
-            '--no-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-setuid-sandbox'
-        ]
-    });
+    if (mcuConfig.enableLocalMCU) {
 
-    var mcuStartedWithoutError = false;
-    async function startUpMcu() {
-        const page = await browser.newPage();
-        try {
-            await page.goto('http://127.0.0.1:' + mcuConfig.masterPort + '/ezMCU/mcuLb.html');
-
-            page.on('console', msg => {
-                for (let i = 0; i < msg.args().length; ++i) {
-                    console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
-                }
-            });
-            page.on('error', msg => {
-                throw msg;
-            });
-            await page.waitFor('#loadMCUBtn');
-            await page.click('body');
-
-            var mcuLbConfig = {
-                loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-                masterURLAndPort: 'http://127.0.0.1:' + mcuConfig.masterPort,
-                secure : false
-            }
-
-            await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
-            await page.click('#loadMCUBtn');
-            setTimeout(function () { //Wait 10sec to spin it up and ensure no error
-                mcuStartedWithoutError = true;
-            }, 1000 * 10)
-        } catch (e) {
-            console.log("MCU ERROR: ", e);
-            if (mcuStartedWithoutError) { //Startup the mcu if it crashes while running (should not happen, just in case)
-                console.log("Restart MCU!")
-                startUpMcu();
-            }
-            mcuStartedWithoutError = false;
+        var masterURL = 'http://127.0.0.1:' + mcuConfig.masterPort + '/ezMCU/mcuLb.html';
+        if(!mcuConfig.isMaster) { //Is loabalancer
+            masterURL = mcuConfig.masterURL+'/ezMCU/mcuLb.html';
         }
+
+        const browser = await puppeteer.launch({
+            headless: true,
+            "ignoreHTTPSErrors": true,
+            args: [
+                '--ignore-certificate-errors',
+                '--no-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-setuid-sandbox'
+            ]
+        });
+
+        var mcuStartedWithoutError = false;
+        async function startUpMcu() {
+            const page = await browser.newPage();
+            try {
+                await page.goto(masterURL);
+
+                page.on('console', msg => {
+                    for (let i = 0; i < msg.args().length; ++i) {
+                        console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+                    }
+                });
+                page.on('error', msg => {
+                    throw msg;
+                });
+                await page.waitFor('#loadMCUBtn');
+                await page.click('body');
+
+                var mcuLbConfig = {
+                    loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
+                    masterURLAndPort: 'http://127.0.0.1:' + mcuConfig.masterPort,
+                    secure: false
+                }
+
+                await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
+                await page.click('#loadMCUBtn');
+                setTimeout(function () { //Wait 10sec to spin it up and ensure no error
+                    mcuStartedWithoutError = true;
+                }, 1000 * 10)
+            } catch (e) {
+                console.log("MCU ERROR: ", e);
+                if (mcuStartedWithoutError) { //Startup the mcu if it crashes while running (should not happen, just in case)
+                    console.log("Restart MCU!")
+                    startUpMcu();
+                }
+                mcuStartedWithoutError = false;
+            }
+        }
+        startUpMcu();
+    } else {
+        if(mcuConfig.isMaster) {
+            console.log("\n\nWARNING: LOCAL MCU NOT STARTED! BE SURE TO SET UP A LOADBALANCER!\n\n");
+        } else {
+            console.log("\n\nERROR: YOU CAN NOT SET 'isMaster' TO FALSE AND DISABLE 'enableLocalMCU'! LOADBALANCER NEEDS 'enableLocalMCU' ENABLED (set to 'true')! \n\n");
+        }  
     }
-    startUpMcu();
 }
 
 function getTURNCredentials(name, secret) {

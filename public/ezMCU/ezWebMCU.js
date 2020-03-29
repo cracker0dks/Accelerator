@@ -29,7 +29,7 @@ function start() {
 	var iceServers = [];
 
 	socket.on('connect', function () {
-		console.log("Conntected to Master Server, waiting for streams to balance...");
+		socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
 
 		socket.on('disconnect', function () {
 			console.log("DISCONNECTED from Master Server!")
@@ -171,9 +171,11 @@ function start() {
 		}
 
 		setInterval(function () { //Every 10h get current IceServers
-			socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey, { enabled: enabled });
+			socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
 		}, 1000 * 60 * 60 * 10);
+		
+
 	});
 
-	console.log("Loadbalancer runnung! Connecting to:", masterIp);
+	console.log("Loadbalancer runnung! Connecting to:", mcuConfig.masterURLAndPort);
 }

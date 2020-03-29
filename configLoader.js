@@ -20,7 +20,10 @@ var defaultConfig = {
 				// },
 			]
 		},
-		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master
+		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master (Must be the same on Master and loadbalancer)
+		isMaster : true, //Set to false if this is a loadbalancer instance
+		masterURL : 'https://yourAcceleratorURL.tl', //the web URL of your main instance (only used on loadbalancers)
+		enableLocalMCU : true //Set to false if this is master and this server should not handle any streams -> be sure you set up a loadbalancer in that case
 	},
 	"accConfig": { 
 		"etherpadUrl": "", //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 

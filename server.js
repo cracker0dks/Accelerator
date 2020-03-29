@@ -19,8 +19,13 @@ var snake = require("./acc_server_modules/snake/snake.js");
 var s_whiteboard = require("./acc_server_modules/whiteboard/s_whiteboard.js");
 var app = express();
 
-
-app.use(express.static(__dirname + '/public'));
+if (config["mcuConfig"]["isMaster"]) {
+    app.use(express.static(__dirname + '/public'));
+} else {  //dont expose main page on loadbalancer
+    var lbReturnString = 'This is a loadbalancer!'
+    app.get('/', function (req, res) { res.send(lbReturnString); });
+    app.get('/index.html', function (req, res) { res.send(lbReturnString); });
+}
 
 var server = http.createServer({
 
