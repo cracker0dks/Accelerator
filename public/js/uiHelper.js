@@ -978,6 +978,24 @@ function updateThumbCtn() {
 	}
 }
 
+function updateUserNameText(id, name) {
+	name = name.split("_").join(" ");
+	name = name.split("-").join(" ");
+	var fontSize = 25;
+	if (name.length > 4) {
+		fontSize = fontSize - (name.length - 4)
+	}
+	fontSize = fontSize < 10 ? 10 : fontSize;
+	$("#" + id).find(".usernameText").html('<div class="usernameTextContent" style="font-size: ' + fontSize + 'px; padding-left:5px; overflow: hidden; position: absolute; top: 18px;">' + name + '</div>');
+	if($("#" + id).find(".usernameText").is(":visible")) {
+		var top = (60 - $("#" + id).find(".usernameTextContent").height()) / 2;
+		top = top < 0 ? 0 : top;
+		$("#" + id).find(".usernameTextContent").css({ "top": top + "px" });
+	} else {
+		setTimeout(function() { updateUserNameText(id, name) }, 100);
+	}
+}
+
 function addUserToPanel(id, username) {
 	if ($("#" + id).length > 0) {
 		console.error("user already on the panel!");
@@ -992,10 +1010,9 @@ function addUserToPanel(id, username) {
 		'<td class="thumbIndicator userIconWrapper" style="position:relative; width: 50px;">' +
 		'<img class="userIcon img-thumbnail" style="border: 1px solid rgba(74, 73, 73, 0.61); padding: 0px; max-width:50px; max-height:50px;" src="./img/dummypic.jpg" alt="icon">' +
 		'</td>' +
-		'<td class="thumbIndicator">' +
-		'</td>' +
-		'<td class="thumbIndicator" style="position:relative;">' +
-		'<div style="font-size: 1.3em; padding-left:5px; max-width:140px; overflow: hidden; text-overflow: ellipsis;" class="username">' + username + '</div>' +
+		'<td class="thumbIndicator" style="position:relative; overflow: hidden;">' +
+		'<div class="username" style="display:none">' + username + '</div>' +
+		'<div class="usernameText" title="' + username + '">' + username + '</div>' +
 		'<div class="shareOwnVideo" title="start Webcam" style="color: rgb(142, 142, 142); display:none; position:absolute; right:6px; top:2px; cursor:pointer;"><i class="fa fa-video-camera"></i></div>' +
 		'</td>' +
 		'<td style="width:2px;"><div style="border-left:1px solid white; height: 50px; border-right:1px solid #BABABA; width:2px;"></div></td>' +
@@ -1474,6 +1491,7 @@ function removeUserFromPage(id) {
 function changeUserInfos(id, name, color) {
 	name = cleanString(name);
 	$(".user-" + id).find(".username").text(name);
+	updateUserNameText(id, name)
 	if (color)
 		$("#" + id).find(".colorPickerDiv").css({ "background": color });
 }
