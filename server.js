@@ -851,7 +851,7 @@ function progressUploadFormData(formData) {
                                 console.log("Dont ex", path, praesiType);
                             } else {
                                 console.log("try to verify zip:", tryCnt, secondCheck);
-                                setTimeout(finishInit(++tryCnt), 200);//Wait for data to be written
+                                setTimeout(function () { finishInit(++tryCnt) }, 200);//Wait for data to be written
                             }
                         }
                         finishInit(0)
