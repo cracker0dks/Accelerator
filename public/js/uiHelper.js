@@ -1582,6 +1582,7 @@ function joinRoom(room, roomPassword) {
 			showPage("#joinRoomPage");
 			loadMCUConnection(room, function () {
 				//connectionReadyCallback
+				sendConnectionReady();
 				renderMainPage(room);
 			});
 		}

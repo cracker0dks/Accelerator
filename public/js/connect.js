@@ -305,6 +305,10 @@ function sendChatMsg(msg) {
     }
 }
 
+function sendConnectionReady() {
+    signaling_socket.emit('connectionReady', null);
+}
+
 function sendGetUserInfos(id) {
     signaling_socket.emit('getUserInfos', id);
 }

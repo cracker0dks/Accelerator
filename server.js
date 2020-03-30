@@ -257,7 +257,6 @@ io.sockets.on('connection', function (socket) {
         if (url3dObjs[roomName])
             socket.emit('show3DObj', url3dObjs[roomName]);
 
-        sendToHoleRoomButNotMe(roomName, socket.id, 'addPeer', userdata);
         var clients = io.sockets.adapter.rooms[roomName].sockets;
         for (var i in clients) {
             socket.emit('addPeer', allUserAttr[i]);
@@ -285,6 +284,11 @@ io.sockets.on('connection', function (socket) {
                 var changendUserName = msg.changedName;
                 sendToHoleRoom(roomName, 'message', { "msg": newMsg, "id": socket.id, "username": changendUserName });
             }
+        });
+
+        //users is ready to talk, tell others to add him now
+        socket.on('connectionReady', function () {
+            sendToHoleRoomButNotMe(roomName, socket.id, 'addPeer', userdata);
         });
 
         socket.on('setStatus', function (status) {
