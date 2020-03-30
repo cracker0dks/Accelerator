@@ -123,6 +123,9 @@ function adapterFactory() {
       firefoxShim.shimSenderGetStats(window);
       firefoxShim.shimReceiverGetStats(window);
       firefoxShim.shimRTCDataChannel(window);
+      firefoxShim.shimAddTransceiver(window);
+      firefoxShim.shimCreateOffer(window);
+      firefoxShim.shimCreateAnswer(window);
 
       commonShim.shimRTCIceCandidate(window);
       commonShim.shimConnectionState(window);
@@ -907,6 +910,8 @@ function shimPeerConnection(window) {
     return;
   }
 
+  var addIceCandidateNullSupported = window.RTCPeerConnection.prototype.addIceCandidate.length === 0;
+
   // shim implicit creation of RTCSessionDescription/RTCIceCandidate
   if (browserDetails.version < 53) {
     ['setLocalDescription', 'setRemoteDescription', 'addIceCandidate'].forEach(function (method) {
@@ -922,7 +927,7 @@ function shimPeerConnection(window) {
   // support for addIceCandidate(null or undefined)
   var nativeAddIceCandidate = window.RTCPeerConnection.prototype.addIceCandidate;
   window.RTCPeerConnection.prototype.addIceCandidate = function addIceCandidate() {
-    if (!arguments[0]) {
+    if (!addIceCandidateNullSupported && !arguments[0]) {
       if (arguments[1]) {
         arguments[1].apply(null);
       }
@@ -1839,6 +1844,9 @@ exports.shimSenderGetStats = shimSenderGetStats;
 exports.shimReceiverGetStats = shimReceiverGetStats;
 exports.shimRemoveStream = shimRemoveStream;
 exports.shimRTCDataChannel = shimRTCDataChannel;
+exports.shimAddTransceiver = shimAddTransceiver;
+exports.shimCreateOffer = shimCreateOffer;
+exports.shimCreateAnswer = shimCreateAnswer;
 
 var _utils = require('../utils');
 
@@ -1882,21 +1890,24 @@ function shimPeerConnection(window) {
   }
 
   // support for addIceCandidate(null or undefined)
-  var nativeAddIceCandidate = window.RTCPeerConnection.prototype.addIceCandidate;
-  window.RTCPeerConnection.prototype.addIceCandidate = function addIceCandidate() {
-    if (!arguments[0]) {
-      if (arguments[1]) {
-        arguments[1].apply(null);
+  // as well as ignoring {sdpMid, candidate: ""}
+  if (browserDetails.version < 68) {
+    var nativeAddIceCandidate = window.RTCPeerConnection.prototype.addIceCandidate;
+    window.RTCPeerConnection.prototype.addIceCandidate = function addIceCandidate() {
+      if (!arguments[0]) {
+        if (arguments[1]) {
+          arguments[1].apply(null);
+        }
+        return Promise.resolve();
       }
-      return Promise.resolve();
-    }
-    // Firefox 68+ emits and processes {candidate: "", ...}, ignore
-    // in older versions.
-    if (browserDetails.version < 68 && arguments[0] && arguments[0].candidate === '') {
-      return Promise.resolve();
-    }
-    return nativeAddIceCandidate.apply(this, arguments);
-  };
+      // Firefox 68+ emits and processes {candidate: "", ...}, ignore
+      // in older versions.
+      if (arguments[0] && arguments[0].candidate === '') {
+        return Promise.resolve();
+      }
+      return nativeAddIceCandidate.apply(this, arguments);
+    };
+  }
 
   var modernStatsTypes = {
     inboundrtp: 'inbound-rtp',
@@ -2021,6 +2032,108 @@ function shimRTCDataChannel(window) {
   if (window.DataChannel && !window.RTCDataChannel) {
     window.RTCDataChannel = window.DataChannel;
   }
+}
+
+function shimAddTransceiver(window) {
+  // https://github.com/webrtcHacks/adapter/issues/998#issuecomment-516921647
+  // Firefox ignores the init sendEncodings options passed to addTransceiver
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1396918
+  if (!((typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object' && window.RTCPeerConnection)) {
+    return;
+  }
+  var origAddTransceiver = window.RTCPeerConnection.prototype.addTransceiver;
+  if (origAddTransceiver) {
+    window.RTCPeerConnection.prototype.addTransceiver = function addTransceiver() {
+      this.setParametersPromises = [];
+      var initParameters = arguments[1];
+      var shouldPerformCheck = initParameters && 'sendEncodings' in initParameters;
+      if (shouldPerformCheck) {
+        // If sendEncodings params are provided, validate grammar
+        initParameters.sendEncodings.forEach(function (encodingParam) {
+          if ('rid' in encodingParam) {
+            var ridRegex = /^[a-z0-9]{0,16}$/i;
+            if (!ridRegex.test(encodingParam.rid)) {
+              throw new TypeError('Invalid RID value provided.');
+            }
+          }
+          if ('scaleResolutionDownBy' in encodingParam) {
+            if (!(parseFloat(encodingParam.scaleResolutionDownBy) >= 1.0)) {
+              throw new RangeError('scale_resolution_down_by must be >= 1.0');
+            }
+          }
+          if ('maxFramerate' in encodingParam) {
+            if (!(parseFloat(encodingParam.maxFramerate) >= 0)) {
+              throw new RangeError('max_framerate must be >= 0.0');
+            }
+          }
+        });
+      }
+      var transceiver = origAddTransceiver.apply(this, arguments);
+      if (shouldPerformCheck) {
+        // Check if the init options were applied. If not we do this in an
+        // asynchronous way and save the promise reference in a global object.
+        // This is an ugly hack, but at the same time is way more robust than
+        // checking the sender parameters before and after the createOffer
+        // Also note that after the createoffer we are not 100% sure that
+        // the params were asynchronously applied so we might miss the
+        // opportunity to recreate offer.
+        var sender = transceiver.sender;
+
+        var params = sender.getParameters();
+        if (!('encodings' in params)) {
+          params.encodings = initParameters.sendEncodings;
+          this.setParametersPromises.push(sender.setParameters(params).catch(function () {}));
+        }
+      }
+      return transceiver;
+    };
+  }
+}
+
+function shimCreateOffer(window) {
+  // https://github.com/webrtcHacks/adapter/issues/998#issuecomment-516921647
+  // Firefox ignores the init sendEncodings options passed to addTransceiver
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1396918
+  if (!((typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object' && window.RTCPeerConnection)) {
+    return;
+  }
+  var origCreateOffer = window.RTCPeerConnection.prototype.createOffer;
+  window.RTCPeerConnection.prototype.createOffer = function createOffer() {
+    var _this4 = this,
+        _arguments2 = arguments;
+
+    if (this.setParametersPromises && this.setParametersPromises.length) {
+      return Promise.all(this.setParametersPromises).then(function () {
+        return origCreateOffer.apply(_this4, _arguments2);
+      }).finally(function () {
+        _this4.setParametersPromises = [];
+      });
+    }
+    return origCreateOffer.apply(this, arguments);
+  };
+}
+
+function shimCreateAnswer(window) {
+  // https://github.com/webrtcHacks/adapter/issues/998#issuecomment-516921647
+  // Firefox ignores the init sendEncodings options passed to addTransceiver
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1396918
+  if (!((typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object' && window.RTCPeerConnection)) {
+    return;
+  }
+  var origCreateAnswer = window.RTCPeerConnection.prototype.createAnswer;
+  window.RTCPeerConnection.prototype.createAnswer = function createAnswer() {
+    var _this5 = this,
+        _arguments3 = arguments;
+
+    if (this.setParametersPromises && this.setParametersPromises.length) {
+      return Promise.all(this.setParametersPromises).then(function () {
+        return origCreateAnswer.apply(_this5, _arguments3);
+      }).finally(function () {
+        _this5.setParametersPromises = [];
+      });
+    }
+    return origCreateAnswer.apply(this, arguments);
+  };
 }
 
 },{"../utils":15,"./getdisplaymedia":12,"./getusermedia":13}],12:[function(require,module,exports){
@@ -2204,20 +2317,28 @@ function shimLocalStreamsAPI(window) {
       });
     };
 
-    window.RTCPeerConnection.prototype.addTrack = function addTrack(track, stream) {
-      if (stream) {
-        if (!this._localStreams) {
-          this._localStreams = [stream];
-        } else if (!this._localStreams.includes(stream)) {
-          this._localStreams.push(stream);
-        }
+    window.RTCPeerConnection.prototype.addTrack = function addTrack(track) {
+      var _this2 = this;
+
+      for (var _len = arguments.length, streams = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        streams[_key - 1] = arguments[_key];
       }
-      return _addTrack.call(this, track, stream);
+
+      if (streams) {
+        streams.forEach(function (stream) {
+          if (!_this2._localStreams) {
+            _this2._localStreams = [stream];
+          } else if (!_this2._localStreams.includes(stream)) {
+            _this2._localStreams.push(stream);
+          }
+        });
+      }
+      return _addTrack.apply(this, arguments);
     };
   }
   if (!('removeStream' in window.RTCPeerConnection.prototype)) {
     window.RTCPeerConnection.prototype.removeStream = function removeStream(stream) {
-      var _this2 = this;
+      var _this3 = this;
 
       if (!this._localStreams) {
         this._localStreams = [];
@@ -2230,7 +2351,7 @@ function shimLocalStreamsAPI(window) {
       var tracks = stream.getTracks();
       this.getSenders().forEach(function (sender) {
         if (tracks.includes(sender.track)) {
-          _this2.removeTrack(sender);
+          _this3.removeTrack(sender);
         }
       });
     };
@@ -2252,7 +2373,7 @@ function shimRemoteStreamsAPI(window) {
         return this._onaddstream;
       },
       set: function set(f) {
-        var _this3 = this;
+        var _this4 = this;
 
         if (this._onaddstream) {
           this.removeEventListener('addstream', this._onaddstream);
@@ -2261,16 +2382,16 @@ function shimRemoteStreamsAPI(window) {
         this.addEventListener('addstream', this._onaddstream = f);
         this.addEventListener('track', this._onaddstreampoly = function (e) {
           e.streams.forEach(function (stream) {
-            if (!_this3._remoteStreams) {
-              _this3._remoteStreams = [];
+            if (!_this4._remoteStreams) {
+              _this4._remoteStreams = [];
             }
-            if (_this3._remoteStreams.includes(stream)) {
+            if (_this4._remoteStreams.includes(stream)) {
               return;
             }
-            _this3._remoteStreams.push(stream);
+            _this4._remoteStreams.push(stream);
             var event = new Event('addstream');
             event.stream = stream;
-            _this3.dispatchEvent(event);
+            _this4.dispatchEvent(event);
           });
         });
       }
@@ -2423,10 +2544,7 @@ function shimRTCIceServerUrls(window) {
 
 function shimTrackEventTransceiver(window) {
   // Add event.transceiver member over deprecated event.receiver
-  if ((typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object' && window.RTCPeerConnection && 'receiver' in window.RTCTrackEvent.prototype &&
-  // can't check 'transceiver' in window.RTCTrackEvent.prototype, as it is
-  // defined for some reason even when window.RTCTransceiver is not.
-  !window.RTCTransceiver) {
+  if ((typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object' && window.RTCTrackEvent && 'receiver' in window.RTCTrackEvent.prototype && !('transceiver' in window.RTCTrackEvent.prototype)) {
     Object.defineProperty(window.RTCTrackEvent.prototype, 'transceiver', {
       get: function get() {
         return { receiver: this.receiver };
@@ -4612,7 +4730,7 @@ module.exports = function(window, edgeVersion) {
 };
 
 },{"sdp":17}],17:[function(require,module,exports){
- /* eslint-env node */
+/* eslint-env node */
 'use strict';
 
 // SDP helpers.
@@ -4792,8 +4910,8 @@ SDPUtils.parseExtmap = function(line) {
 SDPUtils.writeExtmap = function(headerExtension) {
   return 'a=extmap:' + (headerExtension.id || headerExtension.preferredId) +
       (headerExtension.direction && headerExtension.direction !== 'sendrecv'
-          ? '/' + headerExtension.direction
-          : '') +
+        ? '/' + headerExtension.direction
+        : '') +
       ' ' + headerExtension.uri + '\r\n';
 };
 
@@ -4908,7 +5026,7 @@ SDPUtils.parseFingerprint = function(line) {
 //   get the fingerprint line as input. See also getIceParameters.
 SDPUtils.getDtlsParameters = function(mediaSection, sessionpart) {
   var lines = SDPUtils.matchPrefix(mediaSection + sessionpart,
-      'a=fingerprint:');
+    'a=fingerprint:');
   // Note: a=setup line is ignored since we use the 'auto' role.
   // Note2: 'algorithm' is not case sensitive except in Edge.
   return {
@@ -4925,22 +5043,76 @@ SDPUtils.writeDtlsParameters = function(params, setupType) {
   });
   return sdp;
 };
+
+// Parses a=crypto lines into
+//   https://rawgit.com/aboba/edgertc/master/msortc-rs4.html#dictionary-rtcsrtpsdesparameters-members
+SDPUtils.parseCryptoLine = function(line) {
+  var parts = line.substr(9).split(' ');
+  return {
+    tag: parseInt(parts[0], 10),
+    cryptoSuite: parts[1],
+    keyParams: parts[2],
+    sessionParams: parts.slice(3),
+  };
+};
+
+SDPUtils.writeCryptoLine = function(parameters) {
+  return 'a=crypto:' + parameters.tag + ' ' +
+    parameters.cryptoSuite + ' ' +
+    (typeof parameters.keyParams === 'object'
+      ? SDPUtils.writeCryptoKeyParams(parameters.keyParams)
+      : parameters.keyParams) +
+    (parameters.sessionParams ? ' ' + parameters.sessionParams.join(' ') : '') +
+    '\r\n';
+};
+
+// Parses the crypto key parameters into
+//   https://rawgit.com/aboba/edgertc/master/msortc-rs4.html#rtcsrtpkeyparam*
+SDPUtils.parseCryptoKeyParams = function(keyParams) {
+  if (keyParams.indexOf('inline:') !== 0) {
+    return null;
+  }
+  var parts = keyParams.substr(7).split('|');
+  return {
+    keyMethod: 'inline',
+    keySalt: parts[0],
+    lifeTime: parts[1],
+    mkiValue: parts[2] ? parts[2].split(':')[0] : undefined,
+    mkiLength: parts[2] ? parts[2].split(':')[1] : undefined,
+  };
+};
+
+SDPUtils.writeCryptoKeyParams = function(keyParams) {
+  return keyParams.keyMethod + ':'
+    + keyParams.keySalt +
+    (keyParams.lifeTime ? '|' + keyParams.lifeTime : '') +
+    (keyParams.mkiValue && keyParams.mkiLength
+      ? '|' + keyParams.mkiValue + ':' + keyParams.mkiLength
+      : '');
+};
+
+// Extracts all SDES paramters.
+SDPUtils.getCryptoParameters = function(mediaSection, sessionpart) {
+  var lines = SDPUtils.matchPrefix(mediaSection + sessionpart,
+    'a=crypto:');
+  return lines.map(SDPUtils.parseCryptoLine);
+};
+
 // Parses ICE information from SDP media section or sessionpart.
 // FIXME: for consistency with other functions this should only
 //   get the ice-ufrag and ice-pwd lines as input.
 SDPUtils.getIceParameters = function(mediaSection, sessionpart) {
-  var lines = SDPUtils.splitLines(mediaSection);
-  // Search in session part, too.
-  lines = lines.concat(SDPUtils.splitLines(sessionpart));
-  var iceParameters = {
-    usernameFragment: lines.filter(function(line) {
-      return line.indexOf('a=ice-ufrag:') === 0;
-    })[0].substr(12),
-    password: lines.filter(function(line) {
-      return line.indexOf('a=ice-pwd:') === 0;
-    })[0].substr(10)
+  var ufrag = SDPUtils.matchPrefix(mediaSection + sessionpart,
+    'a=ice-ufrag:')[0];
+  var pwd = SDPUtils.matchPrefix(mediaSection + sessionpart,
+    'a=ice-pwd:')[0];
+  if (!(ufrag && pwd)) {
+    return null;
+  }
+  return {
+    usernameFragment: ufrag.substr(12),
+    password: pwd.substr(10),
   };
-  return iceParameters;
 };
 
 // Serializes ICE parameters to SDP.
@@ -4962,15 +5134,15 @@ SDPUtils.parseRtpParameters = function(mediaSection) {
   for (var i = 3; i < mline.length; i++) { // find all codecs from mline[3..]
     var pt = mline[i];
     var rtpmapline = SDPUtils.matchPrefix(
-        mediaSection, 'a=rtpmap:' + pt + ' ')[0];
+      mediaSection, 'a=rtpmap:' + pt + ' ')[0];
     if (rtpmapline) {
       var codec = SDPUtils.parseRtpMap(rtpmapline);
       var fmtps = SDPUtils.matchPrefix(
-          mediaSection, 'a=fmtp:' + pt + ' ');
+        mediaSection, 'a=fmtp:' + pt + ' ');
       // Only the first a=fmtp:<pt> is considered.
       codec.parameters = fmtps.length ? SDPUtils.parseFmtp(fmtps[0]) : {};
       codec.rtcpFeedback = SDPUtils.matchPrefix(
-          mediaSection, 'a=rtcp-fb:' + pt + ' ')
+        mediaSection, 'a=rtcp-fb:' + pt + ' ')
         .map(SDPUtils.parseRtcpFb);
       description.codecs.push(codec);
       // parse FEC mechanisms from rtpmap lines.
@@ -5046,22 +5218,22 @@ SDPUtils.parseRtpEncodingParameters = function(mediaSection) {
 
   // filter a=ssrc:... cname:, ignore PlanB-msid
   var ssrcs = SDPUtils.matchPrefix(mediaSection, 'a=ssrc:')
-  .map(function(line) {
-    return SDPUtils.parseSsrcMedia(line);
-  })
-  .filter(function(parts) {
-    return parts.attribute === 'cname';
-  });
+    .map(function(line) {
+      return SDPUtils.parseSsrcMedia(line);
+    })
+    .filter(function(parts) {
+      return parts.attribute === 'cname';
+    });
   var primarySsrc = ssrcs.length > 0 && ssrcs[0].ssrc;
   var secondarySsrc;
 
   var flows = SDPUtils.matchPrefix(mediaSection, 'a=ssrc-group:FID')
-  .map(function(line) {
-    var parts = line.substr(17).split(' ');
-    return parts.map(function(part) {
-      return parseInt(part, 10);
+    .map(function(line) {
+      var parts = line.substr(17).split(' ');
+      return parts.map(function(part) {
+        return parseInt(part, 10);
+      });
     });
-  });
   if (flows.length > 0 && flows[0].length > 1 && flows[0][0] === primarySsrc) {
     secondarySsrc = flows[0][1];
   }
@@ -5118,12 +5290,12 @@ SDPUtils.parseRtcpParameters = function(mediaSection) {
   // Gets the first SSRC. Note tha with RTX there might be multiple
   // SSRCs.
   var remoteSsrc = SDPUtils.matchPrefix(mediaSection, 'a=ssrc:')
-      .map(function(line) {
-        return SDPUtils.parseSsrcMedia(line);
-      })
-      .filter(function(obj) {
-        return obj.attribute === 'cname';
-      })[0];
+    .map(function(line) {
+      return SDPUtils.parseSsrcMedia(line);
+    })
+    .filter(function(obj) {
+      return obj.attribute === 'cname';
+    })[0];
   if (remoteSsrc) {
     rtcpParameters.cname = remoteSsrc.value;
     rtcpParameters.ssrc = remoteSsrc.ssrc;
@@ -5153,16 +5325,76 @@ SDPUtils.parseMsid = function(mediaSection) {
     return {stream: parts[0], track: parts[1]};
   }
   var planB = SDPUtils.matchPrefix(mediaSection, 'a=ssrc:')
-  .map(function(line) {
-    return SDPUtils.parseSsrcMedia(line);
-  })
-  .filter(function(msidParts) {
-    return msidParts.attribute === 'msid';
-  });
+    .map(function(line) {
+      return SDPUtils.parseSsrcMedia(line);
+    })
+    .filter(function(msidParts) {
+      return msidParts.attribute === 'msid';
+    });
   if (planB.length > 0) {
     parts = planB[0].value.split(' ');
     return {stream: parts[0], track: parts[1]};
   }
+};
+
+// SCTP
+// parses draft-ietf-mmusic-sctp-sdp-26 first and falls back
+// to draft-ietf-mmusic-sctp-sdp-05
+SDPUtils.parseSctpDescription = function(mediaSection) {
+  var mline = SDPUtils.parseMLine(mediaSection);
+  var maxSizeLine = SDPUtils.matchPrefix(mediaSection, 'a=max-message-size:');
+  var maxMessageSize;
+  if (maxSizeLine.length > 0) {
+    maxMessageSize = parseInt(maxSizeLine[0].substr(19), 10);
+  }
+  if (isNaN(maxMessageSize)) {
+    maxMessageSize = 65536;
+  }
+  var sctpPort = SDPUtils.matchPrefix(mediaSection, 'a=sctp-port:');
+  if (sctpPort.length > 0) {
+    return {
+      port: parseInt(sctpPort[0].substr(12), 10),
+      protocol: mline.fmt,
+      maxMessageSize: maxMessageSize
+    };
+  }
+  var sctpMapLines = SDPUtils.matchPrefix(mediaSection, 'a=sctpmap:');
+  if (sctpMapLines.length > 0) {
+    var parts = SDPUtils.matchPrefix(mediaSection, 'a=sctpmap:')[0]
+      .substr(10)
+      .split(' ');
+    return {
+      port: parseInt(parts[0], 10),
+      protocol: parts[1],
+      maxMessageSize: maxMessageSize
+    };
+  }
+};
+
+// SCTP
+// outputs the draft-ietf-mmusic-sctp-sdp-26 version that all browsers
+// support by now receiving in this format, unless we originally parsed
+// as the draft-ietf-mmusic-sctp-sdp-05 format (indicated by the m-line
+// protocol of DTLS/SCTP -- without UDP/ or TCP/)
+SDPUtils.writeSctpDescription = function(media, sctp) {
+  var output = [];
+  if (media.protocol !== 'DTLS/SCTP') {
+    output = [
+      'm=' + media.kind + ' 9 ' + media.protocol + ' ' + sctp.protocol + '\r\n',
+      'c=IN IP4 0.0.0.0\r\n',
+      'a=sctp-port:' + sctp.port + '\r\n'
+    ];
+  } else {
+    output = [
+      'm=' + media.kind + ' 9 ' + media.protocol + ' ' + sctp.port + '\r\n',
+      'c=IN IP4 0.0.0.0\r\n',
+      'a=sctpmap:' + sctp.port + ' ' + sctp.protocol + ' 65535\r\n'
+    ];
+  }
+  if (sctp.maxMessageSize !== undefined) {
+    output.push('a=max-message-size:' + sctp.maxMessageSize + '\r\n');
+  }
+  return output.join('');
 };
 
 // Generate a session ID for SDP.
@@ -5200,12 +5432,12 @@ SDPUtils.writeMediaSection = function(transceiver, caps, type, stream) {
 
   // Map ICE parameters (ufrag, pwd) to SDP.
   sdp += SDPUtils.writeIceParameters(
-      transceiver.iceGatherer.getLocalParameters());
+    transceiver.iceGatherer.getLocalParameters());
 
   // Map DTLS parameters to SDP.
   sdp += SDPUtils.writeDtlsParameters(
-      transceiver.dtlsTransport.getLocalParameters(),
-      type === 'offer' ? 'actpass' : 'active');
+    transceiver.dtlsTransport.getLocalParameters(),
+    type === 'offer' ? 'actpass' : 'active');
 
   sdp += 'a=mid:' + transceiver.mid + '\r\n';
 
