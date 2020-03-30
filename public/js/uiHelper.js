@@ -987,12 +987,12 @@ function updateUserNameText(id, name) {
 	}
 	fontSize = fontSize < 10 ? 10 : fontSize;
 	$("#" + id).find(".usernameText").html('<div class="usernameTextContent" style="font-size: ' + fontSize + 'px; padding-left:5px; overflow: hidden; position: absolute; top: 18px;">' + name + '</div>');
-	if($("#" + id).find(".usernameText").is(":visible")) {
+	if ($("#" + id).find(".usernameText").is(":visible")) {
 		var top = (60 - $("#" + id).find(".usernameTextContent").height()) / 2;
 		top = top < 0 ? 0 : top;
 		$("#" + id).find(".usernameTextContent").css({ "top": top + "px" });
 	} else {
-		setTimeout(function() { updateUserNameText(id, name) }, 100);
+		setTimeout(function () { updateUserNameText(id, name) }, 100);
 	}
 }
 
@@ -1897,7 +1897,7 @@ function showPage(page) {
 var countDownInterval = 0;
 var time = 0;
 //Write something to the chat (But cleans it first)
-function writeToChat(clientName, text, noClean, intent) {
+function writeToChat(clientName, text, noClean) {
 
 	clientName = cleanString(clientName);
 
@@ -1907,16 +1907,25 @@ function writeToChat(clientName, text, noClean, intent) {
 		text = text.linkify();
 		text = emojify.replace(text);
 
-		var nContent = $('<div><b>' + clientName + ': </b>' + text + '</div>');
+		var date = new Date();
+		var min = date.getMinutes();
+		if (min < 10)
+			min = "0" + min;
+		var hour = date.getHours();
+		if (hour < 10)
+			hour = "0" + hour;
+		var timeString = hour + ":" + min;
+
+		var nContent = $('<div><b>' + clientName + '<span style="font-size: 0.8em; padding-left: 2px;">('+timeString+')</span>: </b>' + text + '</div>');
 		nContent.css({ "transition": "color 30s ease", "color": "white" });
 		$("#chatContent").append(nContent);
 		setTimeout(function () {
-			nContent.css({ "color": "rgb(126, 126, 126, 1)" });
+			nContent.css({ "color": "rgb(146, 146, 146, 1)" });
 		}, 10000);
 
 		var objDiv = document.getElementById("chatContent");
 		objDiv.scrollTop = objDiv.scrollHeight;
-		$("#chatContent").css({ "transition": "border 0.1s ease", "border": "1px solid #03a9f4" });
+		$("#chatContent").css({ "transition": "border 0.2s ease", "border": "1px solid #03a9f4" });
 		setTimeout(function () {
 			$("#chatContent").css({ "transition": "border 0.5s ease", "border": "1px solid black" });
 		}, 500);
