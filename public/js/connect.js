@@ -267,414 +267,303 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
     })
 }
 
-function isRTCConnected() {
-    if (signaling_socket != null && signaling_socket.connected)
-        return true;
-    return false;
-}
-
 function sendGetAllRooms() {
-    if (isRTCConnected()) {
-        signaling_socket.emit('getAllRooms');
-    }
+    signaling_socket.emit('getAllRooms');
 }
 
 function setUserAttr(username, passwort) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('setUserAttr',
-            {
-                "username": username,
-                "passwort": passwort,
-                "userLang": userLang
-            }, function (newAccSettings) {
-                accSettings = newAccSettings;
-            });
-    }
+    signaling_socket.emit('setUserAttr',
+        {
+            "username": username,
+            "passwort": passwort,
+            "userLang": userLang
+        }, function (newAccSettings) {
+            accSettings = newAccSettings;
+        });
 }
 
 function sendUserStatus(status) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('setStatus', status);
-    }
+    signaling_socket.emit('setStatus', status);
 }
 
 var playingSnake = false;
 var cntInterval = null;
 
 function sendChatMsg(msg) {
-    if (isRTCConnected()) {
-        if (msg != "") {
-            writeToChat(username, "" + msg);
-            if (msg == "/snake") {
-                if (currentTab == "#homeScreen") {
-                    playingSnake = !playingSnake;
-                    signaling_socket.emit('startStopSnake', playingSnake);
-                    writeToChat("Snake", "" + playingSnake);
-                    return;
-                }
-            }
-
-            signaling_socket.emit('message', msg);
-        }
-    }
-}
-
-function shuffleArray(a) {
-    var j, x, i;
-    for (i = a.length - 1; i > 0; i--) {
-        j = Math.floor(Math.random() * (i + 1));
-        x = a[i];
-        a[i] = a[j];
-        a[j] = x;
-    }
-    return a;
-}
-
-function sendGetUserInfos(id) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('getUserInfos', id);
-    }
-}
-
-function sendModeratorId(userIdToSet) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('setModerator', userIdToSet);
-    }
-}
-
-function sendSetGetMicToUser(userid, status, disableHandUp) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('setGetMicToUser', {
-            "userid": userid,
-            "mic": status,
-            "disableHandUp": disableHandUp
-        });
-    }
-}
-
-function sendLoadPraesis() {
-    if (isRTCConnected()) {
-        signaling_socket.emit('loadPraesis', null);
-    }
-}
-
-function sendAddShowFileAsPresentation(filename) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('addShowFileAsPresentation', filename);
-    }
-}
-
-function sendDeletePraesi(name) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('deletePraesi', name);
-    }
-}
-
-function sendLoadSlide(name, id) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('loadSlide', {
-            "name": name,
-            "slideid": id
-        });
-    }
-}
-
-function sendgSlideKey(keycode) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('gSlideKey', keycode);
-    }
-}
-
-function sendGSliderBtnClick(btnId) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('gSliderBtnClick', btnId);
-    }
-}
-
-function sendZoom(content) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('sendZoom', content);
-    }
-}
-
-function sendGSliderInputVal(inputId, val) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('gSliderInputVal', {
-            "inputId": inputId,
-            "val": val
-        });
-    }
-}
-
-function sendImpressSlideKey(keycode) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('impressSlideKey', keycode);
-    }
-}
-
-function send3dPos(pos) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('3dPos', pos);
-    }
-}
-
-function sendRevealSlideKey(keycode) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('revealSlideKey', keycode);
-    }
-}
-
-function sendDrawWhiteoard(content) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('drawWhiteboard', content);
-    }
-}
-
-function sendCursorPosition(xy) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('cursorPosition', xy);
-    }
-}
-
-function delete3DObj(name) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('delete3DObj', name);
-    }
-}
-
-function show3DObj(name) {
-    if (isRTCConnected()) {
-        $("#show3d").click();
-        signaling_socket.emit('show3DObj', name);
-    }
-}
-
-function sendAddUserPItem(item, posX, posY, itemId, options) {
-    if (isRTCConnected()) {
-        var sendObj = {
-            "item": item,
-            "posX": posX,
-            "userId": ownSocketId,
-            "posY": posY,
-            "itemId": itemId,
-            "itemUsername": username,
-            "color": ownColor
-        };
-        for (var key in options) {
-            sendObj[key] = options[key];
-        }
-
-        if (currentPraesiName && allLoadedPraesis[currentPraesiName]) {
-            var currentPraesiType = allLoadedPraesis[currentPraesiName]["type"];
-            if (currentTab == "#praesiDiv") { //We are on the loaded praesi tab
-                sendObj["praesiname"] = currentPraesiName;
-                sendObj["praesislide"] = currentPraesiSlide;
-            }
-        }
-        signaling_socket.emit('addUserPItem', sendObj);
-    }
-}
-
-function sendChangeUserPItemPosition(posX, posY, itemId, userId) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('changeUserPItemPosition', {
-            "posX": posX,
-            "posY": posY,
-            "itemId": itemId,
-            "userId": userId,
-            "itemUsername": username
-        });
-    }
-}
-
-function sendFixPItemPosition(posX, posY, itemId, userId) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('fixPItemPosition', {
-            "posX": posX,
-            "posY": posY,
-            "itemId": itemId,
-            "userId": userId,
-            "itemUsername": username
-        });
-    }
-}
-
-function sendRemoveUserPItem(itemId, userId) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('removeUserPItem', {
-            "itemId": itemId,
-            "userId": userId,
-            "itemUsername": username
-        });
-    }
-}
-
-function sendRemoveAllUserPItems() {
-    if (isRTCConnected()) {
-        if (currentPraesiName && allLoadedPraesis[currentPraesiName]) {
-            var currentPraesiType = allLoadedPraesis[currentPraesiName]["type"];
-            if (currentTab.indexOf(currentPraesiType) != -1) { //We are on the loaded praesi tab
-                signaling_socket.emit('removeAllUserPItems', { "currentPraesiName": currentPraesiName, "currentPraesiSlide": currentPraesiSlide });
+    if (msg != "") {
+        writeToChat(username, "" + msg);
+        if (msg == "/snake") {
+            if (currentTab == "#homeScreen") {
+                playingSnake = !playingSnake;
+                signaling_socket.emit('startStopSnake', playingSnake);
+                writeToChat("Snake", "" + playingSnake);
                 return;
             }
         }
-        signaling_socket.emit('removeAllUserPItems', null);
+
+        signaling_socket.emit('message', msg);
     }
+}
+
+function sendGetUserInfos(id) {
+    signaling_socket.emit('getUserInfos', id);
+}
+
+function sendModeratorId(userIdToSet) {
+    signaling_socket.emit('setModerator', userIdToSet);
+}
+
+function sendSetGetMicToUser(userid, status, disableHandUp) {
+    signaling_socket.emit('setGetMicToUser', {
+        "userid": userid,
+        "mic": status,
+        "disableHandUp": disableHandUp
+    });
+}
+
+function sendLoadPraesis() {
+    signaling_socket.emit('loadPraesis', null);
+}
+
+function sendAddShowFileAsPresentation(filename) {
+    signaling_socket.emit('addShowFileAsPresentation', filename);
+}
+
+function sendDeletePraesi(name) {
+    signaling_socket.emit('deletePraesi', name);
+}
+
+function sendLoadSlide(name, id) {
+    signaling_socket.emit('loadSlide', {
+        "name": name,
+        "slideid": id
+    });
+}
+
+function sendgSlideKey(keycode) {
+    signaling_socket.emit('gSlideKey', keycode);
+}
+
+function sendGSliderBtnClick(btnId) {
+    signaling_socket.emit('gSliderBtnClick', btnId);
+}
+
+function sendZoom(content) {
+    signaling_socket.emit('sendZoom', content);
+}
+
+function sendGSliderInputVal(inputId, val) {
+    signaling_socket.emit('gSliderInputVal', {
+        "inputId": inputId,
+        "val": val
+    });
+}
+
+function sendImpressSlideKey(keycode) {
+    signaling_socket.emit('impressSlideKey', keycode);
+}
+
+function send3dPos(pos) {
+    signaling_socket.emit('3dPos', pos);
+}
+
+function sendRevealSlideKey(keycode) {
+    signaling_socket.emit('revealSlideKey', keycode);
+}
+
+function sendDrawWhiteoard(content) {
+    signaling_socket.emit('drawWhiteboard', content);
+}
+
+function sendCursorPosition(xy) {
+    signaling_socket.emit('cursorPosition', xy);
+}
+
+function delete3DObj(name) {
+    signaling_socket.emit('delete3DObj', name);
+}
+
+function show3DObj(name) {
+    $("#show3d").click();
+    signaling_socket.emit('show3DObj', name);
+}
+
+function sendAddUserPItem(item, posX, posY, itemId, options) {
+    var sendObj = {
+        "item": item,
+        "posX": posX,
+        "userId": ownSocketId,
+        "posY": posY,
+        "itemId": itemId,
+        "itemUsername": username,
+        "color": ownColor
+    };
+    for (var key in options) {
+        sendObj[key] = options[key];
+    }
+
+    if (currentPraesiName && allLoadedPraesis[currentPraesiName]) {
+        var currentPraesiType = allLoadedPraesis[currentPraesiName]["type"];
+        if (currentTab == "#praesiDiv") { //We are on the loaded praesi tab
+            sendObj["praesiname"] = currentPraesiName;
+            sendObj["praesislide"] = currentPraesiSlide;
+        }
+    }
+    signaling_socket.emit('addUserPItem', sendObj);
+}
+
+function sendChangeUserPItemPosition(posX, posY, itemId, userId) {
+    signaling_socket.emit('changeUserPItemPosition', {
+        "posX": posX,
+        "posY": posY,
+        "itemId": itemId,
+        "userId": userId,
+        "itemUsername": username
+    });
+}
+
+function sendFixPItemPosition(posX, posY, itemId, userId) {
+    signaling_socket.emit('fixPItemPosition', {
+        "posX": posX,
+        "posY": posY,
+        "itemId": itemId,
+        "userId": userId,
+        "itemUsername": username
+    });
+}
+
+function sendRemoveUserPItem(itemId, userId) {
+    signaling_socket.emit('removeUserPItem', {
+        "itemId": itemId,
+        "userId": userId,
+        "itemUsername": username
+    });
+}
+
+function sendRemoveAllUserPItems() {
+    if (currentPraesiName && allLoadedPraesis[currentPraesiName]) {
+        var currentPraesiType = allLoadedPraesis[currentPraesiName]["type"];
+        if (currentTab.indexOf(currentPraesiType) != -1) { //We are on the loaded praesi tab
+            signaling_socket.emit('removeAllUserPItems', { "currentPraesiName": currentPraesiName, "currentPraesiSlide": currentPraesiSlide });
+            return;
+        }
+    }
+    signaling_socket.emit('removeAllUserPItems', null);
 }
 
 function sendShowHideUserPItems(trueFalse) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('showHideUserPItems', trueFalse);
-    }
+    signaling_socket.emit('showHideUserPItems', trueFalse);
 }
 
 function sendSetUserPItemsText(text, itemId, image) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('setUserPItemsText', {
-            "text": text,
-            "itemId": itemId,
-            "image": image
-        });
-    }
+    signaling_socket.emit('setUserPItemsText', {
+        "text": text,
+        "itemId": itemId,
+        "image": image
+    });
 }
 
 function sendSetUserColor(color) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('setUserColor', color);
-    }
+    signaling_socket.emit('setUserColor', color);
 }
 
 function sendSharNotes(nodeText, noteType) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('shareNotes', { "text": nodeText, "noteType": noteType });
-    }
+    signaling_socket.emit('shareNotes', { "text": nodeText, "noteType": noteType });
 }
 
 function sendChangeElementSize(itemId, width, height) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('changeElementSize', {
-            "itemId": itemId,
-            "width": width,
-            "height": height
-        });
-    }
+    signaling_socket.emit('changeElementSize', {
+        "itemId": itemId,
+        "width": width,
+        "height": height
+    });
 }
 
 function sendDrawSomething(itemId, userId, thingToDraw) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('drawSomething', {
-            "itemId": itemId,
-            "userId": userId,
-            "thingToDraw": thingToDraw
-        });
-    }
+    signaling_socket.emit('drawSomething', {
+        "itemId": itemId,
+        "userId": userId,
+        "thingToDraw": thingToDraw
+    });
 }
 
 function sendEndDraw(itemId, drawBuffer) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('sendEndDraw', { "itemId": itemId, "drawBuffer": drawBuffer });
-    }
+    signaling_socket.emit('sendEndDraw', { "itemId": itemId, "drawBuffer": drawBuffer });
 }
 
 function sendLockUnLockCanvas(itemId, lockUnlock) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('lockUnLockCanvas', {
-            "itemId": itemId,
-            "lockUnlock": lockUnlock
-        });
-    }
+    signaling_socket.emit('lockUnLockCanvas', {
+        "itemId": itemId,
+        "lockUnlock": lockUnlock
+    });
 }
 
 function sendSigleFileToUpload(name, fileToUpload) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('sigleFileToUpload', {
-            "filename": name,
-            "buffer": fileToUpload
-        });
-    }
+    signaling_socket.emit('sigleFileToUpload', {
+        "filename": name,
+        "buffer": fileToUpload
+    });
 }
 
 function sendRemoveSingleFile(fileName) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('removeSingleFileEX', fileName);
-    }
+    signaling_socket.emit('removeSingleFileEX', fileName);
 }
 
 function sendGetSingleFileTable() {
-    if (isRTCConnected()) {
-        signaling_socket.emit('getSingleFileTable', null);
-    }
+    signaling_socket.emit('getSingleFileTable', null);
 }
 
 function sendYoutubeCommand(content) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('youtubeCommand', content);
-    }
+    signaling_socket.emit('youtubeCommand', content);
 }
 
 function sendPutRemoteHandDown(id) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('putRemoteHandDown', id);
-    }
+    signaling_socket.emit('putRemoteHandDown', id);
 }
 
 function sendChangeTab(tabH) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('changeTab', tabH);
-    }
+    signaling_socket.emit('changeTab', tabH);
 }
 
 
 function sendAudioVolume(vol) {
-    if (isRTCConnected()) {
-        signaling_socket.emit('audioVolume', vol);
-    }
+    signaling_socket.emit('audioVolume', vol);
 }
 
 function sendCreateNewRoom(roomName, roomPassword) {
-    if (isRTCConnected()) {
-        signaling_socket.emit("createRoom",
-            {
-                "roomName": roomName,
-                "roomPassword": roomPassword,
-                "creator": username
-            }, function (err) {
-                if (err) {
-                    alert(err)
-                }
-            });
-    }
+    signaling_socket.emit("createRoom",
+        {
+            "roomName": roomName,
+            "roomPassword": roomPassword,
+            "creator": username
+        }, function (err) {
+            if (err) {
+                alert(err)
+            }
+        });
 }
 
 function sendGetTimeStamp() {
-    if (isRTCConnected()) {
-        signaling_socket.emit("getTimeStamp", null);
-    }
+    signaling_socket.emit("getTimeStamp", null);
 }
 
 function sendMakeTransparent(itemId, transparent) {
-    if (isRTCConnected()) {
-        signaling_socket.emit("makeTransparent", { "itemId": itemId, "transparent": transparent });
-    }
+    signaling_socket.emit("makeTransparent", { "itemId": itemId, "transparent": transparent });
 }
 
 function sendSecondHandUp(senderId, resiverUserId, trueFalse) {
-    if (isRTCConnected()) {
-        signaling_socket.emit("secondHandUp", { "senderId": senderId, "resiverUserId": resiverUserId, "trueFalse": trueFalse });
-    }
+    signaling_socket.emit("secondHandUp", { "senderId": senderId, "resiverUserId": resiverUserId, "trueFalse": trueFalse });
 }
 
 function sendDeleteNewRoom(roomName, roomId) {
-    if (isRTCConnected()) {
-        signaling_socket.emit("deleteRoom", {
-            "roomName": roomName,
-            "roomId": roomId
-        }, function (err) {
-            if (err) {
-                alert(err);
-            }
-        });
-    }
+    signaling_socket.emit("deleteRoom", {
+        "roomName": roomName,
+        "roomId": roomId
+    }, function (err) {
+        if (err) {
+            alert(err);
+        }
+    });
 }
 
 var signaling_socket = null;

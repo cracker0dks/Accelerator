@@ -21,48 +21,45 @@ $(function () { //Document ready
 	showPage("#loginPage");
 	/* LOGIN PAGE */
 	$("#loginBtn").click(function () {
-		if (isRTCConnected()) {
-			username = cleanString($("#inputUser").val());
-			username = username.replaceAll(" ", "_");
-			setLocalStorage("myUserName", username);
-			var password = cleanString($("#inputPassword").val());
-			if (username === "") {
-				$('#inputUser').popover({ "show": "true", "content": "Username is empty!", "placement": "right" });
-				$('#inputUser').popover('toggle');
-				// } else if(password === "") {
-				// 	$('#inputPassword').popover({ "show": "true", "content" : "Password is empty!", "placement" : "right" });
-				// 	$('#inputPassword').popover('toggle');
-			} else {
-				setUserAttr(username, password);
-				showPage("#accessMicPage");
-				var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
-				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
-					localAudioStream = stream;
-					continueToRoomPage();
-				}, function (err) {
-					alert("Audio input error. Run the Audio / Video Setup to fix this.");
-					continueToRoomPage();
-					console.log(err);
-				});
+		username = cleanString($("#inputUser").val());
+		username = username.replaceAll(" ", "_");
+		setLocalStorage("myUserName", username);
+		var password = cleanString($("#inputPassword").val());
+		if (username === "") {
+			$('#inputUser').popover({ "show": "true", "content": "Username is empty!", "placement": "right" });
+			$('#inputUser').popover('toggle');
+			// } else if(password === "") {
+			// 	$('#inputPassword').popover({ "show": "true", "content" : "Password is empty!", "placement" : "right" });
+			// 	$('#inputPassword').popover('toggle');
+		} else {
+			setUserAttr(username, password);
+			showPage("#accessMicPage");
+			var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
+			navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
+				localAudioStream = stream;
+				continueToRoomPage();
+			}, function (err) {
+				alert("Audio input error. Run the Audio / Video Setup to fix this.");
+				continueToRoomPage();
+				console.log(err);
+			});
 
-				function continueToRoomPage() {
-					//Join a room directly if url get parameter is set   
-					showPage("#roomPage");
-					sendGetAllRooms();
-					var roomQ = getQueryVariable("room");
-					if (roomQ && roomQ != "" && username && username != "dummy") {
-						$("#directRoomName").text(roomQ);
-						$('#connectModal').modal({ backdrop: 'static', keyboard: false });
-						$('#connectModal').find("#acceptDirectConnect").click(function () {
-							$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
-						})
-					}
+			function continueToRoomPage() {
+				//Join a room directly if url get parameter is set   
+				showPage("#roomPage");
+				sendGetAllRooms();
+				var roomQ = getQueryVariable("room");
+				if (roomQ && roomQ != "" && username && username != "dummy") {
+					$("#directRoomName").text(roomQ);
+					$('#connectModal').modal({ backdrop: 'static', keyboard: false });
+					$('#connectModal').find("#acceptDirectConnect").click(function () {
+						$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
+					})
 				}
 			}
-			$("#notConnected").hide();
-		} else {
-			$("#notConnected").show();
 		}
+		$("#notConnected").hide();
+
 	});
 
 	$("#groopRoomSearch").keyup(function () {
@@ -622,14 +619,14 @@ $(function () { //Document ready
 					var stream;
 					try {
 						stream = await _startScreenCapture();
-					} catch(e) {
+					} catch (e) {
 						writeToChat("ERROR", "Access to screen rejected!");
 						$("#startScreenShareBtn").removeAttr("disabled", "false");
 						$("#startScreenShareBtn").text("start screenshare!");
 						$("#screenshareQuallyTable").show();
 						return;
 					}
-					
+
 					stream["streamAttributes"] = { "screenshare": true };
 					screen_stream = stream;
 					if (stream) {
