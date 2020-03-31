@@ -1,15 +1,14 @@
 //@ts-check
 function ezMCU(socket, newConfig = {}) {
     var _this = this;
-    var mcuConfig = {}
+    this.mcuConfig = {}
     for (var i in newConfig) {
-        mcuConfig[i] = newConfig[i];
+        this.mcuConfig[i] = newConfig[i];
     }
     this.socket = socket;
     this.mappedEvents = {};
     this.peers = {}; //contains all peers (to main and load balancers)
     this.allStreamAttributes = {};
-    this.currentIceServers = [];
 
     this.on = function (eventname, callback) {
         if (this.mappedEvents[eventname]) {
@@ -23,13 +22,14 @@ function ezMCU(socket, newConfig = {}) {
             this.mappedEvents[eventname][i](arguments[1], arguments[2], arguments[3])
         }
     };
-    this.makeNewPeer = function (peerId, connectedCallback, iceServers, stream) {
+    this.makeNewPeer = function (peerId, connectedCallback, stream) {
+        var _this = this;
+        _this.mcuConfig["stream"] = stream;
         var _this = this;
         if (_this.peers[peerId]) {
             return console.log("Already connected to this peer!");
         }
-
-        _this.peers[peerId] = new initEzWebRTC(false, { iceServers: iceServers, stream : stream })
+        _this.peers[peerId] = new initEzWebRTC(false, _this.mcuConfig)
         _this.peers[peerId].on('error', err => console.log('error', err))
 
         _this.peers[peerId].on('signaling', data => {
@@ -61,7 +61,6 @@ function ezMCU(socket, newConfig = {}) {
         })
     };
     this.init = function () {
-        var _this = this;
         socket.on("connect", function () {
             console.log("mcu socket connected");
 
@@ -100,7 +99,7 @@ function ezMCU(socket, newConfig = {}) {
             })
 
             socket.on("mcu_onIceServers", function (iceServers) {
-                _this.currentIceServers = iceServers;
+                _this.mcuConfig["iceServers"] = iceServers;
             })
 
             socket.on("mcu_onNewStreamPublished", function (content) {
@@ -134,7 +133,7 @@ function ezMCU(socket, newConfig = {}) {
             username: username
         }, function (iceServers) {
             console.log("iceServers", iceServers)
-            _this.currentIceServers = iceServers;
+            _this.mcuConfig["iceServers"] = iceServers;
             console.log("JOINED!");
             callback();
         });
@@ -161,7 +160,7 @@ function ezMCU(socket, newConfig = {}) {
         var mediaEl = null;
 
         var videoTracks = stream.getVideoTracks();
-        var hasVideo = videoTracks.length>0 ? true : false;
+        var hasVideo = videoTracks.length > 0 ? true : false;
         mediaEl = hasVideo ? document.createElement('video') : document.createElement('audio');
 
         mediaEl.setAttribute("style", css);
@@ -205,7 +204,7 @@ function ezMCU(socket, newConfig = {}) {
             _this.makeNewPeer(instanceTo, function () {
                 //Connected callback
                 console.log("LOADBALANCER CONNECTED (Without stream add)!!!");
-            }, _this.currentIceServers);
+            });
 
             console.log("REQEST THE STREAM!!")
             socket.emit("mcu_reqStreamFromLB", {
@@ -246,7 +245,7 @@ function ezMCU(socket, newConfig = {}) {
                         console.log("LOADBALANCER CONNECTED (With streamadd)!!!");
                         //_this.peers[instanceTo].addStream();
                         callback();
-                    }, _this.currentIceServers, stream);
+                    }, stream);
 
                     socket.emit("mcu_reqPeerConnectionToLB", {
                         "instanceTo": instanceTo
