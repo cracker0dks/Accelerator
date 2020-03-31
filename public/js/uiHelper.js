@@ -1028,8 +1028,6 @@ function addUserToPanel(id, username) {
 		'<td class="thumbIndicator" style="position:relative; overflow: hidden;">' +
 		'<div class="username" style="display:none">' + username + '</div>' +
 		'<div class="usernameText" title="' + username + '">' + username + '</div>' +
-		'<div class="shareOwnVideo" title="start Webcam" style="color: rgb(142, 142, 142); display:none; position:absolute; right:6px; top:2px; cursor:pointer;"><i class="fa fa-video-camera"></i></div>' +
-		'</td>' +
 		'<td style="width:2px;"><div style="border-left:1px solid white; height: 50px; border-right:1px solid #BABABA; width:2px;"></div></td>' +
 		'<td class="UserRightTD" title="No audiostream so far!" style="width:65px; background:rgba(244, 3, 3, 0.26)">' +
 		'<div>' +
@@ -1080,55 +1078,6 @@ function addUserToPanel(id, username) {
 		$(newUser).find(".userIcon").click(function () {
 			$('#userPicUploadModal').modal('show');
 		});
-
-		newUser.find(".shareOwnVideo").show();
-		newUser.find(".shareOwnVideo").click(function () {
-			var _this = this;
-			$(_this).hide();
-			if (!isLocalVideoPlaying) {
-				writeToChat("Server", "Try to access webcam!");
-				var constraints = prevVideoInputDevice ? { deviceId: { ideal: prevVideoInputDevice } } : true;
-				navigator.getUserMedia({ audio: false, video: constraints }, (stream) => {
-					localVideoStrm = stream;
-					var streamId = stream.id.replace('{', "").replace('}', "")
-					localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
-					writeToChat("Pusblish video stream:" + streamId)
-					myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
-						if (err) {
-							writeToChat("ERROR", "Stream could not be published! Error: " + err);
-						} else {
-							isLocalVideoPlaying = true;
-							writeToChat("Server", "Webcamstream connecting...");
-							$("#" + ownSocketId).find(".shareOwnVideo").show();
-							$("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
-							$("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
-							$("#" + ownSocketId).find(".shareOwnVideo").addClass('camBtnActive');
-
-							var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
-							$("#" + ownSocketId).find(".videoContainer").append(videoElement);
-							myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
-							$("#" + ownSocketId).find(".webcamfullscreen").show();
-							$("#" + ownSocketId).find(".popoutVideoBtn").show();
-						};
-					});
-				}, (err) => {
-					writeToChat("ERROR", "Access to webcam rejected or device not available!");
-					$(_this).show();
-					$(_this).css({ "color": "red" });
-					$(_this).attr("title", "Start webcam");
-				})
-
-			} else {
-				myMCU.unpublishStream(localVideoStrm);
-				isLocalVideoPlaying = false;
-				localVideoStrm = null;
-				$(_this).css({ "color": "rgb(142, 142, 142)" });
-				$(_this).attr("title", "Start webcam");
-				$(_this).removeClass("camBtnActive");
-				$(_this).show();
-			}
-		});
-
 	} else {
 		newUser.find(".colorPicker").hide();
 	}
@@ -1226,18 +1175,62 @@ function showHideVideoOptions(action) { //Stop videosharing with more than 6 Use
 	var userCnt = $("#leftContainer").find(".userdiv").length;
 	$("#userCnt").text(userCnt);
 	if (userCnt > 6 && roomImIn["moderator"] != ownSocketId) { //Hide cams if more than 6 users //no hide for moderator
-		$("#videoCameraBtn").hide();
-		$(".camBtnActive").click(); //Stop active cams
-		$(".shareOwnVideo").hide();
+		$("#videoBtn").hide();
+		$("#videoBtn.alert-danger").click(); //Stop active cams
+		if ($("#videoBtn").hasClass("alert-danger")) {
+				$("#videoBtn").removeClass("alert-danger");
+			}
 	} else {
-		$("#videoCameraBtn").show();
-		$(".shareOwnVideo").show();
+		$("#videoBtn").show();
 	}
 	if (action == "add" && userCnt == 7) {
-		writeToChat("Info", "Videosharing was disabled for none moderators. (Disabled for more than 6 people)");
+		writeToChat("Info", "Videosharing was disabled for non-moderators. (Disabled for more than 6 people)");
 	} else if (action == "remove" && userCnt == 6) {
 		writeToChat("Info", "Videosharing is enabled again. (6 or less people)");
 	}
+}
+
+function startLocalVideo() {
+	if (!isLocalVideoPlaying) {
+		writeToChat("Server", "Try to access webcam!");
+		navigator.getUserMedia({ audio: false, video: true }, (stream) => {
+			localVideoStrm = stream;
+			var streamId = stream.id.replace('{', "").replace('}', "")
+			localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
+			writeToChat("Publish video stream:" + streamId)
+			if ($("#videoBtn").hasClass("alert-danger")) { //Don't start stream when button has been recklicked
+				myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
+					if (err) {
+						writeToChat("ERROR", "Stream could not be published! Error: " + err);
+					} else {
+						isLocalVideoPlaying = true;
+						writeToChat("Server", "Webcamstream connecting...");
+						sendUserStatus("video")
+
+						var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
+						$("#" + ownSocketId).find(".videoContainer").append(videoElement);
+						myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+						$("#" + ownSocketId).find(".webcamfullscreen").show();
+						$("#" + ownSocketId).find(".popoutVideoBtn").show();
+					};
+				});
+			}
+		}, (err) => {
+			writeToChat("ERROR", "Access to webcam rejected or device not available!");
+			sendUserStatus("not-video");
+			$("#videoBtn").addClass("alert-error");
+			if ($("#videoBtn").hasClass("alert-danger")) {
+				$("#videoBtn").removeClass("alert-danger");
+			}
+		})
+	}
+}
+
+function stopLocalVideo() {
+	myMCU.unpublishStream(localVideoStrm);
+		isLocalVideoPlaying = false;
+		localVideoStrm = null;
+		sendUserStatus("not-video");
 }
 
 function apendScreenshareStream(stream, streamAttr) {

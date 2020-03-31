@@ -1111,6 +1111,8 @@ $(function () { //Document ready
 		$('#userPicUploadModal').modal('hide');
 	});
 
+
+
 	//Manage Toolbar
 	$(".toolbar-icon").click(function () {
 		var status = "";
@@ -1137,6 +1139,8 @@ $(function () { //Document ready
 				status = "not-coffee";
 			} else if ($(this).find(".applause").length > 0) {
 				status = "not-applause";
+			} else if ($(this).find(".fa-video-camera").length > 0) {
+				stopLocalVideo();
 			}
 		} else {
 			$(this).addClass("alert-danger");
@@ -1166,6 +1170,11 @@ $(function () { //Document ready
 				status = "coffee";
 			} else if ($(this).find(".applause").length > 0) {
 				status = "applause";
+			} else if ($(this).find(".fa-video-camera").length > 0) {
+				if ($(this).hasClass("alert-error")) {
+					$(this).removeClass("alert-error");
+				}
+				startLocalVideo();
 			}
 		}
 		if (status != "")
