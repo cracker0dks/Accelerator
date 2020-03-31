@@ -1076,6 +1076,9 @@ hr {
 .alert-danger {
     background-color: #03a9f4 !important;
 }
+.alert-error {
+    background-color: darkOrange !important;
+}
 #chatButtonWrapper{
     width:100%;
     background-color: #03a9f4 !important;
