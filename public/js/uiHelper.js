@@ -886,6 +886,10 @@ function setStatus(id, status) {
 	refreshMuteUnmuteAll();
 }
 
+setInterval(function() {
+	refreshMuteUnmuteAll();
+}, 1000)
+
 function addSecondHandUp(content) {
 	var senderId = content["senderId"];
 	var resiverId = content["resiverUserId"];
