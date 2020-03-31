@@ -289,6 +289,7 @@ var init = async function (io, newConfig) {
                     masterURLAndPort: masterURL,
                     secure: masterURL.startsWith("https://") ? true : false
                 }
+                mcuLbConfig["webRtcConfig"] = mcuConfig.webRtcConfig;
 
                 await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
                 await page.click('#loadMCUBtn');

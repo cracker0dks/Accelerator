@@ -8,7 +8,8 @@ var mcuConfig = {
 	enabled: true,
 	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
 	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
-	secure : false
+	secure : false,
+	webRtcConfig : {}
 }
 
 function setMCUConfig(config) {
@@ -26,7 +27,6 @@ function start() {
 	var allStreams = {};
 	var allStreamDestinations = {};
 	var allStreamSources = {};
-	var iceServers = [];
 
 	socket.on('connect', function () {
 		socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
@@ -43,7 +43,7 @@ function start() {
 		});
 
 		socket.on('mcu_onIceServers', function (newIceServers) {
-			iceServers = newIceServers;
+			mcuConfig.webRtcConfig.iceServers = newIceServers;
 		});
 
 		socket.on('mcu_onStreamUnpublished', function (streamAttr) {
@@ -112,7 +112,8 @@ function start() {
 			var dest = ac.createMediaStreamDestination();
 			allStreamDestinations[clientSocketId] = dest;
 
-			var localPeer = new initEzWebRTC(true, { iceServers: iceServers, stream: dest.stream })
+			mcuConfig.webRtcConfig["stream"] = dest.stream;
+			var localPeer = new initEzWebRTC(true, mcuConfig.webRtcConfig)
 			allPeers[clientSocketId] = localPeer;
 
 			localPeer.on('error', function (err) {
