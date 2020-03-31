@@ -250,68 +250,82 @@ var init = async function (io, newConfig) {
     if (mcuConfig.enableLocalMCU) {
 
         var masterURL = 'http://127.0.0.1:' + mcuConfig.masterPort;
-        if(!mcuConfig.isMaster) { //Is loabalancer
+        if (!mcuConfig.isMaster) { //Is loabalancer
             masterURL = mcuConfig.masterURL;
         }
 
-        const browser = await puppeteer.launch({
-            headless: true,
-            "ignoreHTTPSErrors": true,
-            args: [
-                '--ignore-certificate-errors',
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--disable-setuid-sandbox'
-            ]
-        });
+        var browser;
+        try {
+            browser = await puppeteer.launch({
+                headless: true,
+                "ignoreHTTPSErrors": true,
+                args: [
+                    '--ignore-certificate-errors',
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-setuid-sandbox'
+                ]
+            });
+        } catch (e) {
+            console.log("FAILD TO START puppeteer BROWSER!!!", e)
+        }
 
-        var mcuStartedWithoutError = false;
-        async function startUpMcu() {
-            const page = await browser.newPage();
-            try {
-                page.on('console', msg => {
-                    for (let i = 0; i < msg.args().length; ++i) {
-                        console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+        if (browser) {
+            var mcuStartedWithoutError = false;
+            async function startUpMcu() {
+                const page = await browser.newPage();
+                try {
+                    page.on('console', msg => {
+                        for (let i = 0; i < msg.args().length; ++i) {
+                            console.log('loadbalancer:', `${i}: ${msg.args()[i]}`);
+                        }
+                    });
+
+                    page.on("pageerror", msg => {
+                        console.log("MCU PAGE ERROR: ", msg);
+                    });
+
+                    page.on('error', msg => {
+                        console.log("MCU ERROR: ", msg);
+                        throw msg;
+                    });
+
+                    await page.goto(masterURL + '/ezMCU/mcuLb.html');
+                    await page.waitFor('#loadMCUBtn');
+                    await page.click('body');
+
+                    var mcuLbConfig = {
+                        loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
+                        masterURLAndPort: masterURL,
+                        secure: masterURL.startsWith("https://") ? true : false
                     }
-                });
-                page.on('error', msg => {
-                    console.log("MCU ERROR: ", msg);
-                    throw msg;
-                });
-                
-                await page.goto(masterURL+'/ezMCU/mcuLb.html');
-                await page.waitFor('#loadMCUBtn');
-                await page.click('body');
+                    mcuLbConfig["webRtcConfig"] = mcuConfig.webRtcConfig;
 
-                var mcuLbConfig = {
-                    loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-                    masterURLAndPort: masterURL,
-                    secure: masterURL.startsWith("https://") ? true : false
+                    await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
+                    await page.click('#loadMCUBtn');
+                    setTimeout(function () { //Wait 10sec to spin it up and ensure no error
+                        mcuStartedWithoutError = true;
+                    }, 1000 * 10)
+                } catch (e) {
+                    console.log("MCU ERROR: ", e);
+                    if (mcuStartedWithoutError) { //Startup the mcu if it crashes while running (should not happen, just in case)
+                        console.log("Restart MCU!")
+                        startUpMcu();
+                    }
+                    mcuStartedWithoutError = false;
                 }
-                mcuLbConfig["webRtcConfig"] = mcuConfig.webRtcConfig;
-
-                await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
-                await page.click('#loadMCUBtn');
-                setTimeout(function () { //Wait 10sec to spin it up and ensure no error
-                    mcuStartedWithoutError = true;
-                }, 1000 * 10)
-            } catch (e) {
-                console.log("MCU ERROR: ", e);
-                if (mcuStartedWithoutError) { //Startup the mcu if it crashes while running (should not happen, just in case)
-                    console.log("Restart MCU!")
-                    startUpMcu();
-                }
-                mcuStartedWithoutError = false;
+            }
+            startUpMcu();
+        } else {
+            if (mcuConfig.isMaster) {
+                console.log("\n\nWARNING: LOCAL MCU NOT STARTED! BE SURE TO SET UP A LOADBALANCER!\n\n");
+            } else {
+                console.log("\n\nERROR: YOU CAN NOT SET 'isMaster' TO FALSE AND DISABLE 'enableLocalMCU'! LOADBALANCER NEEDS 'enableLocalMCU' ENABLED (set to 'true')! \n\n");
             }
         }
-        startUpMcu();
     } else {
-        if(mcuConfig.isMaster) {
-            console.log("\n\nWARNING: LOCAL MCU NOT STARTED! BE SURE TO SET UP A LOADBALANCER!\n\n");
-        } else {
-            console.log("\n\nERROR: YOU CAN NOT SET 'isMaster' TO FALSE AND DISABLE 'enableLocalMCU'! LOADBALANCER NEEDS 'enableLocalMCU' ENABLED (set to 'true')! \n\n");
-        }  
+        console.log("COULD NOT START MCU! NO BROWSER WAS GIVEN!")
     }
 }
 
