@@ -1163,6 +1163,9 @@ function loadAllRoomAttr() {
         }
         try {
             allRoomAttr = JSON.parse(data);
+            for(var i in allRoomAttr) {
+                allRoomAttr[i]["users"] = {}
+            }
         } catch (e) {
             console.log("error reading ./db/allRoomAttr.txt", e);
         }
