@@ -49,10 +49,10 @@ module.exports = {
 		}
 
 		setTimeout(function () {
-			fs.writeFile("./config/config.json", JSON.stringify(returnConfig, null, 4), function (err) { console.log(err) });
+			fs.writeFile("./config/config.json", JSON.stringify(returnConfig, null, 4), function (err) { if(err) console.log(err) });
 
 			//Write default config files
-			fs.writeFile("./config/defaultConfig.json", JSON.stringify(defaultConfig, null, 4), function (err) { console.log(err) });
+			fs.writeFile("./config/defaultConfig.json", JSON.stringify(defaultConfig, null, 4), function (err) { if(err) console.log(err) });
 		}, 500)
 		return JSON.parse(JSON.stringify(returnConfig)); //Return a copy from the org config
 	}
