@@ -131,9 +131,9 @@ function ezMCU(socket, newConfig = {}) {
         socket.emit("mcu_joinRoom", {
             roomname: roomname,
             username: username
-        }, function (iceServers) {
-            console.log("iceServers", iceServers)
-            _this.mcuConfig["iceServers"] = iceServers;
+        }, function (mcuConfig) {
+            console.log("mcuConfig", mcuConfig)
+            _this.mcuConfig = mcuConfig;
             console.log("JOINED!");
             callback();
         });

@@ -51,7 +51,6 @@ var init = async function (io, newConfig) {
             delete loadBalancersSockets[socket.id];
         });
 
-
         function getCurrentIceServers() {
             var icesevers = orgIceServer;
             var returnIce = [];
@@ -84,7 +83,7 @@ var init = async function (io, newConfig) {
             }
 
             socket.join(roomname);
-            callback(getCurrentIceServers());
+            callback(mcuConfig.webRtcConfig);
         });
 
         //Handel signaling between client and server peers
