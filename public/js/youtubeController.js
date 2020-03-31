@@ -7,11 +7,9 @@ var ytplayer = null;
 var youtubeUrl = "";
 
 function loadYoutubeVideo(url, moderator) {
-	$(".placeHolderIcon.fa-youtube").hide();
 	$("#ytapiplayer").empty();
 	$("#ytapiplayer").html('<div id="theytPlayer"></div>');
 
-	var controls = moderator ? 1 : 0;
 	if(moderator) {
 		$("#ytOverlay").hide();
 	} else {
