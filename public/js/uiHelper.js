@@ -1541,7 +1541,7 @@ function renderAllRooms(roomList) {
 						'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
 						'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
 						'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +
-						'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class=""badge"">' + usersInRoomCnt + '</span></td>' +
+						'<td style="width:20px" class="usersInRoomTd"><span data-placement="top" title="' + userInRoom + '" class="badge">' + usersInRoomCnt + '</span></td>' +
 						'</tr>');
 
 					roomListEntry.mouseenter(function () {
