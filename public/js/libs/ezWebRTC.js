@@ -3,6 +3,7 @@ var wrtc = window;
 function initEzWebRTC(initiator, config) {
     var _this = this;
     this.isConnected = false;
+    this.gotOffer = false;
 
     var rtcConfig = { //Default Values
         offerOptions: {
@@ -16,7 +17,7 @@ function initEzWebRTC(initiator, config) {
             }
         ],
         sdpSemantics: 'unified-plan',
-        iceConnectionTimeoutInSec : 30,
+        iceConnectionTimeoutInSec: 30,
     }
     if (config) {
         for (var i in config) {
@@ -51,20 +52,20 @@ function initEzWebRTC(initiator, config) {
     pc.oniceconnectionstatechange = async function (e) {
         //console.log('ICE state: ' + pc.iceConnectionState);
         if (pc.iceConnectionState == "connected" || pc.iceConnectionState == "completed") {
-            if(iceConnectionTimeout) { clearTimeout(iceConnectionTimeout); };
+            if (iceConnectionTimeout) { clearTimeout(iceConnectionTimeout); };
             if (!_this.isConnected) {
                 _this.isConnected = true;
                 _this.emitEvent("connect", true)
             }
         } else if (pc.iceConnectionState == 'disconnected') {
-            setTimeout(async function() { //lets wait if connection switches back to connected in a few seconds
-                if(_this.isConnected && pc.iceConnectionState == "disconnected" && initiator) {  //if still in disconnected and not closed state try to restart ice
+            setTimeout(async function () { //lets wait if connection switches back to connected in a few seconds
+                if (_this.isConnected && pc.iceConnectionState == "disconnected" && initiator) {  //if still in disconnected and not closed state try to restart ice
                     //console.log("Try to recover ice connection form disconnected state!")
                     await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }));
                     _this.emitEvent("signaling", pc.localDescription);
                 }
             }, 3000);
-            iceConnectionTimeout = setTimeout(function() { //Close the connection if state not changes to connected in a given time
+            iceConnectionTimeout = setTimeout(function () { //Close the connection if state not changes to connected in a given time
                 if (_this.isConnected) {
                     _this.isConnected = false;
                     _this.emitEvent("closed", true)
@@ -90,6 +91,7 @@ function initEzWebRTC(initiator, config) {
         if (signalData == "renegotiate" && initiator) { //Got renegotiate request, so do it
             negotiate();
         } else if (signalData && signalData.type == "offer") { //Got an offer -> Create Answer)
+            _this.gotOffer = true;
             if (pc.signalingState != "stable") { //If not stable ask for renegotiation
                 await Promise.all([
                     pc.setLocalDescription({ type: "rollback" }), //Be polite
@@ -185,7 +187,7 @@ function initEzWebRTC(initiator, config) {
             if (pc.signalingState != "stable") return;
             await pc.setLocalDescription(offer);
             _this.emitEvent("signaling", pc.localDescription)
-        } else {
+        } else if (_this.gotOffer) {
             _this.emitEvent("signaling", "renegotiate");
         }
     }
