@@ -1079,12 +1079,7 @@ function sendToUserById(userId, key, content) {
 function saveSingleFileTable() {
     try {
         var allSingleFilesString = JSON.stringify(allSingleFiles);
-        try {
-            fs.writeFileSync("./db/singleFileTable.txt", allSingleFilesString);
-        } catch (e) {
-            console.log(e);
-        }
-
+        fs.writeFileSync("./db/singleFileTable.txt", allSingleFilesString);
     } catch (e) {
         console.log("Faild to save FileTable!", e);
     }
@@ -1108,11 +1103,7 @@ function saveAllPraesis() {
     try {
         var allPraesisString = JSON.stringify(allPraesis);
         if (typeof (allPraesisString) == "string") {
-            try {
-                fs.writeFileSync("./db/praesiSave.txt", allPraesisString);
-            } catch (e) {
-                console.log(e);
-            }
+            fs.writeFileSync("./db/praesiSave.txt", allPraesisString);
         }
     } catch (e) {
         console.log("Faild to save allPraesis!", e);
@@ -1159,11 +1150,7 @@ function saveAllRoomAttr() {
         }
 
         var allRoomAttrString = JSON.stringify(allRoomAttr);
-        try {
-            fs.writeFileSync("./db/allRoomAttr.txt", allRoomAttrString);
-        } catch (e) {
-            console.log(e);
-        }
+        fs.writeFileSync("./db/allRoomAttr.txt", allRoomAttrString);
     } catch (e) {
         console.log("Faild to save allRoomAttr!", e);
     }
@@ -1202,11 +1189,7 @@ loadALlUserPItems();
 function saveUserPItems() {
     try {
         var userPItemsString = JSON.stringify(userPItems);
-        try {
-            fs.writeFileSync("./db/userPItems.txt", userPItemsString);
-        } catch (e) {
-            console.log(e);
-        }
+        fs.writeFileSync("./db/userPItems.txt", userPItemsString);
     } catch (e) {
         console.log("Faild to save userPItems!", e);
     }
@@ -1230,15 +1213,19 @@ loadAll3DObjs();
 function save3DObjs() {
     try {
         var the3DString = JSON.stringify(all3DObjs);
-        try {
-            fs.writeFileSync("./db/all3DObjs.txt", the3DString);
-        } catch (e) {
-            console.log(e);
-        }
+        fs.writeFileSync("./db/all3DObjs.txt", the3DString);
     } catch (e) {
         console.log("Faild to save 3DObjs!", e);
     }
 }
+
+//Put this in to trace console line numbers
+// var log = console.log;
+// console.log = function() {
+//     log.apply(console, arguments);
+//     // Print the stack trace
+//     console.trace();
+// };
 
 // CLEANUP ON EXIT
 process.on('exit', function (code) {
@@ -1256,7 +1243,7 @@ process.on('SIGINT', function (code) {
 process.on('uncaughtException', function (code) {
     console.log("We encouter an error... wait for config to be write then exit!")
     setTimeout(function () {
-        console.log(code);
+        console.log("exit", code);
         process.exit();
     }, 1000)
 });
