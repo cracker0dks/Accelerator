@@ -34,7 +34,11 @@ $(function () { //Document ready
 		} else {
 			setUserAttr(username, password);
 			showPage("#accessMicPage");
-			var constraints = localStorage.getItem("prevAudioInputDevice") ? { deviceId: { exact: localStorage.getItem("prevAudioInputDevice") } } : true;
+
+			var constraints = { echoCancellation: { ideal : true } };
+			if (localStorage.getItem("prevAudioInputDevice")) {
+				constraints["deviceId"] = { ideal: localStorage.getItem("prevAudioInputDevice") }
+			}
 			navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 				localAudioStream = stream;
 				continueToRoomPage();
@@ -154,7 +158,7 @@ $(function () { //Document ready
 		var oneVideoInput = false;
 		var audioInputProgressBar = $('<progress value="0" max="100" style="width: 300px;">0</progress>');
 
-		var constraints = prevAudioInputDevice ? { deviceId: { exact: prevAudioInputDevice } } : true;
+		var constraints = prevAudioInputDevice ? { deviceId: { ideal: prevAudioInputDevice } } : true;
 		navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 			var audioOutputSelect = $('<select style="width: 300px;"></select>');
 			var audioInputSelect = $('<select style="width: 300px;"></select>');
@@ -236,7 +240,7 @@ $(function () { //Document ready
 
 			audioInputBtn.click(function () {
 				$("#mediaSetupOutput").empty();
-				var constraints = { deviceId: { exact: audioInputSelect.val() } };
+				var constraints = { deviceId: { ideal: audioInputSelect.val() } };
 				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 					testAudioStream = stream;
 					const audioContext = new AudioContext();
@@ -303,7 +307,7 @@ $(function () { //Document ready
 			var webcamTestStopBtn = $('<button class="btn btn-primary" style="padding:5px; display:none;"><i class="fa fa-stop-circle-o" aria-hidden="true"></i> Stop</button>');
 			webcamTestStartBtn.click(function () {
 				$("#mediaSetupOutput").empty();
-				var constraints = { deviceId: { exact: videoInputSelect.val() } };
+				var constraints = { deviceId: { ideal: videoInputSelect.val() } };
 				webcamTestStartBtn.hide();
 				navigator.getUserMedia({ audio: false, video: constraints }, async function (stream) {
 					testVideoStream = stream;
@@ -367,7 +371,7 @@ $(function () { //Document ready
 				prevAudioInputDevice = audioInputSelect.val();
 				localStorage.setItem("prevAudioInputDevice", audioInputSelect.val())
 
-				var constraints = { deviceId: { exact: audioInputSelect.val() } };
+				var constraints = { deviceId: { ideal: audioInputSelect.val() } };
 				navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 					localAudioStream = stream;
 				});
@@ -654,7 +658,7 @@ $(function () { //Document ready
 
 				})();
 			} else {
-				var constraints = prevVideoInputDevice ? { deviceId: { exact: prevVideoInputDevice } } : {};
+				var constraints = prevVideoInputDevice ? { deviceId: { ideal: prevVideoInputDevice } } : {};
 				constraints["mandatory"] = newMand;
 				navigator.getUserMedia({ audio: false, video: constraints }, function (stream) {
 					stream["streamAttributes"] = { "screenshare": true };

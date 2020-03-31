@@ -1083,7 +1083,7 @@ function addUserToPanel(id, username) {
 			$(_this).hide();
 			if (!isLocalVideoPlaying) {
 				writeToChat("Server", "Try to access webcam!");
-				var constraints = prevVideoInputDevice ? { deviceId: { exact: prevVideoInputDevice } } : true;
+				var constraints = prevVideoInputDevice ? { deviceId: { ideal: prevVideoInputDevice } } : true;
 				navigator.getUserMedia({ audio: false, video: constraints }, (stream) => {
 					localVideoStrm = stream;
 					var streamId = stream.id.replace('{', "").replace('}', "")
