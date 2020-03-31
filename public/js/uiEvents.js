@@ -761,6 +761,8 @@ $(function () { //Document ready
 					item = "camera";
 				} else if (ui.draggable.hasClass("fa-arrow-up")) {
 					item = "arrowUp";
+				} else if (ui.draggable.hasClass("fa-arrow-down")) {
+					item = "arrowDown";
 				} else if (ui.draggable.hasClass("numberone")) {
 					item = "numberone";
 				} else if (ui.draggable.hasClass("numbertwo")) {

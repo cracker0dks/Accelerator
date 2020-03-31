@@ -52,6 +52,9 @@ function addUserPItem(content) {
 	} else if (item == 'arrowUp') {
 		drop = $('<i class="fa fa-arrow-up"></i>');
 		drop.css({ "color": usercolor, "font-size": "1.3em" });
+	} else if (item == 'arrowDown') {
+		drop = $('<i class="fa fa-arrow-down"></i>');
+		drop.css({ "color": usercolor, "font-size": "1.3em" });
 	} else if (item == 'numberone') {
 		drop = $('<i class="fa numberone">1</i>');
 		drop.css({ "color": usercolor, "font-size": "1.3em", "font-weight": "bold", "font-family": "sans-serif" });
