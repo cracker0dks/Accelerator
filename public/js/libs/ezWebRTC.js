@@ -15,7 +15,8 @@ function initEzWebRTC(initiator, config) {
                 "urls": "stun:stun.l.google.com:19302"
             }
         ],
-        sdpSemantics: 'unified-plan'
+        sdpSemantics: 'unified-plan',
+        iceConnectionTimeoutInSec : 30,
     }
     if (config) {
         for (var i in config) {
@@ -46,9 +47,11 @@ function initEzWebRTC(initiator, config) {
         });
     }
 
+    var iceConnectionTimeout;
     pc.oniceconnectionstatechange = async function (e) {
         //console.log('ICE state: ' + pc.iceConnectionState);
         if (pc.iceConnectionState == "connected" || pc.iceConnectionState == "completed") {
+            if(iceConnectionTimeout) { clearTimeout(iceConnectionTimeout); };
             if (!_this.isConnected) {
                 _this.isConnected = true;
                 _this.emitEvent("connect", true)
@@ -56,18 +59,24 @@ function initEzWebRTC(initiator, config) {
         } else if (pc.iceConnectionState == 'disconnected') {
             setTimeout(async function() { //lets wait if connection switches back to connected in a few seconds
                 if(_this.isConnected && pc.iceConnectionState == "disconnected" && initiator) {  //if still in disconnected and not closed state try to restart ice
-                    console.log("Try to recover ice connection form disconnected state!")
+                    //console.log("Try to recover ice connection form disconnected state!")
                     await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }));
                     _this.emitEvent("signaling", pc.localDescription);
                 }
-            }, 3000)
+            }, 3000);
+            iceConnectionTimeout = setTimeout(function() { //Close the connection if state not changes to connected in a given time
+                if (_this.isConnected) {
+                    _this.isConnected = false;
+                    _this.emitEvent("closed", true)
+                }
+            }, rtcConfig.iceConnectionTimeoutInSec * 1000);
         } else if (pc.iceConnectionState == 'closed') {
             if (_this.isConnected) {
                 _this.isConnected = false;
                 _this.emitEvent("closed", true)
             }
         } else if (pc.iceConnectionState == 'failed' && initiator) { //Try to reconnect from initator side
-            console.log("Try to recover ice connection form failed state!")
+            //console.log("Try to recover ice connection form failed state!")
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))
             _this.emitEvent("signaling", pc.localDescription)
         }
