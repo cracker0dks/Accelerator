@@ -773,6 +773,13 @@ function setModerator(id) {
 
 		if (iWasTheOldMod) {
 			refreshUserItems();
+
+			if (screen_stream) {
+				myMCU.unpublishStream(screen_stream)
+				screen_publishing = false;
+				$("#startScreenShareBtn").css("position", "relative");
+				$("#startScreenShareBtn").text("start screenshare!");
+			}
 		}
 
 		$("#handsUpBtn").show();
@@ -1919,7 +1926,7 @@ function writeToChat(clientName, text, noClean) {
 			hour = "0" + hour;
 		var timeString = hour + ":" + min;
 
-		var nContent = $('<div><b>' + clientName + '<span style="font-size: 0.8em; padding-left: 2px;">('+timeString+')</span>: </b>' + text + '</div>');
+		var nContent = $('<div><b>' + clientName + '<span style="font-size: 0.8em; padding-left: 2px;">(' + timeString + ')</span>: </b>' + text + '</div>');
 		nContent.css({ "transition": "color 30s ease", "color": "white" });
 		$("#chatContent").append(nContent);
 		setTimeout(function () {
