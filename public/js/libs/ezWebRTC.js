@@ -54,12 +54,20 @@ function initEzWebRTC(initiator, config) {
                 _this.emitEvent("connect", true)
             }
         } else if (pc.iceConnectionState == 'disconnected') {
+            setTimeout(async function() { //lets wait if connection switches back to connected in a few seconds
+                if(_this.isConnected && pc.iceConnectionState == "disconnected" && initiator) {  //if still in disconnected and not closed state try to restart ice
+                    console.log("Try to recover ice connection form disconnected state!")
+                    await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }));
+                    _this.emitEvent("signaling", pc.localDescription);
+                }
+            }, 3000)
+        } else if (pc.iceConnectionState == 'closed') {
             if (_this.isConnected) {
                 _this.isConnected = false;
-                _this.emitEvent("disconnect", true)
+                _this.emitEvent("closed", true)
             }
         } else if (pc.iceConnectionState == 'failed' && initiator) { //Try to reconnect from initator side
-            _this.isConnected = false;
+            console.log("Try to recover ice connection form failed state!")
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))
             _this.emitEvent("signaling", pc.localDescription)
         }

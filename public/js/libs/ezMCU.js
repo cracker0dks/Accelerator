@@ -54,7 +54,7 @@ function ezMCU(socket, newConfig = {}) {
                 connectedCallback();
         })
 
-        _this.peers[peerId].on('disconnect', () => {
+        _this.peers[peerId].on('closed', () => {
             _this.peers[peerId].destroy();
             delete _this.peers[peerId];
             _this.emitEvent("peerDisconnected", peerId);

@@ -120,7 +120,7 @@ function start() {
 				console.log('peererror', clientSocketId, err)
 			});
 
-			localPeer.on('disconnect', () => {
+			localPeer.on('closed', () => {
 				for (var i in peerAudioStreamSrcs) {
 					if (allStreamSources[i]) {
 						allStreamSources[i].disconnect();
