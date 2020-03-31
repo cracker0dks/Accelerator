@@ -886,10 +886,6 @@ function setStatus(id, status) {
 	refreshMuteUnmuteAll();
 }
 
-setInterval(function() {
-	refreshMuteUnmuteAll();
-}, 1000)
-
 function addSecondHandUp(content) {
 	var senderId = content["senderId"];
 	var resiverId = content["resiverUserId"];
@@ -1078,6 +1074,107 @@ function addUserToPanel(id, username) {
 		$(newUser).find(".userIcon").click(function () {
 			$('#userPicUploadModal').modal('show');
 		});
+<<<<<<< HEAD
+
+		newUser.find(".shareOwnVideo").show();
+		newUser.find(".shareOwnVideo").click(function () {
+			var _this = this;
+			$(_this).hide();
+			if (!isLocalVideoPlaying) {
+				writeToChat("Server", "Try to access webcam!");
+				var constraints = prevVideoInputDevice ? { deviceId: { ideal: prevVideoInputDevice } } : true;
+				navigator.getUserMedia({ audio: false, video: constraints }, (stream) => {
+					localVideoStrm = stream;
+					var streamId = stream.id.replace('{', "").replace('}', "")
+					localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
+					writeToChat("Pusblish video stream:" + streamId)
+					myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
+						if (err) {
+							writeToChat("ERROR", "Stream could not be published! Error: " + err);
+						} else {
+							isLocalVideoPlaying = true;
+							writeToChat("Server", "Webcamstream connecting...");
+							$("#" + ownSocketId).find(".shareOwnVideo").show();
+							$("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
+							$("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
+							$("#" + ownSocketId).find(".shareOwnVideo").addClass('camBtnActive');
+
+							var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
+							$("#" + ownSocketId).find(".videoContainer").append(videoElement);
+							myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+							$("#" + ownSocketId).find(".webcamfullscreen").show();
+							$("#" + ownSocketId).find(".popoutVideoBtn").show();
+						};
+					});
+				}, (err) => {
+					writeToChat("ERROR", "Access to webcam rejected or device not available!");
+					$(_this).show();
+					$(_this).css({ "color": "red" });
+					$(_this).attr("title", "Start webcam");
+				})
+
+			} else {
+				myMCU.unpublishStream(localVideoStrm);
+				isLocalVideoPlaying = false;
+				localVideoStrm = null;
+				$(_this).css({ "color": "rgb(142, 142, 142)" });
+				$(_this).attr("title", "Start webcam");
+				$(_this).removeClass("camBtnActive");
+				$(_this).show();
+			}
+		});
+
+||||||| constructed merge base
+
+		newUser.find(".shareOwnVideo").show();
+		newUser.find(".shareOwnVideo").click(function () {
+			var _this = this;
+			$(_this).hide();
+			if (!isLocalVideoPlaying) {
+				writeToChat("Server", "Try to access webcam!");
+				navigator.getUserMedia({ audio: false, video: true }, (stream) => {
+					localVideoStrm = stream;
+					var streamId = stream.id.replace('{', "").replace('}', "")
+					localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
+					writeToChat("Pusblish video stream:" + streamId)
+					myMCU.publishStreamToRoom(roomImIn["roomName"], localVideoStrm, function (err) {
+						if (err) {
+							writeToChat("ERROR", "Stream could not be published! Error: " + err);
+						} else {
+							isLocalVideoPlaying = true;
+							writeToChat("Server", "Webcamstream connecting...");
+							$("#" + ownSocketId).find(".shareOwnVideo").show();
+							$("#" + ownSocketId).find(".shareOwnVideo").css({ "color": "#03A9F4" });
+							$("#" + ownSocketId).find(".shareOwnVideo").attr("title", "Stop webcam");
+							$("#" + ownSocketId).find(".shareOwnVideo").addClass('camBtnActive');
+
+							var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + ownSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
+							$("#" + ownSocketId).find(".videoContainer").append(videoElement);
+							myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
+							$("#" + ownSocketId).find(".webcamfullscreen").show();
+							$("#" + ownSocketId).find(".popoutVideoBtn").show();
+						};
+					});
+				}, (err) => {
+					writeToChat("ERROR", "Access to webcam rejected or device not available!");
+					$(_this).show();
+					$(_this).css({ "color": "red" });
+					$(_this).attr("title", "Start webcam");
+				})
+
+			} else {
+				myMCU.unpublishStream(localVideoStrm);
+				isLocalVideoPlaying = false;
+				localVideoStrm = null;
+				$(_this).css({ "color": "rgb(142, 142, 142)" });
+				$(_this).attr("title", "Start webcam");
+				$(_this).removeClass("camBtnActive");
+				$(_this).show();
+			}
+		});
+
+=======
+>>>>>>> move camera button to buttom bar
 	} else {
 		newUser.find(".colorPicker").hide();
 	}
