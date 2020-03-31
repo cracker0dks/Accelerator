@@ -41,11 +41,12 @@ a, a:hover, a:focus {
 
 .colorToPickDiv {
     margin: 1px;
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 5px;
     float: left;
-    cursor: pointer;
+    border: 0px;
+    padding: 0px;
 }
 
 iframe {

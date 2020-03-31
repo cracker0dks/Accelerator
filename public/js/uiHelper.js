@@ -257,13 +257,13 @@ function addUserPItem(content) {
 		drop = $('<div style="color: silver; border-radius: 5px; font-size: 0.9em; border: 1px solid silver; padding-bottom: 5px; background: rgba(226, 220, 220, 0.56); height:' + thisHeight + 'px; min-width: 170px; min-height: 127px;"><div style="padding-left:3px; float:left;"><i class="fa fa-pencil-square-o"></i> ' +
 			itemUsername + '</div>' +
 			'<div style="display:none;" class="colorToPickContainer">' +
-			'<div class="colorToPickDiv" color="red" style="background:red;"></div>' +
-			'<div class="colorToPickDiv" color="blue" style="background:blue;"></div>' +
-			'<div class="colorToPickDiv" color="yellow" style="background:yellow;"></div>' +
-			'<div class="colorToPickDiv" color="green" style="background:green;"></div>' +
-			'<div class="colorToPickDiv" color="black" style="background:black;"></div>' +
-			'<div class="colorToPickDiv" color="white" style="background:white;"></div>' +
-			'<div title="eraser" class="colorToPickDiv" color="alpha" style="width: 11px; border-radius: 2px; background:white; color:black; font-size: 0.7em;"><i style="position: relative; top: -1px;" class="fa fa-eraser" aria-hidden="true"></i></div>' +
+			'<button class="colorToPickDiv" color="red" style="background:red;"></button>' +
+			'<button class="colorToPickDiv" color="blue" style="background:blue;"></button>' +
+			'<button class="colorToPickDiv" color="yellow" style="background:yellow;"></button>' +
+			'<button class="colorToPickDiv" color="green" style="background:green;"></button>' +
+			'<button class="colorToPickDiv" color="black" style="background:black;"></button>' +
+			'<button class="colorToPickDiv" color="white" style="background:white;"></button>' +
+			'<button title="eraser" class="colorToPickDiv" color="alpha" style="width: 11px; border-radius: 2px; background:white; color:black; font-size: 0.7em;"><i class="fa fa-eraser" aria-hidden="true"></i></button>' +
 			'</div>' +
 			'<button class="trash" style="display:none; position:absolute; right:0px; top:0px; background: #ffffff00; height: 17px; border:1px solid transparent;"><i class="fa fa-trash-o"></i></button>' +
 			'<button title="save current drawing to image file" class="saveFrameBtn" style="display:none; position:absolute; right:15px; top:0px; background: #ffffff00; border:1px solid transparent; height: 17px; "><i class="fa fa-floppy-o"></i></button>' +
