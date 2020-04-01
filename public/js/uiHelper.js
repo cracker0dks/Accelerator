@@ -733,7 +733,7 @@ function setModerator(id) {
 	if (id == "0") {
 		var placeholder = $('<div id="moderatorPlaceholder" style="margin-bottom:5px; text-align: center; cursor:pointer;" class="">' +
 			'<div style="height: 55px; padding: 15px;">' +
-			'Moderator <i class="fa fa-refresh"></i>' +
+			'Moderation <i class="fa fa-refresh"></i>' +
 			'</div>' +
 			'</div>');
 		placeholder.click(function () {
