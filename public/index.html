@@ -729,8 +729,15 @@
                         <div id="clockWrapper" style="position:absolute; top: 28px; left: 8px; color: gray;"><i
                                 class="fa fa-clock-o"></i> <span id="serverTime">13:37</span></div>
                         <div id="controllbarWrapper" class="row">
-                            <div class="col-xs-6 col-xs-offset-3">
+                            <div id="userToolbar" class="col-xs-6 col-xs-offset-3">
                                 <div class="toolbarWrapper">
+                                    <div class="btn-group col-centered buttonToolbar" role="group"
+                                        aria-label="...">
+                                        <button title="Activate the horn to speak" id="hornBtn" type="button"
+                                            class="toolbar-icon btn btn-default"><i class="fa fa-bullhorn"></i></button>
+                                        <button title="Enable your Camera" id="videoBtn" type="button"
+                                            class="toolbar-icon btn btn-default"><i class="fa fa-video-camera"></i></button>
+                                    </div>
                                     <div class="btn-group col-centered buttonToolbar" id="userToolbar" role="group"
                                         aria-label="...">
                                         <button title="Give thumbs up" type="button"
@@ -744,10 +751,9 @@
                                                 class="fa fa-hand-o-up"></i></button>
                                         <button title="Clap" type="button" class="toolbar-icon btn btn-default clap"><i
                                                 class="applause fa fa-sign-language"></i></button>
-                                        <button title="Activate the horn to speak" id="hornBtn" type="button"
-                                            class="toolbar-icon btn btn-default"><i class="fa fa-bullhorn"></i></button>
-                                        <button title="Enable your Camera" id="videoBtn" type="button"
-                                            class="toolbar-icon btn btn-default"><i class="fa fa-video-camera"></i></button>
+                                    </div>
+                                    <div class="btn-group col-centered buttonToolbar" role="group"
+                                        aria-label="...">
                                         <button id="silenceBtn" title="Disable audio output if you need silence"
                                             type="button" class="toolbar-icon btn btn-default volume"><i
                                                 class="mdi-av-volume-off"></i></button>
