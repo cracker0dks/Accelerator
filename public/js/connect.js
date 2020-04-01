@@ -1,6 +1,7 @@
 var accSettings = {}; //Serversettings
 var ownSocketId = null;
-var ownColor = null;
+var ownColor = localStorage.getItem("color") || getRandomColor();
+localStorage.setItem("color", ownColor);
 var roomImIn = null;
 var gainNode = null;
 var currentTab = "#homeScreen";
@@ -27,15 +28,15 @@ for (var i = 3; i < urlSplit.length; i++) {
 
 var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
 
-    ownColor = getLocalStorage("color");
-    if (!ownColor)
-        ownColor = getRandomColor();
-    setUserColor(ownSocketId, ownColor);
-
+    myMCU.on("iceFailed", function (peerId) {
+        $("#joinRoomError").text("IceFailedError: Could not connect to media streaming server!")
+    });
+    
     myMCU.joinRoom(username, roomToConnect["roomName"], function (err) {
         if (err) {
-            writeToChat(err);
+            $("#joinRoomError").text(err.toString())
         } else {
+            setUserColor(ownSocketId, ownColor);
             myMCU.on("newStreamPublished", function (content) {
                 console.log(content)
                 // var roomname = content["roomname"];

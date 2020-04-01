@@ -30,7 +30,7 @@ function ezMCU(socket, newConfig = {}) {
             return console.log("Already connected to this peer!");
         }
         _this.peers[peerId] = new initEzWebRTC(false, _this.mcuConfig)
-        _this.peers[peerId].on('error', err => console.log('error', err))
+        _this.peers[peerId].on('error', function(err) { _this.emitEvent("error", err); })
 
         _this.peers[peerId].on('signaling', data => {
             //console.log("SENDING SIGNALING OUT >", data)
@@ -59,6 +59,10 @@ function ezMCU(socket, newConfig = {}) {
             delete _this.peers[peerId];
             _this.emitEvent("peerDisconnected", peerId);
         })
+
+        _this.peers[peerId].on('iceFailed', () => {
+            _this.emitEvent("iceFailed", peerId);
+        });        
     };
     this.init = function () {
         socket.on("connect", function () {

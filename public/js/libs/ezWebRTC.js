@@ -80,6 +80,7 @@ function initEzWebRTC(initiator, config) {
             //console.log("Try to recover ice connection form failed state!")
             await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }))
             _this.emitEvent("signaling", pc.localDescription)
+            _this.emitEvent("iceFailed", true)
         }
     };
 
