@@ -839,7 +839,7 @@ hr {
     -moz-box-pack:center;
 }
 
-#userToolbar{
+#userToolbar > .buttonToolbar{
     display: inline-block;
     position: relative;
     vertical-align: middle;
@@ -1075,6 +1075,9 @@ hr {
 }
 .alert-danger {
     background-color: #03a9f4 !important;
+}
+.alert-error {
+    background-color: darkOrange !important;
 }
 #chatButtonWrapper{
     width:100%;
