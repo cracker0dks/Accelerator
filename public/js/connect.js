@@ -16,7 +16,7 @@ var allSingleFiles = null;
 var localVideoStrm = null;
 var localAudioStream = null;
 var isLocalVideoPlaying = false;
-var roomJoinTime = +new Date();
+var lastPlingSoundPlayed = +new Date()-5000;
 var userLang = navigator.language || navigator.userLanguage;
 
 var url = document.URL.substr(0, document.URL.lastIndexOf('/'));
@@ -616,9 +616,11 @@ function initSocketIO() {
             sendGetUserInfos(remotSocketId);
 
             setUserColor(remotSocketId, color);
-            if ((+new Date() - roomJoinTime) > 5000 && $("#leftContainer").find(".userdiv").length < 10) { //dont play pling when you join or more than ten users
+            
+            if ((+new Date() - lastPlingSoundPlayed) > 500 && $("#leftContainer").find(".userdiv").length < 10) { //dont play pling when you join or more than ten users
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();
+                lastPlingSoundPlayed = +new Date();
             }
             showHideVideoOptions("add");
         });
