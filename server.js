@@ -415,13 +415,16 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('fixPItemPosition', function (content) {
+            console.log("get")
             if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
-                for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
-                    if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
-                        userPItems[roomName][currentLoadedTab[roomName]][i]["posX"] = content["posX"];
-                        userPItems[roomName][currentLoadedTab[roomName]][i]["posY"] = content["posY"];
-                        sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
-                        return;
+                if(currentLoadedTab[roomName] && userPItems[roomName] && userPItems[roomName][currentLoadedTab[roomName]]) {
+                    for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
+                        if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
+                            userPItems[roomName][currentLoadedTab[roomName]][i]["posX"] = content["posX"];
+                            userPItems[roomName][currentLoadedTab[roomName]][i]["posY"] = content["posY"];
+                            sendToHoleRoom(roomName, 'updateUserPItem', userPItems[roomName][currentLoadedTab[roomName]][i]);
+                            return;
+                        }
                     }
                 }
             }
