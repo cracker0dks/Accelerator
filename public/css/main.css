@@ -839,7 +839,7 @@ hr {
     -moz-box-pack:center;
 }
 
-#userToolbar{
+#userToolbar > .buttonToolbar{
     display: inline-block;
     position: relative;
     vertical-align: middle;
