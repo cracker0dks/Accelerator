@@ -31,7 +31,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
     myMCU.on("iceFailed", function (peerId) {
         $("#joinRoomError").text("IceFailedError: Could not connect to media streaming server!")
     });
-    
+
     myMCU.joinRoom(username, roomToConnect["roomName"], function (err) {
         if (err) {
             $("#joinRoomError").text(err.toString())
@@ -616,7 +616,7 @@ function initSocketIO() {
             sendGetUserInfos(remotSocketId);
 
             setUserColor(remotSocketId, color);
-            if ((+new Date() - roomJoinTime) > 5000) { //dont play pling when you join
+            if ((+new Date() - roomJoinTime) > 5000 && $("#leftContainer").find(".userdiv").length < 10) { //dont play pling when you join or more than ten users
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();
             }
