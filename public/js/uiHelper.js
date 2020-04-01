@@ -1535,7 +1535,7 @@ function renderAllRooms(roomList) {
 					}
 					globalUserCnt += usersInRoomCnt;
 					roomesUsedCnt = usersInRoomCnt ? roomesUsedCnt + 1 : roomesUsedCnt;
-					var roomListEntry = $('<tr roomName="' + roomName + '" class="roomLaBle">' +
+					var roomListEntry = $('<tr roomName="' + escape(decodeURIComponent(roomName)).replace(/[^a-zA-Z0-9 ]/g, "") + '" class="roomLaBle">' +
 						'<td>' + roomLockIcon + ' ' + roomNameToShow + '</td>' +
 						'<td class="clickTr"><span style="color: gray; display:none;" class="clickToEnter">Click to enter</span></td>' +
 						'<td style="width:30px"><i style="cursor:pointer; display:none;" class="roomToTrashBtn fa fa-trash-o"></i></td>' +

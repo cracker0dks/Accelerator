@@ -52,12 +52,12 @@ $(function () { //Document ready
 				//Join a room directly if url get parameter is set   
 				showPage("#roomPage");
 				sendGetAllRooms();
-				var roomQ = getQueryVariable("room");
-				if (roomQ && roomQ != "" && username && username != "dummy") {
-					$("#directRoomName").text(roomQ);
+				var roomName = getQueryVariable("room");
+				if (roomName && roomName != "" && username && username != "dummy") {
+					$("#directRoomName").text(decodeURIComponent(roomName));
 					$('#connectModal').modal({ backdrop: 'static', keyboard: false });
 					$('#connectModal').find("#acceptDirectConnect").click(function () {
-						$($("#roomListContent").find(".roomLaBle[roomName=" + roomQ + "]")[0]).click();
+						$($("#roomListContent").find(".roomLaBle[roomName=" + escape(decodeURIComponent(roomName)).replace(/[^a-zA-Z0-9 ]/g, "") + "]")[0]).click();
 					})
 				}
 			}
