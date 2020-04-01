@@ -886,7 +886,7 @@ function setStatus(id, status) {
 	refreshMuteUnmuteAll();
 }
 
-setInterval(function() {
+setInterval(function () {
 	refreshMuteUnmuteAll();
 }, 1000)
 
@@ -1602,25 +1602,29 @@ function filterRooms() {
 	});
 }
 
+var joinedRoom = false;
 function joinRoom(room, roomPassword) {
-	roomImIn = room;
-	signaling_socket.emit('join', {
-		"roomName": room["roomName"],
-		"username": username,
-		"color": ownColor,
-		"roomPassword": roomPassword
-	}, function (err) {
-		if (err) {
-			alert(err);
-		} else {
-			showPage("#joinRoomPage");
-			loadMCUConnection(room, function () {
-				//connectionReadyCallback
-				sendConnectionReady();
-				renderMainPage(room);
-			});
-		}
-	});
+	if (!joinedRoom) { //Dont allow to join a room twice
+		joinedRoom = true;
+		roomImIn = room;
+		signaling_socket.emit('join', {
+			"roomName": room["roomName"],
+			"username": username,
+			"color": ownColor,
+			"roomPassword": roomPassword
+		}, function (err) {
+			if (err) {
+				alert(err);
+			} else {
+				showPage("#joinRoomPage");
+				loadMCUConnection(room, function () {
+					//connectionReadyCallback
+					sendConnectionReady();
+					renderMainPage(room);
+				});
+			}
+		});
+	}
 }
 
 function renderMainPage() {
