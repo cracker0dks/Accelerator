@@ -1003,11 +1003,11 @@ $(function () { //Document ready
 		var FileInput = $("#praesiUploadInput");
 		var files = FileInput[0].files;
 		var praesiType = $(".praesiType:checked").val();
-		var praesiName = cleanString($("#praesiName").val());
 
-		if (praesiName == "" && files.length == 1) {
-			cleanString($("#praesiName").val($("#filePlaceholder").val()));
+		if($("#praesiName").val()=="") {
+			$("#praesiName").val(cleanString($("#filePlaceholder").val()));
 		}
+		var praesiName = cleanString($("#praesiName").val());		
 
 		var formData = new FormData(this);
 		formData.append("userId", ownSocketId);
