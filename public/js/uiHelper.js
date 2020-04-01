@@ -1321,7 +1321,7 @@ function loadSlide(name, slideid) {
 			if ($("#praesiDiv").is(":visible")) {
 				$("#praesiDiv").empty();
 				var praesiUrl = document.URL.substr(0, document.URL.lastIndexOf('/')) + '/pdfjs/web/viewer.html?file=' + document.URL.substr(0, document.URL.lastIndexOf('/')) + '/praesis/' + roomImIn["roomName"].split("###")[0] + '/' + name + '/' + allLoadedPraesis[name]["filename"];
-				pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 730px;" src="' + praesiUrl + '"></iframe>');
+				pdfPraesi = $('<iframe seamless="seamless" id="pdfIFrame" style="background: black; width: 100%; height: 720px;" src="' + praesiUrl + '"></iframe>');
 				$("#praesiDiv").append(pdfPraesi);
 
 				pdfPraesi.on("load", function () {
