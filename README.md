@@ -42,7 +42,9 @@ docker run -d --name acc --net=host -v /home/acc/config:/app/config -v /home/acc
 ```
 
 ### Configuration ###
-On the first start a new folder "/config" will be generated. Take a look at "/config/config.json" for all parameters. Change them if you like, and restart the server. More to come...
+On the first start a new folder "/config" will be generated. Take a look at "/config/config.json" for all parameters. Change them if you like, and restart the server. If you don't see a config.json inside the /config folder set permitions of to mount:`chmod -R 777 /home/acc` and restart the container: `docker restart acc`.
+
+More to come...
 
 ### ToDos ###
 - [ ] Better error feedback
