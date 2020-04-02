@@ -28,6 +28,14 @@ var defaultConfig = {
 	"accConfig": { 
 		"etherpadUrl": "", //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 
 		"deleteUnusedRoomsAfterDays": 0, //0 is no deletion at all
+		"screenshareConfig" : {
+            "maxFPS" : 30,
+            "maxResolution" : "1080p" //1080p, 720p, 480p, 360p
+        },
+        "webcamConfig" : {
+            "maxFPS" : 30,
+            "maxResolution" : "1080p" //1080p, 720p, 480p, 360p
+        }
 	}
 }
 
