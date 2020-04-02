@@ -35,7 +35,7 @@ $(function () { //Document ready
 			setUserAttr(username, password);
 			showPage("#accessMicPage");
 
-			var constraints = { echoCancellation: { ideal : true } };
+			var constraints = { echoCancellation: { ideal: true } };
 			if (localStorage.getItem("prevAudioInputDevice")) {
 				constraints["deviceId"] = { ideal: localStorage.getItem("prevAudioInputDevice") }
 			}
@@ -600,19 +600,35 @@ $(function () { //Document ready
 			$("#startScreenShareBtn").text("please wait...!");
 			writeToChat("Server", "Try to access Screen!");
 			var qIndex = $("#screenshareQually").val();
-			var newMand = { maxWidth: 1920, maxHeight: 1080 };
-			if (qIndex == 2) {
-				newMand = { maxWidth: 1280, maxHeight: 768 };
-			} else if (qIndex == 3) {
-				newMand = { maxWidth: 800, maxHeight: 600 };
-			} else if (qIndex == 4) {
-				newMand = { maxWidth: 640, maxHeight: 480 };
-			}
 
+			var maxWidth = 480;
+			var maxHight = 360
+			if (qIndex == 1) {
+				maxWidth = 1920;
+				maxHight = 1080;
+			} else if (qIndex == 2) {
+				maxWidth = 1920;
+				maxHight = 1080;
+			} else if (qIndex == 3) {
+				maxWidth = 1920;
+				maxHight = 1080;
+			}
+			var newVidConstrains = {
+				// frameRate: {
+				// 	ideal: 5
+				// },
+				width: {
+					max: maxWidth
+				},
+				height: {
+					max: maxHight
+				},
+				mandatory : { maxWidth: maxWidth, maxHeight: maxHight }
+			}
 			var config = {
 				screen: true,
 				attributes: { socketId: ownSocketId },
-				video: { mandatory: newMand }
+				video: newVidConstrains
 			};
 
 			var sIndex = $("#screenshareSource").val();
@@ -624,6 +640,7 @@ $(function () { //Document ready
 					try {
 						stream = await _startScreenCapture();
 					} catch (e) {
+						console.log(e)
 						writeToChat("ERROR", "Access to screen rejected!");
 						$("#startScreenShareBtn").removeAttr("disabled", "false");
 						$("#startScreenShareBtn").text("start screenshare!");
@@ -658,9 +675,11 @@ $(function () { //Document ready
 
 				})();
 			} else {
-				var constraints = prevVideoInputDevice ? { deviceId: { ideal: prevVideoInputDevice } } : {};
-				constraints["mandatory"] = newMand;
-				navigator.getUserMedia({ audio: false, video: constraints }, function (stream) {
+				if(prevVideoInputDevice) {
+					newVidConstrains["deviceId"] = { ideal: prevVideoInputDevice }
+				}
+
+				navigator.getUserMedia({ audio: false, video: newVidConstrains }, function (stream) {
 					stream["streamAttributes"] = { "screenshare": true };
 					screen_stream = stream;
 					myMCU.publishStreamToRoom(roomImIn["roomName"], stream, function (err) {
@@ -1004,10 +1023,10 @@ $(function () { //Document ready
 		var files = FileInput[0].files;
 		var praesiType = $(".praesiType:checked").val();
 
-		if($("#praesiName").val()=="") {
+		if ($("#praesiName").val() == "") {
 			$("#praesiName").val(cleanString($("#filePlaceholder").val()));
 		}
-		var praesiName = cleanString($("#praesiName").val());		
+		var praesiName = cleanString($("#praesiName").val());
 
 		var formData = new FormData(this);
 		formData.append("userId", ownSocketId);
