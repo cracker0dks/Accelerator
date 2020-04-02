@@ -205,6 +205,14 @@ var init = async function (io, newConfig) {
             loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content);
         });
 
+        socket.on("mcu_vid", function (content) {
+            var clientSocketId = content["cs"];
+            var data = content["d"];
+            var streamId = content["streamId"];
+            content["clientSocketId"] = socket.id;
+            io.to(clientSocketId).emit("mcu_vid", { streamId : streamId, d: data });
+        });
+        
         //END - LOAD BALANCER STUFF
     })
 

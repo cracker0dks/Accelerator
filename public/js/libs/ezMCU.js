@@ -30,7 +30,7 @@ function ezMCU(socket, newConfig = {}) {
             return console.log("Already connected to this peer!");
         }
         _this.peers[peerId] = new initEzWebRTC(false, _this.mcuConfig)
-        _this.peers[peerId].on('error', function(err) { _this.emitEvent("error", err); })
+        _this.peers[peerId].on('error', function (err) { _this.emitEvent("error", err); })
 
         _this.peers[peerId].on('signaling', data => {
             //console.log("SENDING SIGNALING OUT >", data)
@@ -62,7 +62,7 @@ function ezMCU(socket, newConfig = {}) {
 
         _this.peers[peerId].on('iceFailed', () => {
             _this.emitEvent("iceFailed", peerId);
-        });        
+        });
     };
     this.init = function () {
         socket.on("connect", function () {
@@ -104,6 +104,33 @@ function ezMCU(socket, newConfig = {}) {
 
             socket.on("mcu_onIceServers", function (iceServers) {
                 _this.mcuConfig["iceServers"] = iceServers;
+            })
+
+            var knownVidStream = {};
+            var video = document.getElementById('plaineVid');
+            var mediaSource;
+            var sourceBuffer;
+            socket.on("mcu_vid", function (content) {
+                var data = Uint8Array.from(content["d"]);
+                var streamId = content["streamId"];
+                
+                
+                if(!knownVidStream[streamId]) {
+                    console.log("CREATE STREAM!");
+                    knownVidStream[streamId] = true;
+
+                    _this.emitEvent("vidStreamAdded", _this.allStreamAttributes[streamId]);
+                    mediaSource = new MediaSource();
+                    video.src = URL.createObjectURL(mediaSource);
+                    mediaSource.addEventListener('sourceopen', function (e) {
+                        sourceBuffer = mediaSource.addSourceBuffer("video/webm;codecs=vp8");
+                        console.log(data)
+                        sourceBuffer.appendBuffer(data);
+                    }, false);
+                   // sourceBuffer.appendBuffer(data);
+                } else {
+                    sourceBuffer.appendBuffer(data);
+                }
             })
 
             socket.on("mcu_onNewStreamPublished", function (content) {

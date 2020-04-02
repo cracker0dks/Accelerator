@@ -63,6 +63,11 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                 }
             })
 
+            
+            myMCU.on("vidStreamAdded", function (stream) {
+
+            });
+
             myMCU.on("streamAdded", function (stream) {
                 console.log(stream)
 

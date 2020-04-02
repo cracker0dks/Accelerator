@@ -8,8 +8,8 @@ var mcuConfig = {
 	enabled: true,
 	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
 	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
-	secure : false,
-	webRtcConfig : {}
+	secure: false,
+	webRtcConfig: {}
 }
 
 function setMCUConfig(config) {
@@ -27,6 +27,8 @@ function start() {
 	var allStreams = {};
 	var allStreamDestinations = {};
 	var allStreamSources = {};
+	var streamRecordSubs = {};
+	var allMediaRecorders = {};
 
 	socket.on('connect', function () {
 		socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
@@ -51,6 +53,8 @@ function start() {
 			if (allStreams[streamId]) {
 				delete allStreams[streamId];
 			}
+			console.log("stopped stream");
+			allMediaRecorders[streamId].stop();
 		});
 
 		socket.on('mcu_reqSteam', function (content) {
@@ -74,7 +78,9 @@ function start() {
 				var audioTracks = allStreams[streamId].getAudioTracks();
 				var videoTracks = allStreams[streamId].getVideoTracks();
 				if (videoTracks.length > 0) {
-					allPeers[clientSocketId].addStream(allStreams[streamId]);
+					if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
+					streamRecordSubs[streamId][clientSocketId] = true;
+					//allPeers[clientSocketId].addStream(allStreams[streamId]); //Old way with extra stream
 				} else if (audioTracks.length > 0) {
 					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
 						allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
@@ -133,6 +139,11 @@ function start() {
 					allStreamDestinations[clientSocketId].disconnect();
 					delete allStreamDestinations[clientSocketId];
 				}
+				for (var i in streamRecordSubs) {
+					if (streamRecordSubs[i][clientSocketId]) {
+						delete streamRecordSubs[i][clientSocketId];
+					}
+				}
 			})
 
 			localPeer.on('connect', () => {
@@ -152,13 +163,53 @@ function start() {
 
 				var videoTracks = stream.getVideoTracks();
 				var audioTracks = stream.getAudioTracks();
-				if (videoTracks == 0) { //Only audio
+				if (videoTracks == 0) { //Only audio so generate a streamSource
 					var scr = ac.createMediaStreamSource(stream);
 					allStreamSources[streamId] = scr;
 					peerAudioStreamSrcs[streamId] = streamId;
 
 					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
+				} else { //its video so start get data
+					var mediaEl = $('<video autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
+					mediaEl[0].srcObject = stream;
+					var firstFrame = null;
+					var mediaRecorder = new MediaRecorder(stream);
+					allMediaRecorders[streamId] = mediaRecorder;
+					mediaRecorder.onerror = function (err) {
+						console.log("error");
+						console.log(err);
+					}
+					console.log(mediaRecorder.mimeType)
+					mediaRecorder.start(0);
+					console.log("Start recording")
+					var knownClients = {};
+					mediaRecorder.ondataavailable = function (event) {
+						if (event.data.size > 0) {
+							var reader = new FileReader();
+							reader.readAsArrayBuffer(event.data);
+							reader.onloadend = function () {
+								var data = new Uint8Array(this.result);
+								if (!firstFrame) {
+									firstFrame = data;
+									console.log("Set first frame!")
+								}
+								if (streamRecordSubs[streamId]) {
+									for (var i in streamRecordSubs[streamId]) { //Send to all subs
+										if (!knownClients[i]) { //Always send first frame because of encoding information
+											knownClients[i] = true;
+											socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: firstFrame }); //Send encoded data to client
+										}
+										socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: data }); //Send encoded data to client
+									}
+								}
+							}
+						}
+					}
+					mediaRecorder.onstop = function (e) {
+						console.log("STOPED")
+						delete allMediaRecorders[streamId];
+					}
 				}
 
 				var retObj = {
@@ -174,7 +225,7 @@ function start() {
 		setInterval(function () { //Every 10h get current IceServers
 			socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
 		}, 1000 * 60 * 60 * 10);
-		
+
 
 	});
 
