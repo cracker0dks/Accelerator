@@ -1219,14 +1219,12 @@ function startLocalVideo() {
 			},
 			height: {
 				max: maxHeight
-			},
-			mandatory: { maxWidth: maxWidth, maxHeight: maxHeight }
+			}
 		}
 
 		if (prevVideoInputDevice) {
 			newVidConstrains["deviceId"] = { ideal: prevVideoInputDevice }
 		}
-		console.error(newVidConstrains)
 		navigator.getUserMedia({ audio: false, video: newVidConstrains }, (stream) => {
 			localVideoStrm = stream;
 			var streamId = stream.id.replace('{', "").replace('}', "")
