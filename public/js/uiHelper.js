@@ -1178,8 +1178,8 @@ function showHideVideoOptions(action) { //Stop videosharing with more than 6 Use
 		$("#videoBtn").hide();
 		$("#videoBtn.alert-danger").click(); //Stop active cams
 		if ($("#videoBtn").hasClass("alert-danger")) {
-				$("#videoBtn").removeClass("alert-danger");
-			}
+			$("#videoBtn").removeClass("alert-danger");
+		}
 	} else {
 		$("#videoBtn").show();
 	}
@@ -1193,7 +1193,41 @@ function showHideVideoOptions(action) { //Stop videosharing with more than 6 Use
 function startLocalVideo() {
 	if (!isLocalVideoPlaying) {
 		writeToChat("Server", "Try to access webcam!");
-		navigator.getUserMedia({ audio: false, video: true }, (stream) => {
+
+		var maxRes = accSettings && accSettings["webcamConfig"] && accSettings["webcamConfig"]["maxResolution"] ? accSettings["webcamConfig"]["maxResolution"] : "480p";
+		var maxFPS = accSettings && accSettings["webcamConfig"] && accSettings["webcamConfig"]["maxFPS"] ? accSettings["webcamConfig"]["maxFPS"] : 15;
+
+		var maxWidth = 480;
+		var maxHeight = 360
+		if (maxRes == "1080p") {
+			maxWidth = 1280;
+			maxHeight = 1080;
+		} else if (maxRes == "720p") {
+			maxWidth = 1280;
+			maxHeight = 720;
+		} else if (maxRes == "480p") {
+			maxWidth = 640;
+			maxHeight = 480;
+		}
+
+		var newVidConstrains = {
+			frameRate: {
+				ideal: maxFPS
+			},
+			width: {
+				max: maxWidth
+			},
+			height: {
+				max: maxHeight
+			},
+			mandatory: { maxWidth: maxWidth, maxHeight: maxHeight }
+		}
+
+		if (prevVideoInputDevice) {
+			newVidConstrains["deviceId"] = { ideal: prevVideoInputDevice }
+		}
+		console.error(newVidConstrains)
+		navigator.getUserMedia({ audio: false, video: newVidConstrains }, (stream) => {
 			localVideoStrm = stream;
 			var streamId = stream.id.replace('{', "").replace('}', "")
 			localVideoStrm["streamAttributes"] = { socketId: ownSocketId, username: username };
@@ -1228,9 +1262,9 @@ function startLocalVideo() {
 
 function stopLocalVideo() {
 	myMCU.unpublishStream(localVideoStrm);
-		isLocalVideoPlaying = false;
-		localVideoStrm = null;
-		sendUserStatus("not-video");
+	isLocalVideoPlaying = false;
+	localVideoStrm = null;
+	sendUserStatus("not-video");
 }
 
 function apendScreenshareStream(stream, streamAttr) {

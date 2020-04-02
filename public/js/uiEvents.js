@@ -307,6 +307,7 @@ $(function () { //Document ready
 			var webcamTestStopBtn = $('<button class="btn btn-primary" style="padding:5px; display:none;"><i class="fa fa-stop-circle-o" aria-hidden="true"></i> Stop</button>');
 			webcamTestStartBtn.click(function () {
 				$("#mediaSetupOutput").empty();
+
 				var constraints = { deviceId: { ideal: videoInputSelect.val() } };
 				webcamTestStartBtn.hide();
 				navigator.getUserMedia({ audio: false, video: constraints }, async function (stream) {
@@ -602,28 +603,29 @@ $(function () { //Document ready
 			var qIndex = $("#screenshareQually").val();
 
 			var maxWidth = 480;
-			var maxHight = 360
+			var maxHeight = 360
 			if (qIndex == 1) {
 				maxWidth = 1920;
-				maxHight = 1080;
+				maxHeight = 1080;
 			} else if (qIndex == 2) {
-				maxWidth = 1920;
-				maxHight = 1080;
+				maxWidth = 1280;
+				maxHeight = 720;
 			} else if (qIndex == 3) {
-				maxWidth = 1920;
-				maxHight = 1080;
+				maxWidth = 640;
+				maxHeight = 480;
 			}
+			var maxFPS = accSettings && accSettings["screenshareConfig"] && accSettings["screenshareConfig"]["maxFPS"] ? accSettings["screenshareConfig"]["maxFPS"] : 15;
 			var newVidConstrains = {
-				// frameRate: {
-				// 	ideal: 5
-				// },
+				frameRate: {
+					ideal: maxFPS
+				},
 				width: {
 					max: maxWidth
 				},
 				height: {
-					max: maxHight
+					max: maxHeight
 				},
-				mandatory : { maxWidth: maxWidth, maxHeight: maxHight }
+				mandatory: { maxWidth: maxWidth, maxHeight: maxHeight }
 			}
 			var config = {
 				screen: true,
@@ -675,7 +677,7 @@ $(function () { //Document ready
 
 				})();
 			} else {
-				if(prevVideoInputDevice) {
+				if (prevVideoInputDevice) {
 					newVidConstrains["deviceId"] = { ideal: prevVideoInputDevice }
 				}
 

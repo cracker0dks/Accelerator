@@ -154,7 +154,7 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
-    socket.on('getAllRooms', function (config) {
+    socket.on('getAllRooms', function () {
         var cleanRooms = getAllRoomsWithoutPasswords();
         socket.emit('getAllRooms', cleanRooms);
     });

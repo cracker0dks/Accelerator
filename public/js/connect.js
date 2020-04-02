@@ -280,6 +280,19 @@ function setUserAttr(username, passwort) {
             "userLang": userLang
         }, function (newAccSettings) {
             accSettings = newAccSettings;
+
+            //Remove invaild resoltions from screenshare
+            var maxRes = accSettings["screenshareConfig"] && accSettings["screenshareConfig"]["maxResolution"] ? accSettings["screenshareConfig"]["maxResolution"] : "720p";
+            if(maxRes != "1080p") {
+                $("#res1080p").remove();
+            }
+            if(maxRes == "480p") {
+                $("#res720p").remove();
+            }
+            if(maxRes == "360p") {
+                $("#res720p").remove();
+                $("#res420p").remove();
+            }
         });
 }
 
