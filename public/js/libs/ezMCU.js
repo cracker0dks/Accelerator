@@ -107,31 +107,62 @@ function ezMCU(socket, newConfig = {}) {
             })
 
             var knownVidStream = {};
-            var video = document.getElementById('plaineVid');
+            var video;
             var mediaSource;
             var sourceBuffer;
+
+            var arrayOfBlobs = [];
             socket.on("mcu_vid", function (content) {
-                var data = Uint8Array.from(content["d"]);
                 var streamId = content["streamId"];
-                
-                
-                if(!knownVidStream[streamId]) {
+                var c = new Blob([content["d"]], { type: "video/webm" })
+                arrayOfBlobs.push(c);
+                appendToSourceBuffer()
+
+                if (!knownVidStream[streamId]) {
                     console.log("CREATE STREAM!");
                     knownVidStream[streamId] = true;
 
-                    _this.emitEvent("vidStreamAdded", _this.allStreamAttributes[streamId]);
+                    //_this.emitEvent("vidStreamAdded", _this.allStreamAttributes[streamId]);
+
                     mediaSource = new MediaSource();
+
+                    video = document.getElementById('plaineVid');
+
                     video.src = URL.createObjectURL(mediaSource);
+
                     mediaSource.addEventListener('sourceopen', function (e) {
                         sourceBuffer = mediaSource.addSourceBuffer("video/webm;codecs=vp8");
-                        console.log(data)
-                        sourceBuffer.appendBuffer(data);
+                        console.log("open")
+                        sourceBuffer.addEventListener("updateend", appendToSourceBuffer);
+                        //video.play();
                     }, false);
-                   // sourceBuffer.appendBuffer(data);
-                } else {
-                    sourceBuffer.appendBuffer(data);
                 }
             })
+
+
+
+            function appendToSourceBuffer() {
+
+                if (mediaSource && arrayOfBlobs && arrayOfBlobs.length > 0 && sourceBuffer && mediaSource.readyState === "open" && sourceBuffer.updating === false) {
+                    //console.log("append", arrayOfBlobs)
+                    sourceBuffer.appendBuffer(new Blob(arrayOfBlobs, {
+                        type: "video/webm"
+                    }));
+                    arrayOfBlobs = []
+                    if (video.paused) {
+                        // start playing after first chunk is appended
+                        var playPromise = video.play();
+                        playPromise.then(function () {
+                            // Automatic playback started!
+                        }).catch(function (error) {
+                            console.log(error)
+                        });
+                    }
+
+                }
+            }
+
+
 
             socket.on("mcu_onNewStreamPublished", function (content) {
                 console.log("mcu_onNewStreamPublished", content)
