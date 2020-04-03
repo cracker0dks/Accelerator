@@ -972,7 +972,7 @@ hr {
 }
 #fileTableWrapper{
     position: relative;
-	background-color: rgba(119,119,119,0.30);
+	background-color: rgba(119,119,119,0.70);
     height:147px;
     border: 1px solid black;
     border-radius: 4px;
@@ -1091,7 +1091,7 @@ hr {
     position: relative;
     height:100px;
     border: 1px solid black;
-	background-color: rgba(119,119,119,0.30);
+	background-color: rgba(119,119,119,0.70);
 	color: white;
     border-radius: 4px;
     overflow: auto;

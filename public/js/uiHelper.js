@@ -1965,7 +1965,7 @@ function writeToChat(clientName, text, noClean) {
 		nContent.css({ "transition": "color 30s ease", "color": "white" });
 		$("#chatContent").append(nContent);
 		setTimeout(function () {
-			nContent.css({ "color": "rgb(146, 146, 146, 1)" });
+			nContent.css({ "color": "rgb(210, 210, 210, 1)" });
 		}, 10000);
 
 		var objDiv = document.getElementById("chatContent");
