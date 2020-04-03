@@ -1173,7 +1173,6 @@ function loadAllRoomAttr() {
                 allRoomAttr[i]["users"] = {};
                 allRoomAttr[i]["moderator"] = null;
             }
-            console.log(allRoomAttr)
         } catch (e) {
             console.log("error reading ./db/allRoomAttr.txt", e);
         }
