@@ -174,19 +174,20 @@ function start() {
 					var mediaEl = $('<video autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
 					var firstFrame = null;
-					var mediaRecorder = new MediaRecorder(stream,{mimeType:"video/webm"});
+					var mediaRecorder = new MediaRecorder(stream,{mimeType:"video/webm; codecs=vp8"});
 					allMediaRecorders[streamId] = mediaRecorder;
 					mediaRecorder.onerror = function (err) {
-						console.log("error");
 						console.log(err);
 					}
 					console.log(mediaRecorder.mimeType)
-					mediaRecorder.start(10);
+					mediaRecorder.start(50);
 					console.log("Start recording")
 					var knownClients = {};
 					mediaRecorder.ondataavailable = function (event) {
 						if (event.data.size > 0) {
+							var wasFirstFrame = false;
 							if (!firstFrame) {
+								wasFirstFrame = true;
 								firstFrame = event.data;
 								console.log("Set first frame!")
 							}
@@ -194,8 +195,10 @@ function start() {
 								for (var i in streamRecordSubs[streamId]) { //Send to all subs
 									if (!knownClients[i]) { //Always send first frame because of encoding information
 										knownClients[i] = true;
-										socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: firstFrame }); //Send encoded data to client
-										console.log("send frame!")
+										// if(!wasFirstFrame) {
+										// 	socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: firstFrame }); //Send encoded data to client
+										// 	console.log("send first frame!")
+										// }
 									}
 									socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: event.data }); //Send encoded data to client
 								}

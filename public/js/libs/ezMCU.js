@@ -107,62 +107,33 @@ function ezMCU(socket, newConfig = {}) {
             })
 
             var knownVidStream = {};
-            var video;
-            var mediaSource;
-            var sourceBuffer;
+            var video = document.getElementById('plaineVid');
+            var mediaSource = new MediaSource();
+            video.src = window.URL.createObjectURL(mediaSource);
 
-            var arrayOfBlobs = [];
+            var sourceBuffer;
+            mediaSource.addEventListener('sourceopen', function () {
+                sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs=vp8');
+                console.log(sourceBuffer);
+            })
+
             socket.on("mcu_vid", function (content) {
                 var streamId = content["streamId"];
-                var c = new Blob([content["d"]], { type: "video/webm" })
-                arrayOfBlobs.push(c);
-                appendToSourceBuffer()
+
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    sourceBuffer.appendBuffer(new Uint8Array(e.target.result));
+                }
+                
+                reader.readAsArrayBuffer(content["d"]);
 
                 if (!knownVidStream[streamId]) {
                     console.log("CREATE STREAM!");
                     knownVidStream[streamId] = true;
 
                     //_this.emitEvent("vidStreamAdded", _this.allStreamAttributes[streamId]);
-
-                    mediaSource = new MediaSource();
-
-                    video = document.getElementById('plaineVid');
-
-                    video.src = URL.createObjectURL(mediaSource);
-
-                    mediaSource.addEventListener('sourceopen', function (e) {
-                        sourceBuffer = mediaSource.addSourceBuffer("video/webm;codecs=vp8");
-                        console.log("open")
-                        sourceBuffer.addEventListener("updateend", appendToSourceBuffer);
-                        //video.play();
-                    }, false);
                 }
             })
-
-
-
-            function appendToSourceBuffer() {
-
-                if (mediaSource && arrayOfBlobs && arrayOfBlobs.length > 0 && sourceBuffer && mediaSource.readyState === "open" && sourceBuffer.updating === false) {
-                    //console.log("append", arrayOfBlobs)
-                    sourceBuffer.appendBuffer(new Blob(arrayOfBlobs, {
-                        type: "video/webm"
-                    }));
-                    arrayOfBlobs = []
-                    if (video.paused) {
-                        // start playing after first chunk is appended
-                        var playPromise = video.play();
-                        playPromise.then(function () {
-                            // Automatic playback started!
-                        }).catch(function (error) {
-                            console.log(error)
-                        });
-                    }
-
-                }
-            }
-
-
 
             socket.on("mcu_onNewStreamPublished", function (content) {
                 console.log("mcu_onNewStreamPublished", content)
