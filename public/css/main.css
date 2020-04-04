@@ -15,14 +15,7 @@ body {
 a, a:hover, a:focus {
     color: #03a9f4;
 }
-.noPadding{
-    padding-left: 0px;
-    padding-right:0px;
-}
-.noMargin{
-    margin-right: 0px;
-    margin-left: 0px;
-}
+
 .page {
     display: none;
     overflow:hidden;
@@ -53,11 +46,6 @@ iframe {
     border: 0px;
 }
 
-.form-control:focus, .form-control.focus {
-  border: 0;
-  background-image: linear-gradient(#03a9f4,#03a9f4),linear-gradient(#d2d2d2,#d2d2d2);
-}
-
 .transparent {
     background: rgba(255, 255, 255, 0) !important;
 }
@@ -66,9 +54,7 @@ iframe {
     border-bottom-right-radius: 3px;
 }
 
-.btn {
-    padding:0px;
-}
+
 div.userTools {
     position: absolute;
     right: 5px;
@@ -108,27 +94,7 @@ div.userTools {
 .innerContent {
     background: white;
 }
-#roomListContent tr:last-child{
-      border-bottom: 1px solid #413939;
-}
-#serverStatsDiv {
-    position: absolute;
-    left: 4px;
-    bottom: -18px;
-    font-size: 0.5em;
-}
-#groopRoomSearch {
-    position: relative;
-    top: -10px;
-    width:200px; 
-    color:white; 
-    background-image: none; 
-    margin-right: 12px; 
-    background-color: #74747454; 
-    padding-left: 10px; 
-    border-radius: 4px; 
-    float: right;
-}
+
 #userToolDiv{
     display: none;
     position: absolute;
@@ -338,18 +304,7 @@ div.userTools {
 	background-color: #03a9f4 !important;
 }
 
-#leftContainer{
-    display: block;
-    left: 0;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 10px 7px 10px 5px;
-    position: fixed;
-    z-index: 1000;
-    height:100%;
-	background-color: rgba(189,189,189,0.35); 
-    box-shadow: 6px 0px 5px -5px #000;
-}
+
 #startScreenShareBtn{
     background-color: #03a9f4;
     margin-left: auto;
@@ -411,55 +366,6 @@ div.userTools {
     margin: 5px 1px;
 }
 
-#slidePageDisplayWrapper {
-    position: absolute;
-    bottom: -12px;
-    background: #595959;
-    left: 50px;
-    font-size: 0.8em;
-    height: 12px;
-    display: block;
-    text-align: center;
-    width: 79px;
-    border-bottom-right-radius: 3px;
-    border-bottom-left-radius: 3px;
-    color: white;
-    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
-}
-
-#praesiSettingsWrapper {
-    position: absolute;
-    bottom: -12px;
-    background: #595959;
-    left: 49px;
-    font-size: 0.7em;
-    height: 12px;
-    display: block;
-    text-align: center;
-    width: 50px;
-    border-bottom-right-radius: 3px;
-    border-bottom-left-radius: 3px;
-    color: white;
-    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
-    cursor: pointer;
-}
-
-#d3praesiSettingsWrapper {
-    position: absolute;
-    bottom: -12px;
-    background: #595959;
-    left: 100px;
-    font-size: 0.7em;
-    height: 12px;
-    display: block;
-    text-align: center;
-    width: 53px;
-    border-bottom-right-radius: 3px;
-    border-bottom-left-radius: 3px;
-    color: white;
-    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
-    cursor: pointer;
-}
 
 .groupLimitInput {
     padding-left: 5px;
@@ -495,8 +401,7 @@ div.userTools {
 }
 
 h1 {
-    font-family: 'Rock Salt', cursive !important;
-    text-shadow: -1px -1px 1px rgba(0,0,0,0.67);
+    
 }
 .placeHolderHeading{
     padding-top:90px;
@@ -541,23 +446,13 @@ h1 {
     margin-bottom: 5px;
 }
 
-#rightContainer{
-    height:100%;
-    display: block;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
 #bottomContainer{
     position: fixed;
     width: 83.33333%;
     padding-right: 45px;
     bottom: 5px;
 }
-#topContainer{
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 5px;
-}
+
 #mainContainer{
     height: 100%;
     z-index: 998;
@@ -569,9 +464,7 @@ h1 {
     width: 1300px;
     min-height: 550px !important;
 }
-.moderatorTools {
-    display:none;
-}
+
 .placeHolderIcon{
     font-size: 16em;
     color:#dcdcdc;
@@ -580,21 +473,9 @@ h1 {
     display:none;
 }
 
-.buttonToolbar{
-    display: inline-block;
-    position: relative;
-    vertical-align: middle;
-    text-shadow: 0px 2px 3px #666;
-    box-shadow: none;
-    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
-}
 
 /* ### LeftContainer Components ####*/
-#moderatorDiv{
-    border:0px solid silver;
-    min-height:80px;
-    margin-bottom:0px;
-}
+
 #moderatorPlaceholder {
 	border:1px solid black;
 	background-color: #888;
@@ -727,11 +608,6 @@ h1 {
     background: none;
 }
 
-.modal-content {
-    -webkit-box-shadow: 0 5px 15px rgba(0,0,0,.5);
-    box-shadow: 0 5px 15px rgba(0,0,0,.5);
-    background-color: #e6e6e6;
-}
 
 hr {
     border-top: 1px solid #717070;
@@ -817,27 +693,12 @@ hr {
     color: black;
 }
 
-.modalSaveBtn, .modalOkBtn {
-    height: 30px;
-}
-
-.modalOkBtn {
-    background-color: gray !important;
-}
-
 /* ### TopContainer Components ####*/
 #buttonPanelTopRight button{
     float:right;
     background-color:#03a9f4;
 }
 /* ### BottomContainer Components ####*/
-.toolbarWrapper{
-    display: -webkit-box;
-    -webkit-box-pack:center;
-    width:100%;
-    display:-moz-box;
-    -moz-box-pack:center;
-}
 
 #userToolbar > .buttonToolbar{
     display: inline-block;
@@ -852,43 +713,7 @@ hr {
     border-bottom-right-radius: 0 !important;
     border-top-right-radius: 0 !important;
 }
-.toolbar-icon {
-    background-color: #595959 !important;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-left: -4px;
-    padding: 6px 12px;
-    border-top:1px solid #6B6B6B;
-    border-bottom:1px solid #3B3B3B;
-    border-left:1px solid #3B3B3B;
-    border-right:1px solid #6B6B6B;
-    text-align: center;
-}
-.toolbar-icon:hover{
-     border-top:1px solid #6B6B6B;
-     border-bottom:1px solid #3B3B3B;
-     border-left:1px solid #3B3B3B;
-     border-right:1px solid #6B6B6B;
- }
-.toolbar-icon:active{
-    border-top:1px solid #6B6B6B;
-    border-bottom:1px solid #3B3B3B;
-    border-left:1px solid #3B3B3B;
-    border-right:1px solid #6B6B6B;
-}
-.toolbar-icon:focus{
-    border-top:1px solid #6B6B6B;
-    border-bottom:1px solid #3B3B3B;
-    border-left:1px solid #3B3B3B;
-    border-right:1px solid #6B6B6B;
-}
 
-.toolbar-icon i {
-    text-shadow: 0px 1px 1px #000;
-    color:#FFF;
-    font-size:1.7em;
-}
 
 #silenceBtn{
     padding-top: 8px;
@@ -1073,12 +898,7 @@ hr {
 	-moz-box-shadow: 0px 0px 5px 1px rgba(3,169,244,1);
 	box-shadow: 0px 0px 5px 1px rgba(3,169,244,1);
 }
-.alert-danger {
-    background-color: #03a9f4 !important;
-}
-.alert-error {
-    background-color: darkOrange !important;
-}
+
 #chatButtonWrapper{
     width:100%;
     background-color: #03a9f4 !important;
@@ -1097,4 +917,295 @@ hr {
     overflow: auto;
     padding:5px;
     box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+
+/* --- --- --- --- refactor --- --- --- --- */
+
+:root {
+    --color-primary: hsl(0, 0%, 100%);
+    --text-color-primary: hsl(0, 0%, 100%);
+    --text-color-secondary: hsla(0, 0%, 100%, 0.67);
+    --modal-background-1: hsla(0, 0%, 50%, 0.69);
+    --modal-foreground-1: hsl(0, 0%, 90%);
+
+    /* --- temp --- */
+    --margin-outer-top-1: 2%;
+    --margin-inner-top-1: 5px;
+    --margin-inner-bottom-1: 20px;
+    --margin-inner-right-1: 12px;
+    --margin-inner-right-2: 10px;
+    --padding-inner-left-1: 5px;
+
+
+}
+
+.textPrimary {color: var(--text-color-primary);}
+.textSecondary {color: var(--text-color-secondary);}
+.noPadding {padding: 0px}
+.noMargin {margin: 0px;}
+.posRel {position: relative;}
+
+/*  --- temp  --- */
+.margin-outer-top-1 {margin-top: var(--margin-outer-top-1);}
+.margin-inner-top-1 {margin-top: var(--margin-inner-top-1);}
+.margin-inner-bottom-1 {margin-bottom: var(--margin-inner-bottom-1);}
+.margin-inner-right-1 {margin-right: var(--margin-inner-right-1);}
+.margin-inner-right-2 {margin-right: var(--margin-inner-right-2);}
+.padding-inner-left-1 {padding-left: var(--padding-inner-left-1);}
+
+.margin-top-20 {margin-top: 20%;}
+.margin-top-15 {margin-top: 15%}
+
+.displayFont {
+    font-family: 'Rock Salt', cursive !important;
+    text-shadow: -1px -1px 1px var(--text-color-secondary);
+}
+
+/* TODO war in main.css aber macht hier buttons kaputt
+.btn {padding:0px;} */
+
+.btn-md {
+    padding: 5px;
+}
+
+.btn-2 {
+    margin: 3px !important;
+    padding: 3px !important;
+}
+
+.form-control:focus, .form-control.focus {
+  border: 0;
+  background-image: linear-gradient(#03a9f4,#03a9f4),linear-gradient(#d2d2d2,#d2d2d2);
+}
+
+.modal {
+    background: var(--modal-background-1);
+}
+
+.modal-content {
+    -webkit-box-shadow: 0 5px 15px rgba(0,0,0,.5);
+    box-shadow: 0 5px 15px rgba(0,0,0,.5);
+    background-color: var(--modal-foreground-1);
+}
+
+.modalSaveBtn, .modalOkBtn {
+    height: 30px;
+}
+
+.modalOkBtn {
+    background-color: gray !important;
+}
+
+.buttonToolbar{
+    display: inline-block;
+    position: relative;
+    vertical-align: middle;
+    text-shadow: 0px 2px 3px #666;
+    box-shadow: none;
+    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+.toolbar-icon {
+    background-color: #595959 !important;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: -4px;
+    padding: 6px 12px;
+    border-top:1px solid #6B6B6B;
+    border-bottom:1px solid #3B3B3B;
+    border-left:1px solid #3B3B3B;
+    border-right:1px solid #6B6B6B;
+    text-align: center;
+}
+.toolbar-icon:hover{
+     border-top:1px solid #6B6B6B;
+     border-bottom:1px solid #3B3B3B;
+     border-left:1px solid #3B3B3B;
+     border-right:1px solid #6B6B6B;
+ }
+.toolbar-icon:active{
+    border-top:1px solid #6B6B6B;
+    border-bottom:1px solid #3B3B3B;
+    border-left:1px solid #3B3B3B;
+    border-right:1px solid #6B6B6B;
+}
+.toolbar-icon:focus{
+    border-top:1px solid #6B6B6B;
+    border-bottom:1px solid #3B3B3B;
+    border-left:1px solid #3B3B3B;
+    border-right:1px solid #6B6B6B;
+}
+
+.toolbar-icon i {
+    text-shadow: 0px 1px 1px #000;
+    color:#FFF;
+    font-size:1.7em;
+}
+
+.alert-danger {background-color: #03a9f4 !important;}
+
+.alert-error {background-color: darkOrange !important;}
+
+
+/* --- Login --- */
+
+#loginUserIcon {
+    position:absolute;
+    right:15px;
+    z-index:2;
+    top:7px;
+}
+
+#notConnected {
+    display:none;
+    padding-top: 20px;
+    padding-left: 0px;
+    float: left;
+}
+
+.privacyPolicy {
+    padding: 5px;
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+}
+
+/* --- Room Page --- */
+#serverStatsDiv {
+    position: absolute;
+    left: 4px;
+    bottom: -18px;
+    font-size: 0.5em;
+}
+
+#groopRoomSearch {
+    position: relative;
+    top: -10px;
+    width:200px; 
+    color:white; 
+    background-image: none; 
+    background-color: #74747454; 
+    padding-left: 10px; 
+    border-radius: 4px; 
+    float: right;
+}
+
+#roomListContainer {
+    max-height: 475px;
+    overflow: auto;
+    padding-right: 10px;
+}
+
+#roomListContent tr:last-child{
+      border-bottom: 1px solid #413939;
+}
+
+#supportedBrowsers {
+    padding: 5px;
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+}
+
+/* --- --- main page --- --- */
+
+
+#leftContainer {
+    display: block;
+    left: 0;
+    max-width: 320px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 10px 7px 10px 5px;
+    position: fixed;
+    z-index: 1000;
+    height:100%;
+    background-color: rgba(189,189,189,0.35); 
+    box-shadow: 6px 0px 5px -5px #000;
+}
+
+#rightContainer{
+    position: relative;
+    height:100%;
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#topContainer{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5px;
+}
+
+/* --- left container --- */
+#leftContainerBackground {
+    z-index: -10;
+    position:absolute;
+    top:0px;
+    left:0px;
+    height: 100%;
+    opacity: 0.07;"
+}
+
+#moderatorDiv{
+    border:0px solid silver;
+    min-height:80px;
+    margin-bottom:0px;
+}
+
+
+/* --- Moderator Toolbar ---*/
+.toolbarWrapper{
+    display: -webkit-box;
+    -webkit-box-pack:center;
+    width:100%;
+    display:-moz-box;
+    -moz-box-pack:center;
+}
+
+
+.moderatorTools {
+    display:none;
+    font-size: 0.7em;
+}
+
+.subToolbarWrapper {
+    position: absolute;
+    bottom: -12px;
+    background: #595959;
+    height: 12px;
+    display: block;
+    text-align: center;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    color: white;
+    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+.subToolbarContent {
+    position: relative;
+    top:-1px;
+}
+
+
+#praesiSettingsWrapper {
+    left: 49px;
+    width: 50px;
+    cursor: pointer;
+}
+
+#d3praesiSettingsWrapper {
+    left: 100px;
+    width: 53px;
+    cursor: pointer;
+}
+
+
+#slidePageDisplayWrapper {
+    left: 50px;
+    font-size: 0.8em;
+    width: 79px;
 }

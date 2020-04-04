@@ -66,22 +66,23 @@
         <div class="row">
             <div class="col-xs-10 col-xs-offset-1 col-md-4 col-md-offset-4">
                 <!--- take care about the offset :) !-->
-                <h1 style="color:white; text-shadow: -2px -2px 1px rgba(0,0,0,0.67);"><img style="width:60px;"
-                        src="./img/logogross.png"> Accelerator</h1>
-                <div style="margin-top: 20%;">
-                    <h3 style="margin-top: 50px; color:white">Enter as guest, please provide your name</h3>
-                    <div style="padding: 0px;" class="noMargin row">
-                        <div style="padding:0px;" class="col-xs-11">
-                            <div style="padding:0px;" class="noMargin row">
-                                <div style="padding:0px; position:relative;" class="input-group col-xs-12">
+                <h1 class="displayFont textPrimary">
+                    <img style="width:60px;" src="./img/logogross.png"> Accelerator
+                </h1>
+                <div class="margin-top-20">
+                    <h3 class="textPrimary" style="margin-top: 50px;">Enter as guest, please provide your name</h3>
+                    <div class="noMargin noPadding row">
+                        <div class="noPadding col-xs-11">
+                            <div class="noMargin noPadding row">
+                                <div style="position:relative;" class="noPadding input-group col-xs-12">
                                     <input style="position:relative; left:0px;" type="text" class="form-control"
                                         id="inputUser" placeholder="Username">
-                                    <span id="loginUserIcon" style="position:absolute; right:15px; z-index:2; top:7px;">
+                                    <span id="loginUserIcon">
                                         <i class="fa fa-user"></i></span>
                                 </div>
                             </div>
-                            <div style="padding:0px; display: none;" class="noMargin row">
-                                <div style="padding:0px; position:relative;" class="input-group col-xs-12">
+                        <!--<div style="display: none;" class="noMargin noPadding row">
+                                <div style="position:relative;" class="noPadding input-group col-xs-12">
                                     <label id="pwField" style="padding-top: 10px; margin-bottom:0px;"
                                         for="inputPassword" class="col-xs-12"></label>
                                     <input style="position:relative; left:0px;" type="password" class="form-control"
@@ -90,17 +91,16 @@
                                         style="position:absolute; right:15px; z-index:2; top:20px;"> <i
                                             class="fa fa-key"></i></span>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="noPadding col-xs-1">
-                            <button style="height: 40px;" class="btn btn-primary" id="loginBtn"><i
-                                    class="fa fa-unlock"></i></button>
+                            <button style="height: 40px;" class="btn btn-primary" id="loginBtn">
+                                <i class="fa fa-unlock"></i></button>
                         </div>
                     </div>
-                    <div id="notConnected"
-                        style="display:none; padding-top: 20px; padding-left: 0px; float: left; color: white;">No
-                        connection to the server!</div>
-                    <div style="color:white; padding: 5px; position: fixed; bottom: 0px; left: 0px;">
+                    <div id="notConnected" class="textPrimary">No                      connection to the server!
+                    </div>
+                    <div class="privacyPolicy">
                         <a target="#" href="./privacy.html">Privacy Policy</a>
                     </div>
                 </div>
@@ -112,19 +112,22 @@
     <div class="page" id="roomPage">
         <div class="row">
             <div class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
-                <h1 style="color:white">Choose Room</h1>
-                <button id="setupCheckBtn" style="padding: 5px;" class="btn btn-primary"><i
-                        class="fa fa-headphones"></i> Setup audio / video</button>
-                <div style="margin-top: 2%;" class="lableContainer">
-                    <h3 style="margin-top: 5px; margin-bottom: 20px; position: relative;">Room Overview <span>
+                <h1 class="textPrimary">Choose Room</h1>
+                <button id="setupCheckBtn" class="btn btn-primary btn-md"><i class="fa fa-headphones"></i> Setup audio / video
+                </button>
+                <div class="lableContainer margin-outer-top-1">
+                    <h3 class="margin-inner-top-1 margin-inner-bottom-1 posRel">
+                        Room Overview 
+                        <span>
                             <div id="serverStatsDiv"></div>
                             <form autocomplete="off"><input type="text" autocomplete="off" style="display:none"><input
-                                    autocomplete="rutjfkde" id="groopRoomSearch" type="text" class="form-control"
+                                    autocomplete="rutjfkde" id="groopRoomSearch" type="text" class="form-control margin-inner-right-1"
                                     placeholder="search room..."></form>
-                        </span></h3>
+                        </span>
+                    </h3>
                     <div class="noPadding noMargin row">
-                        <div id="roomListContainer" style="max-height: 475px; overflow: auto; padding-right: 10px;"
-                            class="noPadding col-sm-12">
+                        <div id="roomListContainer" style=""
+                            class="noPadding margin-inner-right-2 col-sm-12">
                             <table class="table" style="width: 100%;" id="roomListContent">
                                 <tbody></tbody>
                             </table>
@@ -138,7 +141,7 @@
                                 type="password">
                             <i id="roomPwLockIcon" class="fa fa-unlock-alt" aria-hidden="true"></i>
                         </div>
-                        <div style="padding-left:5px;" class="noPadding col-xs-1">
+                        <div class="noPadding col-xs-1 padding-inner-left-1">
                             <button id="createNewRoomBtn" class="btn btn-primary">
                                 <i class="fa fa-plus"></i>
                             </button>
@@ -147,10 +150,10 @@
                 </div>
             </div>
         </div>
-        <div style="color:white; padding: 5px; position: fixed; bottom: 0px; left: 0px;">
+        <div class="privacyPolicy">
             <a target="#" href="./privacy.html">Privacy Policy</a>
         </div>
-        <div style="color:white; padding: 5px; position: fixed; bottom: 0px; right: 0px;">
+        <div id="supportedBrowsers" class="textPrimary">
             <b>Supported Browsers: </b>
             <a title="Chrome" href="https://www.google.de/chrome/browser/desktop/"><img style="width: 50px;"
                     src="./img/chrome.png"></a>
@@ -163,7 +166,7 @@
         </div>
 
         <!-- Connect direclty Modal -!-->
-        <div style="background: #808080b0;" id="connectModal" class="modal">
+        <div id="connectModal" class="modal">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -177,11 +180,11 @@
                     <div class="modal-footer">
                         <div class="row">
                             <div class="col-lg-12">
-                                <button style="margin:3px; padding:3px;" data-dismiss="modal" type="button"
-                                    class="btn btn-default pull-right" id="abortDirektConnect">Cancel
+                                <button data-dismiss="modal" type="button"
+                                    class="btn btn-default btn-2 pull-right" id="abortDirektConnect">Cancel
                                 </button>
-                                <button style="margin:3px; padding:3px;" data-dismiss="modal" type="button"
-                                    class="btn btn-primary pull-right" id="acceptDirectConnect">Connect
+                                <button data-dismiss="modal" type="button"
+                                    class="btn btn-primary btn-2 pull-right" id="acceptDirectConnect">Connect
                                 </button>
                             </div>
                         </div>
@@ -189,14 +192,14 @@
                 </div>
             </div>
         </div>
-        <!-- End direclty Modal -!-->
+        <!-- End Connect direclty Modal -!-->
     </div>
 
     <!---accessMicPage -----------------------------------------------------------------------------------------------------------!-->
     <div class="page" id="accessMicPage">
         <div class="row">
-            <div style="margin-top: 15%;" class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
-                <h2 style="color:white">↖ Please allow microphone access <i class="fa fa-microphone"
+            <div class="margin-top-15 col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+                <h2 class="textPrimary">↖ Please allow microphone access <i class="fa fa-microphone"
                         aria-hidden="true"></i></h2>
             </div>
         </div>
@@ -206,10 +209,10 @@
     <!---joinRoomPage -----------------------------------------------------------------------------------------------------------!-->
     <div class="page" id="joinRoomPage">
         <div class="row">
-            <div style="margin-top: 15%;" class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
-                <h2 style="color:white">Connecting to room, please wait... <i class="fa fa-plug" aria-hidden="true"></i>
+            <div class="col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+                <h2 class="textPrimary margin-top-15">Connecting to room, please wait... <i class="fa fa-plug" aria-hidden="true"></i>
                 </h2>
-                <div style="color:white" id="joinRoomError"></div>
+                <div id="joinRoomError" class="textPrimary"></div>
             </div>
         </div>
     </div>
@@ -227,8 +230,8 @@
         </div>
         <div class="row">
             <!--- LeftContainer -------------------------------------------------------------------------------!-->
-            <div style="max-width: 320px;" class="col-xs-3 col-md-2" id="leftContainer">
-                <img style="z-index: -10; position:absolute; top:0px; left:0px; height: 100%; opacity: 0.07;"
+            <div id="leftContainer" class="col-xs-3 col-md-2">
+                <img id="leftContainerBackground" 
                     src="./img/logogross.png">
 
                 <!--- Moderator Stuff ----!-->
@@ -268,13 +271,12 @@
             </div>
 
             <!--- RightContainer -------------------------------------------------------------------------------!-->
-            <div style="position: relative;" class="col-xs-9 col-xs-offset-3 col-md-10 col-md-offset-2"
-                id="rightContainer">
+            <div id="rightContainer" class="col-xs-9 col-xs-offset-3 col-md-10 col-md-offset-2">
                 <div id="handsUpAlertDivContainer">
                 </div>
 
                 <!--- TopContainer --------------------------------------------------------------------------------!-->
-                <div class="row" id="topContainer">
+                <div id="topContainer" class="row" >
 
                     <!-- Moderator Toolbar -!-->
 
@@ -291,9 +293,8 @@
                                     class="praesiTab mainTab toolbar-icon btn btn-default">
                                     <img style="height: 25px;" src="./img/presentation.svg">
                                 </button>
-                                <div class="praesiUpload" id="praesiSettingsWrapper">
-                                    <span id="praesiSettingsContent"
-                                        style="position: relative; top:-1px; cursor: pointer;">
+                                <div id="praesiSettingsWrapper" class="praesiUpload subToolbarWrapper">
+                                    <span id="praesiSettingsContent" class="subToolbarContent">
                                         <i class="fa fa-cog"></i>
                                     </span>
                                 </div>
@@ -301,9 +302,8 @@
                                     type="button" class="praesiTab mainTab toolbar-icon btn btn-default">
                                     <img style="height: 25px;" src="./img/3dIconWhiteS.png">
                                 </button>
-                                <div class="3dObjUpload" id="d3praesiSettingsWrapper">
-                                    <span id="d3praesiSettingsContent"
-                                        style="position: relative; top:-1px; cursor: pointer;">
+                                <div id="d3praesiSettingsWrapper" class="3dObjUpload subToolbarWrapper">
+                                    <span id="d3praesiSettingsContent" class="subToolbarContent">
                                         <i class="fa fa-cog"></i>
                                     </span>
                                 </div>
@@ -340,9 +340,8 @@
                                     class="notActiveBtn toolbar-icon btn btn-default">
                                     <i class="fa fa-step-forward"></i>
                                 </button>
-                                <div class="moderatorTools" id="slidePageDisplayWrapper">
-                                    <span id="slidePageDisplayContent" style="position: relative; top:-1px;">0 /
-                                        0</span>
+                                <div class="moderatorTools subToolbarWrapper" id="slidePageDisplayWrapper">
+                                    <span id="slidePageDisplayContent subToolbarContent">0 / 0</span>
                                 </div>
                                 <button id="praesiENd" title="Jump to the end of the presentation" type="button"
                                     class="notActiveBtn toolbar-icon btn btn-default clap">
@@ -361,7 +360,7 @@
                                     class="keepActiveBtn toolbar-icon btn btn-default">
                                     <i class="fa fa-search-plus"></i>
                                 </button>
-                                <button style="position: relative;" id="userTootlsBtn" type="button"
+                                <button id="userTootlsBtn" type="button"
                                     title="Enable/Disable UserItems (Textfields...) for the users"
                                     class="keepActiveBtn toolbar-icon btn btn-default">
                                     <i class="fa fa-pencil-square-o"></i>
@@ -375,6 +374,7 @@
                                 </button>
                             </div>
                         </div>
+<!-- refactor done til here -->
                         <div id="userTools" style="display:none;"
                             class="userTools btn-group contentOptions buttonToolbar">
                             <div style="width: 100px; height: 25px;">Draggables</div>
