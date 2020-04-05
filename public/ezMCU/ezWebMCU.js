@@ -9,7 +9,8 @@ var mcuConfig = {
 	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
 	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
 	secure: false,
-	webRtcConfig: {}
+	webRtcConfig: {},
+	processingFPS : 15
 }
 
 function setMCUConfig(config) {
@@ -173,14 +174,32 @@ function start() {
 				} else { //its video so start get data
 					var mediaEl = $('<video autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
+					$("body").append(mediaEl);
+
+					var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
+					canvasEl.appendTo("body")
+					var canvas = canvasEl[0]
+					var ctx = canvas.getContext('2d');
+					var rInterval = setInterval(function () {
+						canvas.width = mediaEl[0].videoWidth;
+						canvas.height = mediaEl[0].videoHeight;
+						ctx.drawImage(mediaEl[0], 0, 0, canvas.width, canvas.height);
+					}, 1000/mcuConfig.processingFPS);
+					var canvasStream = canvas.captureStream(mcuConfig.processingFPS);
+					console.log(canvasStream)
+					secondStreamId = canvasStream.id;
+					//allStreams[secondStreamId] = canvasStream;
+					//allSecondStreamsIntervals[streamId] = rInterval;
+					mediaEl.hide();
+
 					var firstFrame = null;
-					var mediaRecorder = new MediaRecorder(stream,{mimeType:"video/webm; codecs=vp8"});
+					var mediaRecorder = new MediaRecorder(canvasStream,{mimeType:"video/webm; codecs=vp8"});
 					allMediaRecorders[streamId] = mediaRecorder;
 					mediaRecorder.onerror = function (err) {
 						console.log(err);
 					}
 					console.log(mediaRecorder.mimeType)
-					mediaRecorder.start(50);
+					mediaRecorder.start(1000/mcuConfig.processingFPS);
 					console.log("Start recording")
 					var knownClients = {};
 					mediaRecorder.ondataavailable = function (event) {

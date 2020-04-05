@@ -120,12 +120,7 @@ function ezMCU(socket, newConfig = {}) {
             socket.on("mcu_vid", function (content) {
                 var streamId = content["streamId"];
 
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    sourceBuffer.appendBuffer(new Uint8Array(e.target.result));
-                }
-                
-                reader.readAsArrayBuffer(content["d"]);
+                sourceBuffer.appendBuffer(new Uint8Array(content["d"]));
 
                 if (!knownVidStream[streamId]) {
                     console.log("CREATE STREAM!");

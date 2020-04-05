@@ -309,6 +309,7 @@ var init = async function (io, newConfig) {
                         secure: masterURL.startsWith("https://") ? true : false
                     }
                     mcuLbConfig["webRtcConfig"] = mcuConfig.webRtcConfig;
+                    mcuLbConfig["processingFPS"] = mcuConfig.processingFPS || 15;
 
                     await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
                     await page.click('#loadMCUBtn');
