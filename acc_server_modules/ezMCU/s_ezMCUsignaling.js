@@ -111,6 +111,7 @@ var init = async function (io, newConfig) {
                     }
                     //set streamSource attr
                     streamAttributes["instanceTo"] = instance;
+                    streamAttributes["streamSocketId"] = socket.id;
                     allStreamAttributes[streamAttributes["streamId"]] = streamAttributes;
                     myStreamIds.push(streamAttributes["streamId"]);
                     callback(null, streamAttributes);

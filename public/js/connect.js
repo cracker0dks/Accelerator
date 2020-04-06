@@ -16,7 +16,7 @@ var allSingleFiles = null;
 var localVideoStrm = null;
 var localAudioStream = null;
 var isLocalVideoPlaying = false;
-var lastPlingSoundPlayed = +new Date()-5000;
+var lastPlingSoundPlayed = +new Date() - 5000;
 var userLang = navigator.language || navigator.userLanguage;
 
 var url = document.URL.substr(0, document.URL.lastIndexOf('/'));
@@ -63,13 +63,22 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                 }
             })
 
-            
-            myMCU.on("vidStreamAdded", function (stream) {
-
-            });
-
-            myMCU.on("streamAdded", function (stream) {
+            myMCU.on("streamAdded", function (stream, video) {
+                if (!stream && video) {
+                    console.log("Append special stream!", video)
+                    var streamAttr = video.streamAttributes;
+                    var streamSocketId = streamAttr.streamSocketId || streamAttr.socketId;
+                    var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + streamSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
+                    $("#" + streamSocketId).find(".videoContainer").append(videoElement);
+                    video.css({ width: "300px", height: "225px", position: "absolute", top: "0px" })
+                    video.appendTo(videoElement);
+                    $("#" + streamSocketId).find(".webcamfullscreen").show();
+                    $("#" + streamSocketId).find(".popoutVideoBtn").show();
+                    return;
+                }
                 console.log(stream)
+
+                var streamId = stream.id.replace("{", "").replace("}", "")
 
                 if (!stream.hasVideo && stream.hasAudio) {
                     console.log("ADD GLOBAL AUDIO!")
@@ -87,8 +96,9 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                 }
 
                 var streamAttr = stream.streamAttributes;
-                var streamSocketId = streamAttr.socketId;
-                var streamId = stream.id.replace("{", "").replace("}", "")
+                var streamSocketId = streamAttr.streamSocketId || streamAttr.socketId;
+                streamId = streamAttr["specialStreamId"] ? streamAttr["specialStreamId"] : streamId;
+
                 if (streamAttr && streamAttr.screenshare) {   //Screenshare
                     apendScreenshareStream(stream, streamAttr);
                 } else if (stream.hasVideo) {  //Video Stream
@@ -288,13 +298,13 @@ function setUserAttr(username, passwort) {
 
             //Remove invaild resoltions from screenshare
             var maxRes = accSettings["screenshareConfig"] && accSettings["screenshareConfig"]["maxResolution"] ? accSettings["screenshareConfig"]["maxResolution"] : "720p";
-            if(maxRes != "1080p") {
+            if (maxRes != "1080p") {
                 $("#res1080p").remove();
             }
-            if(maxRes == "480p") {
+            if (maxRes == "480p") {
                 $("#res720p").remove();
             }
-            if(maxRes == "360p") {
+            if (maxRes == "360p") {
                 $("#res720p").remove();
                 $("#res420p").remove();
             }
@@ -635,7 +645,7 @@ function initSocketIO() {
             sendGetUserInfos(remotSocketId);
 
             setUserColor(remotSocketId, color);
-            
+
             if ((+new Date() - lastPlingSoundPlayed) > 500 && $("#leftContainer").find(".userdiv").length < 10) { //dont play pling when you join or more than ten users
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();

@@ -106,28 +106,43 @@ function ezMCU(socket, newConfig = {}) {
                 _this.mcuConfig["iceServers"] = iceServers;
             })
 
-            var knownVidStream = {};
-            var video = document.getElementById('plaineVid');
-            var mediaSource = new MediaSource();
-            video.src = window.URL.createObjectURL(mediaSource);
-
-            var sourceBuffer;
-            mediaSource.addEventListener('sourceopen', function () {
-                sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs=vp8');
-                console.log(sourceBuffer);
-            })
-
+            var knownSourceBuffers = {};
+            var knownDataBuffers = [];
+            var knownStreams = {};
             socket.on("mcu_vid", function (content) {
                 var streamId = content["streamId"];
+                knownDataBuffers.push(content["d"]);
 
-                sourceBuffer.appendBuffer(new Uint8Array(content["d"]));
-
-                if (!knownVidStream[streamId]) {
+                if (!knownStreams[streamId]) {
                     console.log("CREATE STREAM!");
-                    knownVidStream[streamId] = true;
+                    knownStreams[streamId] = true;
 
-                    //_this.emitEvent("vidStreamAdded", _this.allStreamAttributes[streamId]);
+                    var video = $('<video id="'+streamId+'" class="' + streamId + '" autoplay="autoplay"></video>');
+                    $("body").append(video);
+
+                    var mediaSource = new MediaSource();
+                    video[0].src = window.URL.createObjectURL(mediaSource);
+
+                    mediaSource.addEventListener('sourceopen', function () {
+                        knownSourceBuffers[streamId] = mediaSource.addSourceBuffer('video/webm; codecs=vp8');
+                        console.log(knownSourceBuffers[streamId]);
+                        knownSourceBuffers[streamId].onupdateend = e => {
+                            appendToBuffer();
+                        }
+                        appendToBuffer();
+
+                        video.streamAttributes = _this.allStreamAttributes[streamId];
+                        _this.emitEvent("streamAdded", null, video);
+                    })
                 }
+
+                function appendToBuffer() {
+                    if (knownSourceBuffers[streamId] && !knownSourceBuffers[streamId].updating) {
+                        knownSourceBuffers[streamId].appendBuffer(new Uint8Array(knownDataBuffers.shift()));
+                    }
+                }
+                appendToBuffer();
+
             })
 
             socket.on("mcu_onNewStreamPublished", function (content) {

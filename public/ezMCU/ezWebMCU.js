@@ -172,12 +172,12 @@ function start() {
 					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
 				} else { //its video so start get data
-					var mediaEl = $('<video autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
+					var mediaEl = $('<video class="'+streamId+'" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
 					$("body").append(mediaEl);
 
 					var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
-					canvasEl.appendTo("body")
+					//canvasEl.appendTo("body")
 					var canvas = canvasEl[0]
 					var ctx = canvas.getContext('2d');
 					var rInterval = setInterval(function () {
@@ -188,8 +188,7 @@ function start() {
 					var canvasStream = canvas.captureStream(mcuConfig.processingFPS);
 					console.log(canvasStream)
 					secondStreamId = canvasStream.id;
-					//allStreams[secondStreamId] = canvasStream;
-					//allSecondStreamsIntervals[streamId] = rInterval;
+					allStreams[secondStreamId] = canvasStream;
 					mediaEl.hide();
 
 					var firstFrame = null;
@@ -197,10 +196,13 @@ function start() {
 					allMediaRecorders[streamId] = mediaRecorder;
 					mediaRecorder.onerror = function (err) {
 						console.log(err);
+						clearInterval(rInterval);
+						canvasEl.remove();
+						mediaEl.remove();
 					}
 					console.log(mediaRecorder.mimeType)
 					mediaRecorder.start(1000/mcuConfig.processingFPS);
-					console.log("Start recording")
+
 					var knownClients = {};
 					mediaRecorder.ondataavailable = function (event) {
 						if (event.data.size > 0) {
@@ -227,6 +229,9 @@ function start() {
 					mediaRecorder.onstop = function (e) {
 						console.log("STOPED")
 						delete allMediaRecorders[streamId];
+						clearInterval(rInterval);
+						canvasEl.remove();
+						mediaEl.remove();
 					}
 				}
 
