@@ -4,6 +4,7 @@ function initEzWebRTC(initiator, config) {
     var _this = this;
     this.isConnected = false;
     this.gotOffer = false;
+    this.makingOffer = false;
 
     var rtcConfig = { //Default Values
         offerOptions: {
@@ -105,7 +106,8 @@ function initEzWebRTC(initiator, config) {
             _this.emitEvent("signaling", pc.localDescription)
             if (!initiator)
                 requestMissingTransceivers()
-        } else if (signalData && signalData.type == "answer") { //STEP 5 (Initiator: Setting answer and starting connection)
+        } else if (signalData && signalData.type == "answer" && initiator) { //Initiator: Setting answer and starting connection
+            _this.makingOffer = false;
             pc.setRemoteDescription(new wrtc.RTCSessionDescription(signalData))
         } else if (signalData && signalData.type == "transceive" && initiator) { //Got an request to transrecive
             _this.addTransceiver(signalData.kind, signalData.init)
@@ -182,13 +184,16 @@ function initEzWebRTC(initiator, config) {
     }
 
     async function negotiate() {
+        if(_this.makingOffer) //Dont make an offer twice before answer is received
+            return;
         //console.log("negotiate", initiator)
         if (initiator) {
+            _this.makingOffer = true;
             const offer = await pc.createOffer(rtcConfig.offerOptions); //Create offer
             if (pc.signalingState != "stable") return;
             await pc.setLocalDescription(offer);
             _this.emitEvent("signaling", pc.localDescription)
-        } else if (_this.gotOffer) {
+        } else if (_this.gotOffer) { //Dont send renegotiate req before getting at least one offer
             _this.emitEvent("signaling", "renegotiate");
         }
     }
