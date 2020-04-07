@@ -176,10 +176,8 @@ function initEzWebRTC(initiator, config) {
     }
 
     if (rtcConfig.stream) {
-        this.addStream(rtcConfig.stream); //Add stream at start, this will trigger negotiation on initiator
-    }
-
-    if (initiator && !rtcConfig.stream) { //start negotiation if we are initiator
+        this.addStream(rtcConfig.stream); //Add stream at start, this will trigger negotiation
+    } else if (initiator) { //start negotiation if we are initiator anyway if we have no stream
         negotiate();
     }
 
