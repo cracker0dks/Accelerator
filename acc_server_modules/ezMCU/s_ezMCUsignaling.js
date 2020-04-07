@@ -197,13 +197,13 @@ var init = async function (io, newConfig) {
         socket.on("mcu_reqStreamFromLB", function (content) {
             var instanceFrom = content["instanceFrom"];
             content["clientSocketId"] = socket.id;
-            loadBalancersSockets[instanceFrom].emit("mcu_reqSteam", content);
+            if(loadBalancersSockets[instanceFrom]) { loadBalancersSockets[instanceFrom].emit("mcu_reqSteam", content); }
         });
 
         socket.on("mcu_reqPeerConnectionToLB", function (content) {
             var instanceTo = content["instanceTo"];
             content["clientSocketId"] = socket.id;
-            loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content);
+            if(loadBalancersSockets[instanceTo]) { loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content); }
         });
 
         socket.on("mcu_vid", function (content) {

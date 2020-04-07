@@ -1219,14 +1219,12 @@ function startLocalVideo() {
 			},
 			height: {
 				max: maxHeight
-			},
-			mandatory: { maxWidth: maxWidth, maxHeight: maxHeight }
+			}
 		}
 
 		if (prevVideoInputDevice) {
 			newVidConstrains["deviceId"] = { ideal: prevVideoInputDevice }
 		}
-		console.error(newVidConstrains)
 		navigator.getUserMedia({ audio: false, video: newVidConstrains }, (stream) => {
 			localVideoStrm = stream;
 			var streamId = stream.id.replace('{', "").replace('}', "")
@@ -1967,7 +1965,7 @@ function writeToChat(clientName, text, noClean) {
 		nContent.css({ "transition": "color 30s ease", "color": "white" });
 		$("#chatContent").append(nContent);
 		setTimeout(function () {
-			nContent.css({ "color": "rgb(146, 146, 146, 1)" });
+			nContent.css({ "color": "rgb(210, 210, 210, 1)" });
 		}, 10000);
 
 		var objDiv = document.getElementById("chatContent");

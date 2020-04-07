@@ -624,8 +624,7 @@ $(function () { //Document ready
 				},
 				height: {
 					max: maxHeight
-				},
-				mandatory: { maxWidth: maxWidth, maxHeight: maxHeight }
+				}
 			}
 			var config = {
 				screen: true,

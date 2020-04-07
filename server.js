@@ -1149,6 +1149,9 @@ function saveAllRoomAttr() {
         for (var i in allRoomAttr) {
             if (!allRoomAttr[i]["permanent"] && config["accConfig"]["deleteUnusedRoomsAfterDays"] != 0 && currDate - allRoomAttr[i]["lastVisit"] > daysInMillis) {
                 deleteRoom(i)
+            } else {
+                allRoomAttr[i]["users"] = {};
+                allRoomAttr[i]["moderator"] = null;
             }
         }
 
@@ -1168,7 +1171,7 @@ function loadAllRoomAttr() {
             allRoomAttr = JSON.parse(data);
             for(var i in allRoomAttr) {
                 allRoomAttr[i]["users"] = {};
-                allRoomAttr[i]["moderator"] = 0;
+                allRoomAttr[i]["moderator"] = null;
             }
         } catch (e) {
             console.log("error reading ./db/allRoomAttr.txt", e);

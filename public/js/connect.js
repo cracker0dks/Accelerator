@@ -816,7 +816,7 @@ function initSocketIO() {
                 $("#praesiUpInfo").html('<div style="color:red;">Conversion failed!!! Error: ' + msg + '</div>');
             } else {
                 if (msg == "beginConversion") {
-                    $("#praesiUpInfo").html('Started conversion... <img class="loaderIcon" src="./img/logogross.png">');
+                    $("#praesiUpInfo").html('Started conversion... <img class="loaderIcon" src="./img/logogross.png" style="width: 20%; display: block; margin:auto;">');
                     writeToChat("Server", "Started conversion...");
                 } else if (msg == "successConversion") {
                     $("#praesiUpInfo").html('<div style="color:green;">Conversion done!</div>');
