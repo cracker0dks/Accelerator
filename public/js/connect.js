@@ -609,7 +609,7 @@ function initSocketIO() {
     } else {
         signaling_socket = io();
     }
-    signaling_socket.binaryType = 'arraybuffer';
+    //signaling_socket.binaryType = 'arraybuffer';
 
     myMCU = new ezMCU(signaling_socket);
     myMCU.init();

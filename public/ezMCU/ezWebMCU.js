@@ -10,7 +10,7 @@ var mcuConfig = {
 	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
 	secure: false,
 	webRtcConfig: {},
-	processingFPS : 15
+	processingFPS: 15
 }
 
 function setMCUConfig(config) {
@@ -29,7 +29,8 @@ function start() {
 	var allStreamDestinations = {};
 	var allStreamSources = {};
 	var streamRecordSubs = {};
-	var allMediaRecorders = {};
+	var allEncodeWorkers = {};
+	var allEncodeTimeouts = {};
 
 	socket.on('connect', function () {
 		socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
@@ -55,7 +56,14 @@ function start() {
 				delete allStreams[streamId];
 			}
 			console.log("stopped stream");
-			allMediaRecorders[streamId].stop();
+			if (allEncodeTimeouts[streamId])
+				clearInterval(allEncodeTimeouts[streamId])
+			if (allEncodeWorkers[streamId]) {
+				allEncodeWorkers[streamId].terminate();
+				allEncodeWorkers[streamId] = null;
+			}
+
+			$("." + streamId).remove();
 		});
 
 		socket.on('mcu_reqSteam', function (content) {
@@ -172,67 +180,81 @@ function start() {
 					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
 				} else { //its video so start get data
-					var mediaEl = $('<video class="'+streamId+'" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
+					var mediaEl = $('<video class="' + streamId + '" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
+					var localVideo = mediaEl[0];
 					$("body").append(mediaEl);
 
-					var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
+					var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
 					//canvasEl.appendTo("body")
-					var canvas = canvasEl[0]
-					var ctx = canvas.getContext('2d');
-					var rInterval = setInterval(function () {
-						canvas.width = mediaEl[0].videoWidth;
-						canvas.height = mediaEl[0].videoHeight;
-						ctx.drawImage(mediaEl[0], 0, 0, canvas.width, canvas.height);
-					}, 1000/mcuConfig.processingFPS);
-					var canvasStream = canvas.captureStream(mcuConfig.processingFPS);
-					console.log(canvasStream)
-					secondStreamId = canvasStream.id;
-					allStreams[secondStreamId] = canvasStream;
-					mediaEl.hide();
+					var localCanvas = canvasEl[0]
+					var localContext = localCanvas.getContext('2d');
 
-					var firstFrame = null;
-					var mediaRecorder = new MediaRecorder(canvasStream,{mimeType:"video/webm; codecs=vp8"});
-					allMediaRecorders[streamId] = mediaRecorder;
-					mediaRecorder.onerror = function (err) {
-						console.log(err);
-						clearInterval(rInterval);
-						canvasEl.remove();
-						mediaEl.remove();
-					}
-					console.log(mediaRecorder.mimeType)
-					mediaRecorder.start(1000/mcuConfig.processingFPS);
+					const src = '../js/webm-wasm/vpx-worker.js';
+					const vpxenc_ = new Worker(src);
+					allEncodeWorkers[streamId] = vpxenc_;
 
-					var knownClients = {};
-					mediaRecorder.ondataavailable = function (event) {
-						if (event.data.size > 0) {
-							var wasFirstFrame = false;
-							if (!firstFrame) {
-								wasFirstFrame = true;
-								firstFrame = event.data;
-								console.log("Set first frame!")
-							}
-							if (streamRecordSubs[streamId]) {
-								for (var i in streamRecordSubs[streamId]) { //Send to all subs
-									if (!knownClients[i]) { //Always send first frame because of encoding information
-										knownClients[i] = true;
-										// if(!wasFirstFrame) {
-										// 	socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: firstFrame }); //Send encoded data to client
-										// 	console.log("send first frame!")
-										// }
-									}
-									socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: event.data }); //Send encoded data to client
-								}
-							}
+					const vpxconfig_ = {};
+
+					const width = 640;
+					const height = 480;
+					const fps = 15;
+					var frames = 0;
+					var bytesSent = 0;
+					var lastTime = Date.now();
+
+					localCanvas.width = width;
+					localCanvas.height = height;
+
+					vpxconfig_.codec = 'VP8';
+					vpxconfig_.width = width;
+					vpxconfig_.height = height;
+					vpxconfig_.fps = fps;
+					vpxconfig_.bitrate = 600;
+					vpxconfig_.packetSize = 16;
+
+					vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
+
+					let encoding = false;
+					setTimeout(() => {
+						allEncodeTimeouts[streamId] = setInterval(() => {
+							if (encoding) return; // TODO: apprtc is a bit smarter here.
+							encoding = true;
+							localContext.drawImage(localVideo, 0, 0, width, height);
+							const frame = localContext.getImageData(0, 0, width, height);
+							vpxenc_.postMessage({
+								id: 'enc',
+								type: 'call',
+								name: 'encode',
+								args: [frame.data.buffer]
+							}, [frame.data.buffer]);
+
+						}, 1000.0 / fps);
+					}, 1000); // wait a bit before grabbing frames to give the wasm stuff time to init.
+
+					var statsInt = setInterval(function () {
+						const now = Date.now();
+						console.log('bitrate', Math.floor(8000.0 * bytesSent / (now - lastTime)),
+							'fps', Math.floor(1000.0 * frames / (now - lastTime)));
+						bytesSent = 0;
+						frames = 0;
+						lastTime = now;
+						if(!allEncodeWorkers[streamId]) {
+							clearInterval(statsInt)
 						}
-					}
-					mediaRecorder.onstop = function (e) {
-						console.log("STOPED")
-						delete allMediaRecorders[streamId];
-						clearInterval(rInterval);
-						canvasEl.remove();
-						mediaEl.remove();
-					}
+					}, 1000)
+
+					vpxenc_.onmessage = e => {
+						encoding = false;
+						if (e.data.res) {
+							const encoded = new Uint8Array(e.data.res);
+							for (var i in streamRecordSubs[streamId]) { //Send to all subs
+								socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res }); // 64 KB max
+							}
+							bytesSent += encoded.length;
+							frames++;
+						}
+					};
 				}
 
 				var retObj = {
@@ -243,6 +265,10 @@ function start() {
 				//console.log(retObj)
 				socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 			});
+		}
+
+		function typedArrayToBuffer(array) {
+			return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 		}
 
 		setInterval(function () { //Every 10h get current IceServers

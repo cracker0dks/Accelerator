@@ -266,7 +266,8 @@ var init = async function (io, newConfig) {
         var browser;
         try {
             browser = await puppeteer.launch({
-                headless: true,
+                headless: false,
+                executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
                 "ignoreHTTPSErrors": true,
                 args: [
                     '--ignore-certificate-errors',
