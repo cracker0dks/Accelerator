@@ -18,7 +18,8 @@ var defaultConfig = {
 				//     username: "username",
 				//     credential: "123456"
 				// },
-			]
+			],
+            "preferH264Codec": false //Set to true to prefer the use of h264 if possible; This might reduce cpu load for video processing because we can might use hardware acceleration. Note that you have to use chrome in puppeteer (not chromium)
 		},
 		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master (Must be the same on Master and loadbalancer)
 		isMaster : true, //Set to false if this is a loadbalancer instance
