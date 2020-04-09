@@ -190,15 +190,8 @@ function start() {
 					var localCanvas = canvasEl[0]
 					var localContext = localCanvas.getContext('2d');
 
-					var canvasEl1 = $('<canvas class="' + streamId + '"></canvas>');
-					canvasEl1.appendTo("body")
-					var remoteCanvas = canvasEl1[0]
-					var remoteContext = remoteCanvas.getContext('2d');
-
 					const src = '../js/webm-wasm/vpx-worker.js';
 					const vpxenc_ = new Worker(src);
-					const vpxdec_ = new Worker(src);
-
 
 					allEncodeWorkers[streamId] = vpxenc_;
 
@@ -207,15 +200,9 @@ function start() {
 					const width = 640;
 					const height = 480;
 					const fps = 15;
-					var frames = 0;
-					var bytesSent = 0;
-					var lastTime = Date.now();
 
 					localCanvas.width = width;
 					localCanvas.height = height;
-
-					remoteCanvas.width = width;
-					remoteCanvas.height = height;
 
 					vpxconfig_.codec = 'VP8';
 					vpxconfig_.width = width;
@@ -225,8 +212,6 @@ function start() {
 					vpxconfig_.packetSize = 16;
 
 					vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
-
-					vpxdec_.postMessage({ type: 'init', data: vpxconfig_ });
 
 					let encoding = false;
 					setTimeout(() => {
@@ -245,49 +230,14 @@ function start() {
 						}, 1000.0 / fps);
 					}, 1000); // wait a bit before grabbing frames to give the wasm stuff time to init.
 
-					var statsInt = setInterval(function () {
-						const now = Date.now();
-						console.log('bitrate', Math.floor(8000.0 * bytesSent / (now - lastTime)),
-							'fps', Math.floor(1000.0 * frames / (now - lastTime)));
-						bytesSent = 0;
-						frames = 0;
-						lastTime = now;
-						if (!allEncodeWorkers[streamId]) {
-							clearInterval(statsInt)
-						}
-					}, 1000)
-
 					vpxenc_.onmessage = e => {
 						encoding = false;
 						if (e.data.res) {
-							const encoded = new Uint8Array(e.data.res);
-							console.log(e.data.res)
 							for (var i in streamRecordSubs[streamId]) { //Send to all subs
 								socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res });
 							}
-
-
-							bytesSent += encoded.length;
-							frames++;
-
-							// vpxdec_.postMessage({
-							// 	id: 'dec',
-							// 	type: 'call',
-							// 	name: 'decode',
-							// 	args: [e.data.res],
-							// }, [e.data.res]);
 						}
 					};
-
-					vpxdec_.onmessage = e => {
-						if (e.data.res) {
-							const decoded = new Uint8Array(e.data.res);
-							const frame = remoteContext.createImageData(width, height);
-							frame.data.set(decoded, 0);
-							remoteContext.putImageData(frame, 0, 0);
-						}
-					};
-
 				}
 
 				var retObj = {

@@ -108,71 +108,71 @@ function ezMCU(socket, newConfig = {}) {
 
             var knownStreams = {};
             var allEncodeWorkers = {};
-
-            const src = '../js/webm-wasm/vpx-worker.js';
-            const vpxdec_ = new Worker(src);
-
-            const vpxconfig_ = {};
-
-            const width = 640;
-            const height = 480;
-            const fps = 15
-
-            var canvasEl = $('<canvas class=""></canvas>');
-            $("body").append(canvasEl);
-            //canvasEl.appendTo("body")
-            var remoteCanvas = canvasEl[0]
-            var remoteContext = remoteCanvas.getContext('2d');
-
-            remoteCanvas.width = width;
-            remoteCanvas.height = height;
-
-            vpxconfig_.codec = 'VP8';
-            vpxconfig_.width = width;
-            vpxconfig_.height = height;
-            vpxconfig_.fps = fps;
-            vpxconfig_.bitrate = 600;
-            vpxconfig_.packetSize = 16;
-
-            vpxdec_.postMessage({ type: 'init', data: vpxconfig_ });
-
-            vpxdec_.onmessage = e => {
-                if (e.data.res) {
-                    const decoded = new Uint8Array(e.data.res);
-                    const frame = remoteContext.createImageData(width, height);
-                    frame.data.set(decoded, 0);
-                    remoteContext.putImageData(frame, 0, 0);
-                }
-            };
-
+            var encoderReady = {};
             socket.on("mcu_vid", function (content) {
                 var streamId = content["streamId"];
-                console.log(content["d"])
+                //console.log(content["d"])
                 var d = content["d"];
 
                 if (!knownStreams[streamId]) {
                     console.log("CREATE STREAM!");
                     knownStreams[streamId] = true;
 
+                    const src = '../js/webm-wasm/vpx-worker.js';
+                    const vpxdec_ = new Worker(src);
 
+                    const vpxconfig_ = {};
+
+                    const width = 640;
+                    const height = 480;
+                    const fps = 15
+
+                    var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
+                    $("body").append(canvasEl);
+                    //canvasEl.appendTo("body")
+                    var remoteCanvas = canvasEl[0]
+                    var remoteContext = remoteCanvas.getContext('2d');
+
+                    remoteCanvas.width = width;
+                    remoteCanvas.height = height;
+
+                    vpxconfig_.codec = 'VP8';
+                    vpxconfig_.width = width;
+                    vpxconfig_.height = height;
+                    vpxconfig_.fps = fps;
+                    vpxconfig_.bitrate = 600;
+                    vpxconfig_.packetSize = 16;
+
+                    vpxdec_.postMessage({ type: 'init', data: vpxconfig_ });
+
+                    vpxdec_.onmessage = e => {
+                        if (e.data.res) {
+                            const decoded = new Uint8Array(e.data.res);
+                            const frame = remoteContext.createImageData(width, height);
+                            frame.data.set(decoded, 0);
+                            remoteContext.putImageData(frame, 0, 0);
+                        }
+                    };
                     allEncodeWorkers[streamId] = vpxdec_;
-
-
 
                     canvasEl.streamAttributes = _this.allStreamAttributes[streamId];
                     _this.emitEvent("streamAdded", null, canvasEl);
 
-                    
+                    setTimeout(function() {
+                        encoderReady[streamId] = true;
+                    }, 1000)
+
                 }
 
                 //const data = new Uint8Array(d);
-                allEncodeWorkers[streamId].postMessage({
-                    id: 'dec',
-                    type: 'call',
-                    name: 'decode',
-                    args: [d],
-                }, [d]);
-
+                if(encoderReady[streamId]) {
+                    allEncodeWorkers[streamId].postMessage({
+                        id: 'dec',
+                        type: 'call',
+                        name: 'decode',
+                        args: [d],
+                    }, [d]);
+                }
             })
 
             socket.on("mcu_onNewStreamPublished", function (content) {
