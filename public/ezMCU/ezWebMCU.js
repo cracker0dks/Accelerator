@@ -186,12 +186,20 @@ function start() {
 					$("body").append(mediaEl);
 
 					var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
-					//canvasEl.appendTo("body")
+					canvasEl.appendTo("body")
 					var localCanvas = canvasEl[0]
 					var localContext = localCanvas.getContext('2d');
 
+					var canvasEl1 = $('<canvas class="' + streamId + '"></canvas>');
+					canvasEl1.appendTo("body")
+					var remoteCanvas = canvasEl1[0]
+					var remoteContext = remoteCanvas.getContext('2d');
+
 					const src = '../js/webm-wasm/vpx-worker.js';
 					const vpxenc_ = new Worker(src);
+					const vpxdec_ = new Worker(src);
+
+
 					allEncodeWorkers[streamId] = vpxenc_;
 
 					const vpxconfig_ = {};
@@ -206,6 +214,9 @@ function start() {
 					localCanvas.width = width;
 					localCanvas.height = height;
 
+					remoteCanvas.width = width;
+					remoteCanvas.height = height;
+
 					vpxconfig_.codec = 'VP8';
 					vpxconfig_.width = width;
 					vpxconfig_.height = height;
@@ -214,6 +225,8 @@ function start() {
 					vpxconfig_.packetSize = 16;
 
 					vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
+
+					vpxdec_.postMessage({ type: 'init', data: vpxconfig_ });
 
 					let encoding = false;
 					setTimeout(() => {
@@ -239,7 +252,7 @@ function start() {
 						bytesSent = 0;
 						frames = 0;
 						lastTime = now;
-						if(!allEncodeWorkers[streamId]) {
+						if (!allEncodeWorkers[streamId]) {
 							clearInterval(statsInt)
 						}
 					}, 1000)
@@ -248,13 +261,33 @@ function start() {
 						encoding = false;
 						if (e.data.res) {
 							const encoded = new Uint8Array(e.data.res);
+							console.log(e.data.res)
 							for (var i in streamRecordSubs[streamId]) { //Send to all subs
-								socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res }); // 64 KB max
+								socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res });
 							}
+
+
 							bytesSent += encoded.length;
 							frames++;
+
+							// vpxdec_.postMessage({
+							// 	id: 'dec',
+							// 	type: 'call',
+							// 	name: 'decode',
+							// 	args: [e.data.res],
+							// }, [e.data.res]);
 						}
 					};
+
+					vpxdec_.onmessage = e => {
+						if (e.data.res) {
+							const decoded = new Uint8Array(e.data.res);
+							const frame = remoteContext.createImageData(width, height);
+							frame.data.set(decoded, 0);
+							remoteContext.putImageData(frame, 0, 0);
+						}
+					};
+
 				}
 
 				var retObj = {
