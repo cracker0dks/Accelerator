@@ -83,7 +83,12 @@ var init = async function (io, newConfig) {
             }
 
             socket.join(roomname);
-            callback(mcuConfig.webRtcConfig);
+            
+            var retConfig = JSON.parse(JSON.stringify(mcuConfig.webRtcConfig));
+            retConfig["processingFPS"] = mcuConfig["processingFPS"];
+            retConfig["processingBitrate"] = mcuConfig["processingBitrate"];
+            retConfig["processingCodec"] = mcuConfig["processingCodec"];
+            callback(retConfig);
         });
 
         //Handel signaling between client and server peers
@@ -304,16 +309,8 @@ var init = async function (io, newConfig) {
                     await page.goto(masterURL + '/ezMCU/mcuLb.html');
                     await page.waitFor('#loadMCUBtn');
                     await page.click('body');
-
-                    var mcuLbConfig = {
-                        loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-                        masterURLAndPort: masterURL,
-                        secure: masterURL.startsWith("https://") ? true : false
-                    }
-                    mcuLbConfig["webRtcConfig"] = mcuConfig.webRtcConfig;
-                    mcuLbConfig["processingFPS"] = mcuConfig.processingFPS || 15;
-
-                    await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
+                    
+                    await page.evaluate((config) => { setMCUConfig(config); }, mcuConfig);
                     await page.click('#loadMCUBtn');
                     setTimeout(function () { //Wait 10sec to spin it up and ensure no error
                         mcuStartedWithoutError = true;

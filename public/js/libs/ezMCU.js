@@ -125,7 +125,6 @@ function ezMCU(socket, newConfig = {}) {
 
                     const width = 640;
                     const height = 480;
-                    const fps = 15
 
                     var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
                     $("body").append(canvasEl);
@@ -135,12 +134,12 @@ function ezMCU(socket, newConfig = {}) {
 
                     remoteCanvas.width = width;
                     remoteCanvas.height = height;
-
-                    vpxconfig_.codec = 'VP8';
+                    
+                    vpxconfig_.codec = _this.mcuConfig.processingCodec;
                     vpxconfig_.width = width;
                     vpxconfig_.height = height;
-                    vpxconfig_.fps = fps;
-                    vpxconfig_.bitrate = 600;
+                    vpxconfig_.fps = _this.mcuConfig.processingFPS;
+                    vpxconfig_.bitrate = _this.mcuConfig.processingBitrate;
                     vpxconfig_.packetSize = 16;
 
                     vpxdec_.postMessage({ type: 'init', data: vpxconfig_ });
@@ -161,7 +160,6 @@ function ezMCU(socket, newConfig = {}) {
                     setTimeout(function() {
                         encoderReady[streamId] = true;
                     }, 1000)
-
                 }
 
                 //const data = new Uint8Array(d);

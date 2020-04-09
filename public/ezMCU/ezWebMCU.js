@@ -1,3 +1,5 @@
+const workerSrc = '../js/webm-wasm/vpx-worker.js';
+
 $(document).ready(function () {
 	$("#loadMCUBtn").click(function () {
 		start()
@@ -7,7 +9,7 @@ $(document).ready(function () {
 var mcuConfig = {
 	enabled: true,
 	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
-	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
+	masterURL: "http://127.0.0.1:8080", //IP Or hostname and port
 	secure: false,
 	webRtcConfig: {},
 	processingFPS: 15
@@ -17,10 +19,15 @@ function setMCUConfig(config) {
 	for (var i in config) {
 		mcuConfig[i] = config[i];
 	}
+	if(mcuConfig.isMaster) {
+		mcuConfig.masterURL = "http://127.0.0.1:"+mcuConfig.masterPort
+	}
+	mcuConfig.secure = mcuConfig.masterURL.startsWith("https://") ? true : false;
 }
 
 function start() {
-	var socket = io(mcuConfig.masterURLAndPort, { secure: mcuConfig.secure, reconnect: true, rejectUnauthorized: false });
+	
+	var socket = io(mcuConfig.masterURL, { secure: mcuConfig.secure, reconnect: true, rejectUnauthorized: false });
 
 	var ac = new AudioContext();
 
@@ -181,63 +188,63 @@ function start() {
 					mediaEl[0].srcObject = stream;
 				} else { //its video so start get data
 					var mediaEl = $('<video class="' + streamId + '" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
-					mediaEl[0].srcObject = stream;
 					var localVideo = mediaEl[0];
+					localVideo.srcObject = stream;
+
 					$("body").append(mediaEl);
 
-					var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
-					canvasEl.appendTo("body")
-					var localCanvas = canvasEl[0]
-					var localContext = localCanvas.getContext('2d');
+					localVideo.addEventListener("canplay", function () {
+						var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
+						//canvasEl.appendTo("body")
+						var localCanvas = canvasEl[0]
+						var localContext = localCanvas.getContext('2d');
 
-					const src = '../js/webm-wasm/vpx-worker.js';
-					const vpxenc_ = new Worker(src);
+						const vpxenc_ = new Worker(workerSrc);
+						allEncodeWorkers[streamId] = vpxenc_;
 
-					allEncodeWorkers[streamId] = vpxenc_;
+						const vpxconfig_ = {};
 
-					const vpxconfig_ = {};
+						const width = localVideo.videoWidth;
+						const height = localVideo.videoHeight;
 
-					const width = 640;
-					const height = 480;
-					const fps = 15;
+						vpxconfig_.codec = mcuConfig.processingCodec;
+						vpxconfig_.width = width;
+						vpxconfig_.height = height;
+						vpxconfig_.fps = mcuConfig.processingFPS;
+						vpxconfig_.bitrate = mcuConfig.processingBitrate;
+						vpxconfig_.packetSize = 16;
 
-					localCanvas.width = width;
-					localCanvas.height = height;
+						vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
 
-					vpxconfig_.codec = 'VP8';
-					vpxconfig_.width = width;
-					vpxconfig_.height = height;
-					vpxconfig_.fps = fps;
-					vpxconfig_.bitrate = 600;
-					vpxconfig_.packetSize = 16;
+						let encoding = false;
+						setTimeout(() => {
+							localCanvas.width = width;
+							localCanvas.height = height;
 
-					vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
+							allEncodeTimeouts[streamId] = setInterval(() => {
+								if (encoding) return;
+								encoding = true;
+								localContext.drawImage(localVideo, 0, 0, width, height);
+								const frame = localContext.getImageData(0, 0, width, height);
+								vpxenc_.postMessage({
+									id: 'enc',
+									type: 'call',
+									name: 'encode',
+									args: [frame.data.buffer]
+								}, [frame.data.buffer]);
 
-					let encoding = false;
-					setTimeout(() => {
-						allEncodeTimeouts[streamId] = setInterval(() => {
-							if (encoding) return; // TODO: apprtc is a bit smarter here.
-							encoding = true;
-							localContext.drawImage(localVideo, 0, 0, width, height);
-							const frame = localContext.getImageData(0, 0, width, height);
-							vpxenc_.postMessage({
-								id: 'enc',
-								type: 'call',
-								name: 'encode',
-								args: [frame.data.buffer]
-							}, [frame.data.buffer]);
+							}, 1000.0 / mcuConfig.processingFPS);
+						}, 1000); // wait a bit before grabbing frames to give the wasm stuff time to init.
 
-						}, 1000.0 / fps);
-					}, 1000); // wait a bit before grabbing frames to give the wasm stuff time to init.
-
-					vpxenc_.onmessage = e => {
-						encoding = false;
-						if (e.data.res) {
-							for (var i in streamRecordSubs[streamId]) { //Send to all subs
-								socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res });
+						vpxenc_.onmessage = e => {
+							encoding = false;
+							if (e.data.res) {
+								for (var i in streamRecordSubs[streamId]) { //Send to all subs
+									socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res });
+								}
 							}
-						}
-					};
+						};
+					});
 				}
 
 				var retObj = {
@@ -261,5 +268,5 @@ function start() {
 
 	});
 
-	console.log("Loadbalancer runnung! Connecting to:", mcuConfig.masterURLAndPort);
+	console.log("Loadbalancer runnung! Connecting to:", mcuConfig.masterURL);
 }
