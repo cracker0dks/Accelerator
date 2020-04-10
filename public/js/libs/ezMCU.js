@@ -117,14 +117,16 @@ function ezMCU(socket, newConfig = {}) {
                 if (!knownStreams[streamId]) {
                     console.log("CREATE STREAM!");
                     knownStreams[streamId] = true;
+                    var steamAttr = _this.allStreamAttributes[streamId];
+                    console.log(steamAttr);
 
                     const src = '../js/webm-wasm/vpx-worker.js';
                     const vpxdec_ = new Worker(src);
 
                     const vpxconfig_ = {};
 
-                    const width = 640;
-                    const height = 480;
+                    const width = steamAttr.videoWidth;
+                    const height = steamAttr.videoHeight;
 
                     var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
                     $("body").append(canvasEl);
@@ -154,7 +156,7 @@ function ezMCU(socket, newConfig = {}) {
                     };
                     allEncodeWorkers[streamId] = vpxdec_;
 
-                    canvasEl.streamAttributes = _this.allStreamAttributes[streamId];
+                    canvasEl.streamAttributes = steamAttr;
                     _this.emitEvent("streamAdded", null, canvasEl);
 
                     setTimeout(function() {

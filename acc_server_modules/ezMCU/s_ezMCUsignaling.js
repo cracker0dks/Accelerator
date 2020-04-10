@@ -189,6 +189,8 @@ var init = async function (io, newConfig) {
                 if (allStreamAttributes[streamId]) {
                     allStreamAttributes[streamId].hasVideo = content.hasVideo;
                     allStreamAttributes[streamId].hasAudio = content.hasAudio;
+                    allStreamAttributes[streamId].videoWidth = content.videoWidth;
+                    allStreamAttributes[streamId].videoHeight = content.videoHeight;
                     allStreamAttributes[streamId]["active"] = true;
                     if (allStreamAttributes[streamId]["roomname"]) {
                         socket.to(allStreamAttributes[streamId]["roomname"]).emit("mcu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in

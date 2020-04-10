@@ -19,14 +19,14 @@ function setMCUConfig(config) {
 	for (var i in config) {
 		mcuConfig[i] = config[i];
 	}
-	if(mcuConfig.isMaster) {
-		mcuConfig.masterURL = "http://127.0.0.1:"+mcuConfig.masterPort
+	if (mcuConfig.isMaster) {
+		mcuConfig.masterURL = "http://127.0.0.1:" + mcuConfig.masterPort
 	}
 	mcuConfig.secure = mcuConfig.masterURL.startsWith("https://") ? true : false;
 }
 
 function start() {
-	
+
 	var socket = io(mcuConfig.masterURL, { secure: mcuConfig.secure, reconnect: true, rejectUnauthorized: false });
 
 	var ac = new AudioContext();
@@ -77,6 +77,7 @@ function start() {
 			//console.log("mcu_reqSteam", content)
 			var streamId = content.streamId;
 			var clientSocketId = content.clientSocketId;
+			var sendPeerVideo = content.sendPeerVideo;
 			if (allStreams[streamId]) {
 				if (!allPeers[clientSocketId]) {
 					createNewPeer(clientSocketId, function () {
@@ -94,9 +95,12 @@ function start() {
 				var audioTracks = allStreams[streamId].getAudioTracks();
 				var videoTracks = allStreams[streamId].getVideoTracks();
 				if (videoTracks.length > 0) {
-					if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
-					streamRecordSubs[streamId][clientSocketId] = true;
-					//allPeers[clientSocketId].addStream(allStreams[streamId]); //Old way with extra stream
+					if (mcuConfig.enableGlobalVideoProcessing && audioTracks.length == 0 && !sendPeerVideo) { //Not working if we have audiotracks
+						if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
+						streamRecordSubs[streamId][clientSocketId] = true;
+					} else {
+						allPeers[clientSocketId].addStream(allStreams[streamId]); //Add stream to peer connection
+					}
 				} else if (audioTracks.length > 0) {
 					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
 						allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
@@ -179,6 +183,13 @@ function start() {
 
 				var videoTracks = stream.getVideoTracks();
 				var audioTracks = stream.getAudioTracks();
+
+				var retObj = {
+					hasVideo: videoTracks.length > 0 ? true : false,
+					hasAudio: audioTracks.length > 0 ? true : false,
+					streamId: streamId
+				}
+
 				if (videoTracks == 0) { //Only audio so generate a streamSource
 					var scr = ac.createMediaStreamSource(stream);
 					allStreamSources[streamId] = scr;
@@ -186,7 +197,11 @@ function start() {
 
 					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
-				} else { //its video so start get data
+
+					//console.log(retObj)
+					socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
+				} else if (mcuConfig.enableGlobalVideoProcessing && audioTracks.length == 0) { //if not, streams send via peer connection
+
 					var mediaEl = $('<video class="' + streamId + '" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
 					var localVideo = mediaEl[0];
 					localVideo.srcObject = stream;
@@ -206,6 +221,10 @@ function start() {
 
 						const width = localVideo.videoWidth;
 						const height = localVideo.videoHeight;
+
+						retObj["videoWidth"] = width;
+						retObj["videoHeight"] = height;
+						socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 
 						vpxconfig_.codec = mcuConfig.processingCodec;
 						vpxconfig_.width = width;
@@ -246,14 +265,6 @@ function start() {
 						};
 					});
 				}
-
-				var retObj = {
-					hasVideo: videoTracks.length > 0 ? true : false,
-					hasAudio: audioTracks.length > 0 ? true : false,
-					streamId: streamId
-				}
-				//console.log(retObj)
-				socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 			});
 		}
 
