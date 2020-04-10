@@ -63,22 +63,12 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                 }
             })
 
-            myMCU.on("streamAdded", function (stream, video) {
-                if (!stream && video) {
-                    console.log("Append special stream!", video)
-                    var streamAttr = video.streamAttributes;
-                    var streamSocketId = streamAttr.streamSocketId || streamAttr.socketId;
-                    var videoElement = $('<div id="video' + streamId + '" class="direktVideoContainer socketId' + streamSocketId + '" style="height: 225px; width: 100%; z-index:10;"></div>');
-                    $("#" + streamSocketId).find(".videoContainer").append(videoElement);
-                    video.css({ width: "300px", height: "225px", position: "absolute", top: "0px" })
-                    video.appendTo(videoElement);
-                    $("#" + streamSocketId).find(".webcamfullscreen").show();
-                    $("#" + streamSocketId).find(".popoutVideoBtn").show();
-                    return;
-                }
+            myMCU.on("streamAdded", function (stream) {
+                var streamAttr = stream.streamAttributes;
+
                 console.log(stream)
 
-                var streamId = stream.id.replace("{", "").replace("}", "")
+                var streamId = stream.id ? stream.id.replace("{", "").replace("}", "") : streamAttr["streamId"];
 
                 if (!stream.hasVideo && stream.hasAudio) {
                     console.log("ADD GLOBAL AUDIO!")
@@ -95,13 +85,12 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                     return;
                 }
 
-                var streamAttr = stream.streamAttributes;
+                
                 var streamSocketId = streamAttr.streamSocketId || streamAttr.socketId;
-                streamId = streamAttr["specialStreamId"] ? streamAttr["specialStreamId"] : streamId;
 
                 if (streamAttr && streamAttr.screenshare) {   //Screenshare
                     apendScreenshareStream(stream, streamAttr);
-                } else if (stream.hasVideo) {  //Video Stream
+                } else if (stream.hasVideo || streamAttr.hasVideo) {  //Video Stream
                     console.log("ADD VIDEO!")
                     $("#video" + streamId).remove(); //just in case so no double cam
                     if (streamAttr && streamAttr["itemId"]) { //Webcamstream in userPitem

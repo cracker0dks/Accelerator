@@ -118,6 +118,7 @@ function ezMCU(socket, newConfig = {}) {
                     console.log("CREATE STREAM!");
                     knownStreams[streamId] = true;
                     var steamAttr = _this.allStreamAttributes[streamId];
+                    steamAttr["canvasStream"] = true;
                     console.log(steamAttr);
 
                     const src = '../js/webm-wasm/vpx-worker.js';
@@ -128,7 +129,7 @@ function ezMCU(socket, newConfig = {}) {
                     const width = steamAttr.videoWidth;
                     const height = steamAttr.videoHeight;
 
-                    var canvasEl = $('<canvas class="'+streamId+'"></canvas>');
+                    var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
                     $("body").append(canvasEl);
                     //canvasEl.appendTo("body")
                     var remoteCanvas = canvasEl[0]
@@ -136,7 +137,7 @@ function ezMCU(socket, newConfig = {}) {
 
                     remoteCanvas.width = width;
                     remoteCanvas.height = height;
-                    
+
                     vpxconfig_.codec = _this.mcuConfig.processingCodec;
                     vpxconfig_.width = width;
                     vpxconfig_.height = height;
@@ -157,15 +158,15 @@ function ezMCU(socket, newConfig = {}) {
                     allEncodeWorkers[streamId] = vpxdec_;
 
                     canvasEl.streamAttributes = steamAttr;
-                    _this.emitEvent("streamAdded", null, canvasEl);
+                    _this.emitEvent("streamAdded", canvasEl);
 
-                    setTimeout(function() {
+                    setTimeout(function () {
                         encoderReady[streamId] = true;
                     }, 1000)
                 }
 
                 //const data = new Uint8Array(d);
-                if(encoderReady[streamId]) {
+                if (encoderReady[streamId]) {
                     allEncodeWorkers[streamId].postMessage({
                         id: 'dec',
                         type: 'call',
@@ -229,20 +230,28 @@ function ezMCU(socket, newConfig = {}) {
         stream.audioMuted = mute;
     };
     this.showMediaStream = function (elmDomId, stream, css = "") {
-        var streamId = stream.id.replace("{", "").replace("}", "")
-        var mediaEl = null;
+        var streamAttr = stream.streamAttributes;
+        var streamId = stream.id ? stream.id.replace("{", "").replace("}", "") : streamAttr["streamId"];
+        
+        if (streamAttr && streamAttr.canvasStream) {
+            stream[0].setAttribute("style", css);
+            stream[0].id = streamId;
+            document.getElementById(elmDomId).appendChild(stream[0]);
+        } else { //Video or audio stream via peer
+            var mediaEl = null;
+            var videoTracks = stream.getVideoTracks();
+            var hasVideo = videoTracks.length > 0 ? true : false;
+            mediaEl = hasVideo ? document.createElement('video') : document.createElement('audio');
 
-        var videoTracks = stream.getVideoTracks();
-        var hasVideo = videoTracks.length > 0 ? true : false;
-        mediaEl = hasVideo ? document.createElement('video') : document.createElement('audio');
+            mediaEl.setAttribute("style", css);
+            mediaEl.setAttribute("autoplay", "autoplay");
+            mediaEl.id = streamId;
+            document.getElementById(elmDomId).appendChild(mediaEl);
 
-        mediaEl.setAttribute("style", css);
-        mediaEl.setAttribute("autoplay", "autoplay");
-        mediaEl.id = streamId;
-        document.getElementById(elmDomId).appendChild(mediaEl);
+            mediaEl.srcObject = stream;
+            mediaEl.play();
+        }
 
-        mediaEl.srcObject = stream;
-        mediaEl.play();
     };
     this.getAllStreamsFromRoom = function (roomname, callback) {
         var _this = this;

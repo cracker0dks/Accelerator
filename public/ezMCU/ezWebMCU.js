@@ -209,6 +209,7 @@ function start() {
 					$("body").append(mediaEl);
 
 					localVideo.addEventListener("canplay", function () {
+						mediaEl.hide();
 						var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
 						//canvasEl.appendTo("body")
 						var localCanvas = canvasEl[0]
@@ -264,6 +265,8 @@ function start() {
 							}
 						};
 					});
+				} else {
+					socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 				}
 			});
 		}
