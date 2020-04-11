@@ -106,7 +106,6 @@ function initEzWebRTC(initiator, config) {
             await pc.setLocalDescription(await pc.createAnswer(rtcConfig.offerOptions));
             var a_desc = pc.localDescription;
             a_desc.sdp = rtcConfig.preferH264Codec ? preferH264Codec(a_desc.sdp) : a_desc.sdp;
-            console.log(a_desc)
             _this.emitEvent("signaling", a_desc)
             if (!initiator)
                 requestMissingTransceivers()
@@ -196,7 +195,6 @@ function initEzWebRTC(initiator, config) {
             await pc.setLocalDescription(offer);
             var o_desc = pc.localDescription;
             o_desc.sdp = rtcConfig.preferH264Codec ? preferH264Codec(o_desc.sdp) : o_desc.sdp;
-            console.log(o_desc);
             _this.emitEvent("signaling", o_desc)
         } else if (_this.gotOffer) { //Dont send renegotiate req before getting at least one offer
             _this.emitEvent("signaling", "renegotiate");

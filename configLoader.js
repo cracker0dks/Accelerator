@@ -23,19 +23,23 @@ var defaultConfig = {
 		},
 		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master (Must be the same on Master and loadbalancer)
 		isMaster : true, //Set to false if this is a loadbalancer instance
-		masterURL : 'https://yourAcceleratorURL.tl', //the web URL of your main instance (only used on loadbalancers)
-		enableLocalMCU : true //Set to false if this is master and this server should not handle any streams -> be sure you set up a loadbalancer in that case
+		masterURL : 'https://yourAcceleratorURL.tl', //the web URL of your main instance
+		enableLocalMCU : true, //Set to false if this is master and this server should not handle any streams -> be sure you set up a loadbalancer in that case
+		enableGlobalVideoProcessing : false, //If true: All Videostreams will be encoded once (not everytime for every downstream) and send back via websockets (not webRTC). Far less server cpu usage but no WebRTC features on downstream
+		processingFPS : 20, //FPS for Video proccesing on the MCU (Less is better for cpu usage but laggy)
+        processingBitrate: 600, //Default 600
+        processingCodec: "VP8" //Can be VP8 or VP9
 	},
 	"accConfig": { 
 		"etherpadUrl": "", //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 
 		"deleteUnusedRoomsAfterDays": 0, //0 is no deletion at all
 		"screenshareConfig" : {
-            "maxFPS" : 30,
-            "maxResolution" : "1080p" //1080p, 720p, 480p, 360p
+            "maxFPS" : 20,
+            "maxResolution" : "720p" //1080p, 720p, 480p, 360p
         },
         "webcamConfig" : {
-            "maxFPS" : 30,
-            "maxResolution" : "1080p" //1080p, 720p, 480p, 360p
+            "maxFPS" : 20,
+            "maxResolution" : "480p" //1080p, 720p, 480p, 360p
         }
 	}
 }

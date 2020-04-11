@@ -30,7 +30,7 @@ function ezMCU(socket, newConfig = {}) {
             return console.log("Already connected to this peer!");
         }
         _this.peers[peerId] = new initEzWebRTC(false, _this.mcuConfig)
-        _this.peers[peerId].on('error', function(err) { _this.emitEvent("error", err); })
+        _this.peers[peerId].on('error', function (err) { _this.emitEvent("error", err); })
 
         _this.peers[peerId].on('signaling', data => {
             //console.log("SENDING SIGNALING OUT >", data)
@@ -62,7 +62,7 @@ function ezMCU(socket, newConfig = {}) {
 
         _this.peers[peerId].on('iceFailed', () => {
             _this.emitEvent("iceFailed", peerId);
-        });        
+        });
     };
     this.init = function () {
         socket.on("connect", function () {
@@ -104,6 +104,81 @@ function ezMCU(socket, newConfig = {}) {
 
             socket.on("mcu_onIceServers", function (iceServers) {
                 _this.mcuConfig["iceServers"] = iceServers;
+            })
+
+            var knownStreams = {};
+            var allEncodeWorkers = {};
+            var encoderReady = {};
+            socket.on("mcu_vid", function (content) {
+                var streamId = content["streamId"];
+                //console.log(content["d"])
+                var d = content["d"];
+
+                if (!knownStreams[streamId]) {
+                    console.log("CREATE STREAM!");
+                    knownStreams[streamId] = true;
+                    var steamAttr = _this.allStreamAttributes[streamId];
+                    steamAttr["canvasStream"] = true;
+                    console.log(steamAttr);
+
+                    const src = '../js/webm-wasm/vpx-worker.js';
+                    const vpxdec_ = new Worker(src);
+
+                    const vpxconfig_ = {};
+
+                    const width = steamAttr.videoWidth;
+                    const height = steamAttr.videoHeight;
+
+                    var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
+                    $("body").append(canvasEl);
+                    //canvasEl.appendTo("body")
+                    var remoteCanvas = canvasEl[0]
+                    var remoteContext = remoteCanvas.getContext('2d');
+
+                    remoteCanvas.width = width;
+                    remoteCanvas.height = height;
+
+                    vpxconfig_.codec = _this.mcuConfig.processingCodec;
+                    vpxconfig_.width = width;
+                    vpxconfig_.height = height;
+                    vpxconfig_.fps = _this.mcuConfig.processingFPS;
+                    vpxconfig_.bitrate = _this.mcuConfig.processingBitrate;
+                    vpxconfig_.packetSize = 16;
+
+                    vpxdec_.postMessage({ type: 'init', data: vpxconfig_ });
+
+                    vpxdec_.onmessage = e => {
+                        if (e.data.res) {
+                            const decoded = new Uint8Array(e.data.res);
+                            const frame = remoteContext.createImageData(width, height);
+                            frame.data.set(decoded, 0);
+                            remoteContext.putImageData(frame, 0, 0);
+                        }
+                    };
+                    allEncodeWorkers[streamId] = vpxdec_;
+
+                    canvasEl.streamAttributes = steamAttr;
+
+                    setTimeout(function () {
+                        remoteContext.fillStyle = "#FFFFFF";
+                        remoteContext.fillRect(0, 0, width, height);
+                        remoteContext.font = "30px Arial";
+                        remoteContext.fillStyle = "#000000";
+                        remoteContext.fillText("Connecting Videostream...", 15, 25);
+                        encoderReady[streamId] = true;
+                        _this.emitEvent("streamAdded", canvasEl);
+                    }, 1000)
+                }
+
+                //const data = new Uint8Array(d);
+                if (encoderReady[streamId]) {
+                    allEncodeWorkers[streamId].postMessage({
+                        id: 'dec',
+                        type: 'call',
+                        name: 'decode',
+                        args: [d],
+                    }, [d]);
+                }
             })
 
             socket.on("mcu_onNewStreamPublished", function (content) {
@@ -160,20 +235,28 @@ function ezMCU(socket, newConfig = {}) {
         stream.audioMuted = mute;
     };
     this.showMediaStream = function (elmDomId, stream, css = "") {
-        var streamId = stream.id.replace("{", "").replace("}", "")
-        var mediaEl = null;
+        var streamAttr = stream.streamAttributes;
+        var streamId = stream.id ? stream.id.replace("{", "").replace("}", "") : streamAttr["streamId"];
 
-        var videoTracks = stream.getVideoTracks();
-        var hasVideo = videoTracks.length > 0 ? true : false;
-        mediaEl = hasVideo ? document.createElement('video') : document.createElement('audio');
+        if (streamAttr && streamAttr.canvasStream) {
+            stream[0].setAttribute("style", css);
+            stream[0].id = streamId;
+            document.getElementById(elmDomId).appendChild(stream[0]);
+        } else { //Video or audio stream via peer
+            var mediaEl = null;
+            var videoTracks = stream.getVideoTracks();
+            var hasVideo = videoTracks.length > 0 ? true : false;
+            mediaEl = hasVideo ? document.createElement('video') : document.createElement('audio');
 
-        mediaEl.setAttribute("style", css);
-        mediaEl.setAttribute("autoplay", "autoplay");
-        mediaEl.id = streamId;
-        document.getElementById(elmDomId).appendChild(mediaEl);
+            mediaEl.setAttribute("style", css);
+            mediaEl.setAttribute("autoplay", "autoplay");
+            mediaEl.id = streamId;
+            document.getElementById(elmDomId).appendChild(mediaEl);
 
-        mediaEl.srcObject = stream;
-        mediaEl.play();
+            mediaEl.srcObject = stream;
+            mediaEl.play();
+        }
+
     };
     this.getAllStreamsFromRoom = function (roomname, callback) {
         var _this = this;

@@ -1,3 +1,5 @@
+const workerSrc = '../js/webm-wasm/vpx-worker.js';
+
 $(document).ready(function () {
 	$("#loadMCUBtn").click(function () {
 		start()
@@ -7,19 +9,25 @@ $(document).ready(function () {
 var mcuConfig = {
 	enabled: true,
 	loadBalancerAuthKey: "abc", //Auth key to connect to the master as loadBalancer
-	masterURLAndPort: "http://127.0.0.1:8080", //IP Or hostname and port
-	secure : false,
-	webRtcConfig : {}
+	masterURL: "http://127.0.0.1:8080", //IP Or hostname and port
+	secure: false,
+	webRtcConfig: {},
+	processingFPS: 15
 }
 
 function setMCUConfig(config) {
 	for (var i in config) {
 		mcuConfig[i] = config[i];
 	}
+	if (mcuConfig.isMaster) {
+		mcuConfig.masterURL = "http://127.0.0.1:" + mcuConfig.masterPort
+	}
+	mcuConfig.secure = mcuConfig.masterURL.startsWith("https://") ? true : false;
 }
 
 function start() {
-	var socket = io(mcuConfig.masterURLAndPort, { secure: mcuConfig.secure, reconnect: true, rejectUnauthorized: false });
+
+	var socket = io(mcuConfig.masterURL, { secure: mcuConfig.secure, reconnect: true, rejectUnauthorized: false });
 
 	var ac = new AudioContext();
 
@@ -27,6 +35,9 @@ function start() {
 	var allStreams = {};
 	var allStreamDestinations = {};
 	var allStreamSources = {};
+	var streamRecordSubs = {};
+	var allEncodeWorkers = {};
+	var allEncodeTimeouts = {};
 
 	socket.on('connect', function () {
 		socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
@@ -51,12 +62,22 @@ function start() {
 			if (allStreams[streamId]) {
 				delete allStreams[streamId];
 			}
+			console.log("stopped stream");
+			if (allEncodeTimeouts[streamId])
+				clearInterval(allEncodeTimeouts[streamId])
+			if (allEncodeWorkers[streamId]) {
+				allEncodeWorkers[streamId].terminate();
+				allEncodeWorkers[streamId] = null;
+			}
+
+			$("." + streamId).remove();
 		});
 
 		socket.on('mcu_reqSteam', function (content) {
 			//console.log("mcu_reqSteam", content)
 			var streamId = content.streamId;
 			var clientSocketId = content.clientSocketId;
+			var sendPeerVideo = content.sendPeerVideo;
 			if (allStreams[streamId]) {
 				if (!allPeers[clientSocketId]) {
 					createNewPeer(clientSocketId, function () {
@@ -74,7 +95,12 @@ function start() {
 				var audioTracks = allStreams[streamId].getAudioTracks();
 				var videoTracks = allStreams[streamId].getVideoTracks();
 				if (videoTracks.length > 0) {
-					allPeers[clientSocketId].addStream(allStreams[streamId]);
+					if (mcuConfig.enableGlobalVideoProcessing && audioTracks.length == 0 && !sendPeerVideo) { //Not working if we have audiotracks
+						if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
+						streamRecordSubs[streamId][clientSocketId] = true;
+					} else {
+						allPeers[clientSocketId].addStream(allStreams[streamId]); //Add stream to peer connection
+					}
 				} else if (audioTracks.length > 0) {
 					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
 						allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
@@ -133,6 +159,11 @@ function start() {
 					allStreamDestinations[clientSocketId].disconnect();
 					delete allStreamDestinations[clientSocketId];
 				}
+				for (var i in streamRecordSubs) {
+					if (streamRecordSubs[i][clientSocketId]) {
+						delete streamRecordSubs[i][clientSocketId];
+					}
+				}
 			})
 
 			localPeer.on('connect', () => {
@@ -152,31 +183,104 @@ function start() {
 
 				var videoTracks = stream.getVideoTracks();
 				var audioTracks = stream.getAudioTracks();
-				if (videoTracks == 0) { //Only audio
-					var scr = ac.createMediaStreamSource(stream);
-					allStreamSources[streamId] = scr;
-					peerAudioStreamSrcs[streamId] = streamId;
-
-					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
-					mediaEl[0].srcObject = stream;
-				}
 
 				var retObj = {
 					hasVideo: videoTracks.length > 0 ? true : false,
 					hasAudio: audioTracks.length > 0 ? true : false,
 					streamId: streamId
 				}
-				//console.log(retObj)
-				socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
+
+				if (videoTracks == 0) { //Only audio so generate a streamSource
+					var scr = ac.createMediaStreamSource(stream);
+					allStreamSources[streamId] = scr;
+					peerAudioStreamSrcs[streamId] = streamId;
+
+					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
+					mediaEl[0].srcObject = stream;
+
+					//console.log(retObj)
+					socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
+				} else if (mcuConfig.enableGlobalVideoProcessing && audioTracks.length == 0) { //if not, streams send via peer connection
+
+					var mediaEl = $('<video class="' + streamId + '" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
+					var localVideo = mediaEl[0];
+					localVideo.srcObject = stream;
+
+					$("body").append(mediaEl);
+
+					localVideo.addEventListener("canplay", function () {
+						mediaEl.hide();
+						var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
+						//canvasEl.appendTo("body")
+						var localCanvas = canvasEl[0]
+						var localContext = localCanvas.getContext('2d');
+
+						const vpxenc_ = new Worker(workerSrc);
+						allEncodeWorkers[streamId] = vpxenc_;
+
+						const vpxconfig_ = {};
+
+						const width = localVideo.videoWidth;
+						const height = localVideo.videoHeight;
+
+						retObj["videoWidth"] = width;
+						retObj["videoHeight"] = height;
+						socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
+
+						vpxconfig_.codec = mcuConfig.processingCodec;
+						vpxconfig_.width = width;
+						vpxconfig_.height = height;
+						vpxconfig_.fps = mcuConfig.processingFPS;
+						vpxconfig_.bitrate = mcuConfig.processingBitrate;
+						vpxconfig_.packetSize = 16;
+
+						vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
+
+						let encoding = false;
+						setTimeout(() => {
+							localCanvas.width = width;
+							localCanvas.height = height;
+
+							allEncodeTimeouts[streamId] = setInterval(() => {
+								if (encoding) return;
+								encoding = true;
+								localContext.drawImage(localVideo, 0, 0, width, height);
+								const frame = localContext.getImageData(0, 0, width, height);
+								vpxenc_.postMessage({
+									id: 'enc',
+									type: 'call',
+									name: 'encode',
+									args: [frame.data.buffer]
+								}, [frame.data.buffer]);
+
+							}, 1000.0 / mcuConfig.processingFPS);
+						}, 1000); // wait a bit before grabbing frames to give the wasm stuff time to init.
+
+						vpxenc_.onmessage = e => {
+							encoding = false;
+							if (e.data.res) {
+								for (var i in streamRecordSubs[streamId]) { //Send to all subs
+									socket.emit("mcu_vid", { "cs": i, streamId: streamId, d: e.data.res });
+								}
+							}
+						};
+					});
+				} else {
+					socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
+				}
 			});
+		}
+
+		function typedArrayToBuffer(array) {
+			return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 		}
 
 		setInterval(function () { //Every 10h get current IceServers
 			socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
 		}, 1000 * 60 * 60 * 10);
-		
+
 
 	});
 
-	console.log("Loadbalancer runnung! Connecting to:", mcuConfig.masterURLAndPort);
+	console.log("Loadbalancer runnung! Connecting to:", mcuConfig.masterURL);
 }

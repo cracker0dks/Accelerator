@@ -16,7 +16,7 @@ var allSingleFiles = null;
 var localVideoStrm = null;
 var localAudioStream = null;
 var isLocalVideoPlaying = false;
-var lastPlingSoundPlayed = +new Date()-5000;
+var lastPlingSoundPlayed = +new Date() - 5000;
 var userLang = navigator.language || navigator.userLanguage;
 
 var url = document.URL.substr(0, document.URL.lastIndexOf('/'));
@@ -64,7 +64,11 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
             })
 
             myMCU.on("streamAdded", function (stream) {
+                var streamAttr = stream.streamAttributes;
+
                 console.log(stream)
+
+                var streamId = stream.id ? stream.id.replace("{", "").replace("}", "") : streamAttr["streamId"];
 
                 if (!stream.hasVideo && stream.hasAudio) {
                     console.log("ADD GLOBAL AUDIO!")
@@ -81,12 +85,12 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                     return;
                 }
 
-                var streamAttr = stream.streamAttributes;
-                var streamSocketId = streamAttr.socketId;
-                var streamId = stream.id.replace("{", "").replace("}", "")
+                
+                var streamSocketId = streamAttr.streamSocketId || streamAttr.socketId;
+
                 if (streamAttr && streamAttr.screenshare) {   //Screenshare
                     apendScreenshareStream(stream, streamAttr);
-                } else if (stream.hasVideo) {  //Video Stream
+                } else if (stream.hasVideo || streamAttr.hasVideo) {  //Video Stream
                     console.log("ADD VIDEO!")
                     $("#video" + streamId).remove(); //just in case so no double cam
                     if (streamAttr && streamAttr["itemId"]) { //Webcamstream in userPitem
@@ -283,13 +287,13 @@ function setUserAttr(username, passwort) {
 
             //Remove invaild resoltions from screenshare
             var maxRes = accSettings["screenshareConfig"] && accSettings["screenshareConfig"]["maxResolution"] ? accSettings["screenshareConfig"]["maxResolution"] : "720p";
-            if(maxRes != "1080p") {
+            if (maxRes != "1080p") {
                 $("#res1080p").remove();
             }
-            if(maxRes == "480p") {
+            if (maxRes == "480p") {
                 $("#res720p").remove();
             }
-            if(maxRes == "360p") {
+            if (maxRes == "360p") {
                 $("#res720p").remove();
                 $("#res420p").remove();
             }
@@ -594,6 +598,7 @@ function initSocketIO() {
     } else {
         signaling_socket = io();
     }
+    //signaling_socket.binaryType = 'arraybuffer';
 
     myMCU = new ezMCU(signaling_socket);
     myMCU.init();
@@ -629,7 +634,7 @@ function initSocketIO() {
             sendGetUserInfos(remotSocketId);
 
             setUserColor(remotSocketId, color);
-            
+
             if ((+new Date() - lastPlingSoundPlayed) > 500 && $("#leftContainer").find(".userdiv").length < 10) { //dont play pling when you join or more than ten users
                 var audio = new Audio('./sounds/pling.mp3');
                 audio.play();

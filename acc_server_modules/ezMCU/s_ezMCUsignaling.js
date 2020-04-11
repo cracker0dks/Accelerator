@@ -83,7 +83,12 @@ var init = async function (io, newConfig) {
             }
 
             socket.join(roomname);
-            callback(mcuConfig.webRtcConfig);
+            
+            var retConfig = JSON.parse(JSON.stringify(mcuConfig.webRtcConfig));
+            retConfig["processingFPS"] = mcuConfig["processingFPS"];
+            retConfig["processingBitrate"] = mcuConfig["processingBitrate"];
+            retConfig["processingCodec"] = mcuConfig["processingCodec"];
+            callback(retConfig);
         });
 
         //Handel signaling between client and server peers
@@ -111,6 +116,7 @@ var init = async function (io, newConfig) {
                     }
                     //set streamSource attr
                     streamAttributes["instanceTo"] = instance;
+                    streamAttributes["streamSocketId"] = socket.id;
                     allStreamAttributes[streamAttributes["streamId"]] = streamAttributes;
                     myStreamIds.push(streamAttributes["streamId"]);
                     callback(null, streamAttributes);
@@ -183,6 +189,8 @@ var init = async function (io, newConfig) {
                 if (allStreamAttributes[streamId]) {
                     allStreamAttributes[streamId].hasVideo = content.hasVideo;
                     allStreamAttributes[streamId].hasAudio = content.hasAudio;
+                    allStreamAttributes[streamId].videoWidth = content.videoWidth;
+                    allStreamAttributes[streamId].videoHeight = content.videoHeight;
                     allStreamAttributes[streamId]["active"] = true;
                     if (allStreamAttributes[streamId]["roomname"]) {
                         socket.to(allStreamAttributes[streamId]["roomname"]).emit("mcu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in
@@ -205,6 +213,14 @@ var init = async function (io, newConfig) {
             if(loadBalancersSockets[instanceTo]) { loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content); }
         });
 
+        socket.on("mcu_vid", function (content) {
+            var clientSocketId = content["cs"];
+            var data = content["d"];
+            var streamId = content["streamId"];
+            content["clientSocketId"] = socket.id;
+            io.to(clientSocketId).emit("mcu_vid", { streamId : streamId, d: data });
+        });
+        
         //END - LOAD BALANCER STUFF
     })
 
@@ -258,6 +274,7 @@ var init = async function (io, newConfig) {
         try {
             browser = await puppeteer.launch({
                 headless: true,
+                //executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
                 "ignoreHTTPSErrors": true,
                 args: [
                     '--ignore-certificate-errors',
@@ -294,15 +311,8 @@ var init = async function (io, newConfig) {
                     await page.goto(masterURL + '/ezMCU/mcuLb.html');
                     await page.waitFor('#loadMCUBtn');
                     await page.click('body');
-
-                    var mcuLbConfig = {
-                        loadBalancerAuthKey: mcuConfig.loadBalancerAuthKey,
-                        masterURLAndPort: masterURL,
-                        secure: masterURL.startsWith("https://") ? true : false
-                    }
-                    mcuLbConfig["webRtcConfig"] = mcuConfig.webRtcConfig;
-
-                    await page.evaluate((config) => { setMCUConfig(config); }, mcuLbConfig);
+                    
+                    await page.evaluate((config) => { setMCUConfig(config); }, mcuConfig);
                     await page.click('#loadMCUBtn');
                     setTimeout(function () { //Wait 10sec to spin it up and ensure no error
                         mcuStartedWithoutError = true;
