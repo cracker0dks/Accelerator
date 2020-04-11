@@ -241,7 +241,7 @@ function start() {
 						retObj["videoHeight"] = height;
 						socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 
-						vpxconfig_.codec = mcuConfig.processingCodec;
+						vpxconfig_.codec = "VP8";
 						vpxconfig_.width = width;
 						vpxconfig_.height = height;
 						vpxconfig_.fps = mcuConfig.processingFPS;

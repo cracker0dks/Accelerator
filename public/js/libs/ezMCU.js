@@ -138,7 +138,7 @@ function ezMCU(socket, newConfig = {}) {
                     remoteCanvas.width = width;
                     remoteCanvas.height = height;
 
-                    vpxconfig_.codec = _this.mcuConfig.processingCodec;
+                    vpxconfig_.codec = "VP8";
                     vpxconfig_.width = width;
                     vpxconfig_.height = height;
                     vpxconfig_.fps = _this.mcuConfig.processingFPS;

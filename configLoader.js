@@ -27,8 +27,7 @@ var defaultConfig = {
 		enableLocalMCU : true, //Set to false if this is master and this server should not handle any streams -> be sure you set up a loadbalancer in that case
 		enableGlobalVideoProcessing : false, //If true: All Videostreams will be encoded once (not everytime for every downstream) and send back via websockets (not webRTC). Far less server cpu usage but no WebRTC features on downstream
 		processingFPS : 20, //FPS for Video proccesing on the MCU (Less is better for cpu usage but laggy)
-        processingBitrate: 600, //Default 600
-        processingCodec: "VP8" //Can be VP8 or VP9
+        processingBitrate: 600 //Default 600
 	},
 	"accConfig": { 
 		"etherpadUrl": "", //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 

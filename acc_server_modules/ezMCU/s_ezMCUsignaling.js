@@ -87,7 +87,6 @@ var init = async function (io, newConfig) {
             var retConfig = JSON.parse(JSON.stringify(mcuConfig.webRtcConfig));
             retConfig["processingFPS"] = mcuConfig["processingFPS"];
             retConfig["processingBitrate"] = mcuConfig["processingBitrate"];
-            retConfig["processingCodec"] = mcuConfig["processingCodec"];
             callback(retConfig);
         });
 
