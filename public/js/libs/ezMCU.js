@@ -121,7 +121,7 @@ function ezMCU(socket, newConfig = {}) {
                     steamAttr["canvasStream"] = true;
                     console.log(steamAttr);
 
-                    const src = '../js/webm-wasm/vpx-worker.js';
+                    const src = './js/webm-wasm/vpx-worker.js';
                     const vpxdec_ = new Worker(src);
 
                     const vpxconfig_ = {};
@@ -162,7 +162,7 @@ function ezMCU(socket, newConfig = {}) {
                     setTimeout(function () {
                         remoteContext.fillStyle = "#FFFFFF";
                         remoteContext.fillRect(0, 0, width, height);
-                        remoteContext.font = "30px Arial";
+                        remoteContext.font = "25px Arial";
                         remoteContext.fillStyle = "#000000";
                         remoteContext.fillText("Connecting Videostream...", 30, 50);
                         encoderReady[streamId] = true;
