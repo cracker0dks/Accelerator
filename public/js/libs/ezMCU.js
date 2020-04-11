@@ -158,10 +158,15 @@ function ezMCU(socket, newConfig = {}) {
                     allEncodeWorkers[streamId] = vpxdec_;
 
                     canvasEl.streamAttributes = steamAttr;
-                    _this.emitEvent("streamAdded", canvasEl);
 
                     setTimeout(function () {
+                        remoteContext.fillStyle = "#FFFFFF";
+                        remoteContext.fillRect(0, 0, width, height);
+                        remoteContext.font = "30px Arial";
+                        remoteContext.fillStyle = "#000000";
+                        remoteContext.fillText("Connecting Videostream...", 15, 25);
                         encoderReady[streamId] = true;
+                        _this.emitEvent("streamAdded", canvasEl);
                     }, 1000)
                 }
 
@@ -232,7 +237,7 @@ function ezMCU(socket, newConfig = {}) {
     this.showMediaStream = function (elmDomId, stream, css = "") {
         var streamAttr = stream.streamAttributes;
         var streamId = stream.id ? stream.id.replace("{", "").replace("}", "") : streamAttr["streamId"];
-        
+
         if (streamAttr && streamAttr.canvasStream) {
             stream[0].setAttribute("style", css);
             stream[0].id = streamId;
