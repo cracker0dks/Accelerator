@@ -164,7 +164,7 @@ function ezMCU(socket, newConfig = {}) {
                         remoteContext.fillRect(0, 0, width, height);
                         remoteContext.font = "30px Arial";
                         remoteContext.fillStyle = "#000000";
-                        remoteContext.fillText("Connecting Videostream...", 15, 25);
+                        remoteContext.fillText("Connecting Videostream...", 30, 50);
                         encoderReady[streamId] = true;
                         _this.emitEvent("streamAdded", canvasEl);
                     }, 1000)

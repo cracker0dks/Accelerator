@@ -63,8 +63,10 @@ function start() {
 				delete allStreams[streamId];
 			}
 			console.log("stopped stream");
-			if (allEncodeTimeouts[streamId])
+			if (allEncodeTimeouts[streamId]) {
 				clearInterval(allEncodeTimeouts[streamId])
+				allEncodeTimeouts[streamId] = null;
+			}
 			if (allEncodeWorkers[streamId]) {
 				allEncodeWorkers[streamId].terminate();
 				allEncodeWorkers[streamId] = null;
@@ -135,6 +137,7 @@ function start() {
 
 		function createNewPeer(clientSocketId, callback) {
 			var peerAudioStreamSrcs = [];
+			var allPeerEncodingStreams = [];
 			var dest = ac.createMediaStreamDestination();
 			allStreamDestinations[clientSocketId] = dest;
 
@@ -163,6 +166,17 @@ function start() {
 					if (streamRecordSubs[i][clientSocketId]) {
 						delete streamRecordSubs[i][clientSocketId];
 					}
+				}
+
+				for (var i in allPeerEncodingStreams) {
+					var streamId = allPeerEncodingStreams[i];
+					if (allEncodeTimeouts[streamId])
+						clearInterval(allEncodeTimeouts[streamId])
+					if (allEncodeWorkers[streamId]) {
+						allEncodeWorkers[streamId].terminate();
+						allEncodeWorkers[streamId] = null;
+					}
+					$("." + streamId).remove();
 				}
 			})
 
@@ -201,7 +215,7 @@ function start() {
 					//console.log(retObj)
 					socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 				} else if (mcuConfig.enableGlobalVideoProcessing && audioTracks.length == 0) { //if not, streams send via peer connection
-
+					allPeerEncodingStreams.push(streamId);
 					var mediaEl = $('<video class="' + streamId + '" autoplay="autoplay"></video>'); //Stream is not active on chrome without this!
 					var localVideo = mediaEl[0];
 					localVideo.srcObject = stream;
