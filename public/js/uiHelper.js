@@ -1663,6 +1663,7 @@ function renderMainPage() {
 	whiteboard.loadWhiteboard("#whiteboardContainer", {
 		whiteboardId: roomImIn["roomName"].replace(/[^0-9a-z]/gi, ''),
 		username: username,
+		backgroundGridUrl: './img/KtEBa3.png',
 		sendFunction: function (content) {
 			sendDrawWhiteoard(content);
 		}
