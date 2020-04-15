@@ -42,6 +42,7 @@ $(function () { //Document ready
 			navigator.getUserMedia({ audio: constraints, video: false }, async function (stream) {
 				localAudioStream = stream;
 				continueToRoomPage();
+				appendCamDevices();
 			}, function (err) {
 				alert("Audio input error. Run the Audio / Video Setup to fix this.");
 				continueToRoomPage();
@@ -626,6 +627,7 @@ $(function () { //Document ready
 					max: maxHeight
 				}
 			}
+			
 			var config = {
 				screen: true,
 				attributes: { socketId: ownSocketId },
@@ -676,10 +678,10 @@ $(function () { //Document ready
 
 				})();
 			} else {
-				if (prevVideoInputDevice) {
-					newVidConstrains["deviceId"] = { ideal: prevVideoInputDevice }
+				var camId = $("#screenshareCamSelect").val();
+				if(camId) {
+					newVidConstrains["deviceId"] = { ideal: camId };
 				}
-
 				navigator.getUserMedia({ audio: false, video: newVidConstrains }, function (stream) {
 					stream["streamAttributes"] = { "screenshare": true };
 					screen_stream = stream;
@@ -1017,6 +1019,18 @@ $(function () { //Document ready
 			$("#indexTr").hide();
 		}
 	});
+
+	$("#screenshareSource").change(function() {
+		if($(this).val()==1) {
+			$("#screenshareCamSelectTR").hide();
+		} else {
+			$("#screenshareCamSelectTR").show();
+		}
+	});
+
+	$("#refreshScreenshareCamSelectBtn").click(function() {
+		appendCamDevices();
+	})
 
 	$('#praseiUploadForm').on('submit', function (e) {	//PraesiUpload
 		e.preventDefault();

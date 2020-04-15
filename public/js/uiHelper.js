@@ -2093,6 +2093,20 @@ function show3DManageModal() {
 	});
 }
 
+async function appendCamDevices() {
+	if (navigator.mediaDevices) {
+		const devices = await navigator.mediaDevices.enumerateDevices();
+		$("#screenshareCamSelect").empty();
+		for (var i in devices) {
+			var device = devices[i];
+			var devLabel = device["label"] && device["label"] != "" ? device["label"] : "Video Device " + device["deviceId"].substr(0, 10)
+			if (device.kind !== 'audiooutput' && device.kind !== 'audioinput') {
+				$("#screenshareCamSelect").append('<option value="' + device["deviceId"] + '">' + devLabel + '</option>');
+			}
+		}
+	}
+}
+
 function render3ObjsTable() {
 	if ($(".uploaded3DobjsTable").length > 0) {
 		$(".uploaded3DobjsTable").find("tbody").empty();
