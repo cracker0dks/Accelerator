@@ -279,7 +279,6 @@ var init = async function (io, newConfig) {
                     '--ignore-certificate-errors',
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
-                    '--disable-gpu',
                     '--disable-setuid-sandbox'
                 ]
             });
