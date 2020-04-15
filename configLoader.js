@@ -19,27 +19,28 @@ var defaultConfig = {
 				//     credential: "123456"
 				// },
 			],
-            "preferH264Codec": false //Set to true to prefer the use of h264 if possible; This might reduce cpu load for video processing because we can might use hardware acceleration. Note that you have to use chrome in puppeteer (not chromium)
+			"preferH264Codec": false //Set to true to prefer the use of h264 if possible; This might reduce cpu load for video processing because we can might use hardware acceleration. Note that you have to use chrome in puppeteer (not chromium)
 		},
 		loadBalancerAuthKey: (Math.random() + "").replace(".", ""), //Key for the loadbalancers to auth on the master (Must be the same on Master and loadbalancer)
-		isMaster : true, //Set to false if this is a loadbalancer instance
-		masterURL : 'https://yourAcceleratorURL.tl', //the web URL of your main instance
-		enableLocalMCU : true, //Set to false if this is master and this server should not handle any streams -> be sure you set up a loadbalancer in that case
-		enableGlobalVideoProcessing : false, //If true: All Videostreams will be encoded once (not everytime for every downstream) and send back via websockets (not webRTC). Far less server cpu usage but no WebRTC features on downstream
-		processingFPS : 20, //FPS for Video proccesing on the MCU (Less is better for cpu usage but laggy)
-        processingBitrate: 600 //Default 600
+		isMaster: true, //Set to false if this is a loadbalancer instance
+		masterURL: 'https://yourAcceleratorURL.tl', //the web URL of your main instance
+		enableLocalMCU: true, //Set to false if this is master and this server should not handle any streams -> be sure you set up a loadbalancer in that case
+		enableGlobalVideoProcessing: false, //If true: All Videostreams will be encoded once (not everytime for every downstream) and send back via websockets (not webRTC). Far less server cpu usage but no WebRTC features on downstreams
+		processingFPS: 20, //FPS for Video proccesing on the MCU (Less is better for cpu usage but laggy)
+		processingBitrate: 600 //Default 600
 	},
-	"accConfig": { 
+	"accConfig": {
 		"etherpadUrl": "", //Set to an url to enable etherpad (https://yourURL.tl/etherpad/p/) 
 		"deleteUnusedRoomsAfterDays": 0, //0 is no deletion at all
-		"screenshareConfig" : {
-            "maxFPS" : 20,
-            "maxResolution" : "720p" //1080p, 720p, 480p, 360p
-        },
-        "webcamConfig" : {
-            "maxFPS" : 20,
-            "maxResolution" : "480p" //1080p, 720p, 480p, 360p
-        }
+		"screenshareConfig": {
+			"maxFPS": 20,
+			"maxResolution": "720p" //1080p, 720p, 480p, 360p
+		},
+		"webcamConfig": {
+			"maxFPS": 20,
+			"maxResolution": "480p" //1080p, 720p, 480p, 360p
+		},
+		"userCntVideoShareLimit": 6 //video will be disable for users (only enabled for moderators) after this mutch users in one room
 	}
 }
 
@@ -61,10 +62,10 @@ module.exports = {
 		}
 
 		setTimeout(function () {
-			fs.writeFile("./config/config.json", JSON.stringify(returnConfig, null, 4), function (err) { if(err) console.log(err) });
+			fs.writeFile("./config/config.json", JSON.stringify(returnConfig, null, 4), function (err) { if (err) console.log(err) });
 
 			//Write default config files
-			fs.writeFile("./config/defaultConfig.json", JSON.stringify(defaultConfig, null, 4), function (err) { if(err) console.log(err) });
+			fs.writeFile("./config/defaultConfig.json", JSON.stringify(defaultConfig, null, 4), function (err) { if (err) console.log(err) });
 		}, 500)
 		return JSON.parse(JSON.stringify(returnConfig)); //Return a copy from the org config
 	}

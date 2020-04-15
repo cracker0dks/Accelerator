@@ -1171,10 +1171,10 @@ function loadPraesis(praesis) {
 	}
 }
 
-function showHideVideoOptions(action) { //Stop videosharing with more than 6 Users
+function showHideVideoOptions(action) { //Stop videosharing with more than accSettings.userCntVideoShareLimit Users
 	var userCnt = $("#leftContainer").find(".userdiv").length;
 	$("#userCnt").text(userCnt);
-	if (userCnt > 6 && roomImIn["moderator"] != ownSocketId) { //Hide cams if more than 6 users //no hide for moderator
+	if (userCnt > accSettings.userCntVideoShareLimit && roomImIn["moderator"] != ownSocketId) { //Hide cams if more than accSettings.userCntVideoShareLimit users //no hide for moderator
 		$("#videoBtn").hide();
 		$("#videoBtn.alert-danger").click(); //Stop active cams
 		if ($("#videoBtn").hasClass("alert-danger")) {
@@ -1183,10 +1183,10 @@ function showHideVideoOptions(action) { //Stop videosharing with more than 6 Use
 	} else {
 		$("#videoBtn").show();
 	}
-	if (action == "add" && userCnt == 7) {
-		writeToChat("Info", "Videosharing was disabled for non-moderators. (Disabled for more than 6 people)");
-	} else if (action == "remove" && userCnt == 6) {
-		writeToChat("Info", "Videosharing is enabled again. (6 or less people)");
+	if (action == "add" && userCnt == accSettings.userCntVideoShareLimit + 1) {
+		writeToChat("Info", "Videosharing was disabled for non-moderators. (Disabled for more than " + accSettings.userCntVideoShareLimit + " people)");
+	} else if (action == "remove" && userCnt == accSettings.userCntVideoShareLimit) {
+		writeToChat("Info", "Videosharing is enabled again. (" + accSettings.userCntVideoShareLimit + " or less people)");
 	}
 }
 
