@@ -344,6 +344,8 @@ function ezMCU(socket, newConfig = {}) {
                 streamAttributes["videoWidth"] = width;
                 streamAttributes["videoHeight"] = height;
                 streamAttributes["clientProcessedStream"] = accSettings["enableClientVideoProcessing"] ? "true" : null;
+                streamAttributes["active"] = true;
+                
                 socket.emit("mcu_registerStream", streamAttributes, function (err, setStreamAttributes) {
                     console.log("setStreamAttributes", setStreamAttributes, stream)
                     if (err) {
