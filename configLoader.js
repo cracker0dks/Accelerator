@@ -40,7 +40,8 @@ var defaultConfig = {
 			"maxFPS": 20,
 			"maxResolution": "480p" //1080p, 720p, 480p, 360p
 		},
-		"userCntVideoShareLimit": 6 //video will be disable for users (only enabled for moderators) after this mutch users in one room
+		"userCntVideoShareLimit": 6, //video will be disable for users (only enabled for moderators) after this mutch users in one room
+		"enableClientVideoProcessing" : false //If true the videostreams will be encoded once on the client and send via websockets (not webRTC) to the server. This will use close to zero server cpu usage but no WebRTC features on up and dowstreams (Also might not work well on slow devices)"
 	}
 }
 

@@ -9,6 +9,9 @@ function ezMCU(socket, newConfig = {}) {
     this.mappedEvents = {};
     this.peers = {}; //contains all peers (to main and load balancers)
     this.allStreamAttributes = {};
+    var allEncodeWorkers = {};
+    var allEncodeTimeouts = {};
+    const workerSrc = './js/webm-wasm/vpx-worker.js';
 
     this.on = function (eventname, callback) {
         if (this.mappedEvents[eventname]) {
@@ -107,7 +110,6 @@ function ezMCU(socket, newConfig = {}) {
             })
 
             var knownStreams = {};
-            var allEncodeWorkers = {};
             var encoderReady = {};
             socket.on("mcu_vid", function (content) {
                 var streamId = content["streamId"];
@@ -121,8 +123,7 @@ function ezMCU(socket, newConfig = {}) {
                     steamAttr["canvasStream"] = true;
                     console.log(steamAttr);
 
-                    const src = './js/webm-wasm/vpx-worker.js';
-                    const vpxdec_ = new Worker(src);
+                    const vpxdec_ = new Worker(workerSrc);
 
                     const vpxconfig_ = {};
 
@@ -218,7 +219,8 @@ function ezMCU(socket, newConfig = {}) {
         });
     };
     this.unpublishStream = function (stream) {
-        socket.emit("mcu_unpublishStream", stream.id.replace("{", "").replace("}", ""), function (err) {
+        var streamId = stream.id.replace("{", "").replace("}", "");
+        socket.emit("mcu_unpublishStream", streamId, function (err) {
             if (err) console.log(err);
         });
         for (var i in stream.getAudioTracks()) {
@@ -226,6 +228,14 @@ function ezMCU(socket, newConfig = {}) {
         }
         for (var i in stream.getVideoTracks()) {
             stream.getVideoTracks()[i].stop();
+        }
+        if(allEncodeTimeouts[streamId]) {
+            clearInterval(allEncodeTimeouts[streamId])
+            allEncodeTimeouts[streamId] = null;
+        }
+        if (allEncodeWorkers[streamId]) {
+            allEncodeWorkers[streamId].terminate();
+            allEncodeWorkers[streamId] = null;
         }
     };
     this.muteMediaStream = function (mute, stream) {
@@ -276,6 +286,17 @@ function ezMCU(socket, newConfig = {}) {
     this.subscribeToStream = function (streamId, callback) {
         var _this = this;
         var instanceTo = _this.allStreamAttributes[streamId] ? _this.allStreamAttributes[streamId]["instanceTo"] : "";
+        console.log("_this.allStreamAttributes", _this.allStreamAttributes[streamId])
+
+        //if this is a clientProccesedStream we dont need to connect to LBs
+        if(_this.allStreamAttributes && _this.allStreamAttributes[streamId] && _this.allStreamAttributes[streamId]["clientProcessedStream"] && _this.allStreamAttributes[streamId]["hasVideo"]) {
+            socket.emit("mcu_reqStreamFromLB", {
+                "instanceFrom": instanceTo,
+                "streamId": streamId,
+            }, callback);
+            return;
+        }
+
         if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
             console.log("REQEST THE STREAM!!", streamId)
             socket.emit("mcu_reqStreamFromLB", {
@@ -307,43 +328,115 @@ function ezMCU(socket, newConfig = {}) {
         for (var i in stream.streamAttributes) {
             streamAttributes[i] = stream.streamAttributes[i];
         }
+        var videoTracks = stream.getVideoTracks();
+        var streamId = stream.id.replace("{", "").replace("}", "");
         streamAttributes["roomname"] = roomname;
-        streamAttributes["streamId"] = stream.id.replace("{", "").replace("}", "");
-        socket.emit("mcu_registerStream", streamAttributes, function (err, setStreamAttributes) {
-            console.log("setStreamAttributes", setStreamAttributes)
-            if (err) {
-                callback(err)
-                console.error(err)
-            } else {
-                var instanceTo = setStreamAttributes["instanceTo"] || "";
-                if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
-                    _this.peers[instanceTo].addStream(stream);
-                    callback(null, setStreamAttributes)
-                } else if (_this.peers[instanceTo]) { //Connection started so wait for it...
-                    setTimeout(function () {
-                        _this.peers[instanceTo].addStream(stream);
-                        //_this.publishStreamToRoom(roomname, stream, callback)
-                    }, 500)
-                } else if (!_this.peers[instanceTo]) {
-                    //We need to connect to the instance first
-                    console.log("CONNECT TO LB!!!");
-                    _this.makeNewPeer(instanceTo, function () {
-                        //Connected callback
-                        console.log("LOADBALANCER CONNECTED (With streamadd)!!!");
-                        //_this.peers[instanceTo].addStream();
-                        callback();
-                    }, stream);
+        streamAttributes["streamId"] = streamId
+        //streamAttributes["instanceTo"] = accSettings["enableClientVideoProcessing"] ? "main" : null;
+        streamAttributes["hasVideo"] = videoTracks.length > 0 ? true : false;
 
-                    socket.emit("mcu_reqPeerConnectionToLB", {
-                        "instanceTo": instanceTo
-                    });
+        if (accSettings["enableClientVideoProcessing"] && videoTracks.length > 0) {
+            callback(null, streamAttributes); //callback so we add video to dom
+            var localVideo = $("#" + streamId)[0];
+            localVideo.addEventListener("canplay", function () {
+                const width = localVideo.videoWidth;
+                const height = localVideo.videoHeight;
+                streamAttributes["videoWidth"] = width;
+                streamAttributes["videoHeight"] = height;
+                streamAttributes["clientProcessedStream"] = accSettings["enableClientVideoProcessing"] ? "true" : null;
+                socket.emit("mcu_registerStream", streamAttributes, function (err, setStreamAttributes) {
+                    console.log("setStreamAttributes", setStreamAttributes, stream)
+                    if (err) {
+                        callback(err)
+                        console.error(err)
+                    } else {
+                        var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
+                        var localCanvas = canvasEl[0]
+                        var localContext = localCanvas.getContext('2d');
+
+                        const vpxenc_ = new Worker(workerSrc);
+                        allEncodeWorkers[streamId] = vpxenc_;
+
+                        const vpxconfig_ = {};
+
+                        vpxconfig_.codec = "VP8";
+                        vpxconfig_.width = width;
+                        vpxconfig_.height = height;
+                        vpxconfig_.fps = _this.mcuConfig.processingFPS;
+                        vpxconfig_.bitrate = _this.mcuConfig.processingBitrate;
+                        vpxconfig_.packetSize = 16;
+
+                        vpxenc_.postMessage({ type: 'init', data: vpxconfig_ });
+
+                        let encoding = false;
+                        setTimeout(() => {
+                            localCanvas.width = width;
+                            localCanvas.height = height;
+
+                            allEncodeTimeouts[streamId] = setInterval(() => {
+                                if (encoding) return;
+                                encoding = true;
+                                localContext.drawImage(localVideo, 0, 0, width, height);
+                                const frame = localContext.getImageData(0, 0, width, height);
+                                vpxenc_.postMessage({
+                                    id: 'enc',
+                                    type: 'call',
+                                    name: 'encode',
+                                    args: [frame.data.buffer]
+                                }, [frame.data.buffer]);
+
+                            }, 1000.0 / _this.mcuConfig.processingFPS);
+                        }, 1000); // wait a bit before grabbing frames to give the wasm stuff time to init.
+
+                        vpxenc_.onmessage = e => {
+                            encoding = false;
+                            if (e.data.res) {
+                                socket.emit("client_vid", { streamId: streamId, d: e.data.res });
+                            }
+                        };
+
+                    }
+                });
+            });
+        } else {
+            socket.emit("mcu_registerStream", streamAttributes, function (err, setStreamAttributes) {
+                console.log("setStreamAttributes", setStreamAttributes, stream)
+                if (err) {
+                    callback(err)
+                    console.error(err)
                 } else {
-                    console.log("Problem while connecting to the given streaming instance! Check logs.", setStreamAttributes)
-                    callback("Problem while connecting to the given streaming instance! Check logs.")
-                }
-            }
-        });
 
+
+                    var instanceTo = setStreamAttributes["instanceTo"] || "";
+                    if (_this.peers[instanceTo] && _this.peers[instanceTo].isConnected) {
+                        _this.peers[instanceTo].addStream(stream);
+                        callback(null, setStreamAttributes)
+                    } else if (_this.peers[instanceTo]) { //Connection started so wait for it...
+                        setTimeout(function () {
+                            _this.peers[instanceTo].addStream(stream);
+                            //_this.publishStreamToRoom(roomname, stream, callback)
+                        }, 500)
+                    } else if (!_this.peers[instanceTo]) {
+                        //We need to connect to the instance first
+                        console.log("CONNECT TO LB!!!", instanceTo);
+                        _this.makeNewPeer(instanceTo, function () {
+                            //Connected callback
+                            console.log("LOADBALANCER CONNECTED (With streamadd)!!!");
+                            //_this.peers[instanceTo].addStream();
+                            callback();
+                        }, stream);
+
+                        socket.emit("mcu_reqPeerConnectionToLB", {
+                            "instanceTo": instanceTo
+                        });
+                    } else {
+                        console.log("Problem while connecting to the given streaming instance! Check logs.", setStreamAttributes)
+                        callback("Problem while connecting to the given streaming instance! Check logs.")
+                    }
+                }
+
+            });
+        }
     };
     this.recordStream = function (streamId) {
         socket.emit("mcu_recordStream", streamId.replace("{", "").replace("}", ""));

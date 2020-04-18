@@ -71,7 +71,7 @@ function start() {
 				allEncodeWorkers[streamId].terminate();
 				allEncodeWorkers[streamId] = null;
 			}
-
+			delete streamRecordSubs[streamId];
 			$("." + streamId).remove();
 		});
 

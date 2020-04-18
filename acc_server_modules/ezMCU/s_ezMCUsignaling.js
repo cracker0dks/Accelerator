@@ -9,6 +9,7 @@ var puppeteer = require('puppeteer');
 var allStreams = {}; //Contains all the streams on this instance
 var allStreamAttributes = {}; //Constains all the stream Attr (also from streams on other instances)
 var loadBalancersSockets = {};
+var streamRecordSubs = {}; //All subs to a clientProcessed stream
 
 var init = async function (io, newConfig) {
     var mcuConfig = {
@@ -83,7 +84,7 @@ var init = async function (io, newConfig) {
             }
 
             socket.join(roomname);
-            
+
             var retConfig = JSON.parse(JSON.stringify(mcuConfig.webRtcConfig));
             retConfig["processingFPS"] = mcuConfig["processingFPS"];
             retConfig["processingBitrate"] = mcuConfig["processingBitrate"];
@@ -107,21 +108,30 @@ var init = async function (io, newConfig) {
 
         socket.on("mcu_registerStream", function (streamAttributes, callback) {
             //console.log("mcu_registerStream", streamAttributes)
-            if (!allStreams[streamAttributes["streamId"]]) { //Stream is not there yet
+            var streamId = streamAttributes["streamId"];
+            if (!allStreams[streamId]) { //if Stream is not there yet
                 streamAttributes["socketId"] = socket.id;
-                findBestStreamingInstance(streamAttributes, function (err, instance) { //Get the destination where the user should stream to!
-                    if (err) {
-                        return callback(err);
-                    }
-                    //set streamSource attr
-                    streamAttributes["instanceTo"] = instance;
-                    streamAttributes["streamSocketId"] = socket.id;
-                    allStreamAttributes[streamAttributes["streamId"]] = streamAttributes;
-                    myStreamIds.push(streamAttributes["streamId"]);
+                streamAttributes["streamSocketId"] = socket.id;
+                allStreamAttributes[streamId] = streamAttributes;
+                if (streamAttributes.clientProcessedStream && streamAttributes.hasVideo) {
+                    myStreamIds.push(streamId);
                     callback(null, streamAttributes);
-                })
+                    socket.to(allStreamAttributes[streamId]["roomname"]).emit("mcu_onNewStreamPublished", allStreamAttributes[streamId]); //To hole room if stream is in
+                    socket.emit("mcu_onNewStreamPublished", allStreamAttributes[streamId]) //to yourself
+                } else {
+                    findBestStreamingInstance(streamAttributes, function (err, instance) { //Get the destination where the user should stream to!
+                        if (err) {
+                            return callback(err);
+                        }
+                        console.log(instance)
+                        //set streamSource attr
+                        streamAttributes["instanceTo"] = instance;
+                        myStreamIds.push(streamId);
+                        callback(null, streamAttributes);
+                    })
+                }
             } else {
-                callback("Not a stream you own! Nothing was set!");
+                callback("Steam already there! Nothing was set!");
             }
         })
 
@@ -151,6 +161,7 @@ var init = async function (io, newConfig) {
 
                 delete allStreams[streamId];
                 delete allStreamAttributes[streamId];
+                delete streamRecordSubs[streamId];
                 callback();
             } else {
                 callback("Not a stream you own! Nothing was set!");
@@ -166,6 +177,14 @@ var init = async function (io, newConfig) {
             }
             callback(retArr);
         })
+
+        socket.on("client_vid", function (content) {
+            var streamId = content["streamId"];
+            var d = content["d"];
+            for(var i in streamRecordSubs[streamId]) {
+                io.to(i).emit("mcu_vid", { streamId: streamId, d: d });
+            }
+        });
 
         //LOAD BALANCER STUFF
         socket.on("mcu_registerLoadBalancer", function (lbAuthKey, attributes) {
@@ -201,15 +220,22 @@ var init = async function (io, newConfig) {
         })
 
         socket.on("mcu_reqStreamFromLB", function (content) {
-            var instanceFrom = content["instanceFrom"];
-            content["clientSocketId"] = socket.id;
-            if(loadBalancersSockets[instanceFrom]) { loadBalancersSockets[instanceFrom].emit("mcu_reqSteam", content); }
+            var streamId = content["streamId"];
+            var streamAttributes = allStreamAttributes[streamId];
+            if (streamAttributes["clientProcessedStream"] && streamAttributes["hasVideo"]) {
+                if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
+                streamRecordSubs[streamId][socket.id] = true;
+            } else {
+                var instanceFrom = content["instanceFrom"];
+                content["clientSocketId"] = socket.id;
+                if (loadBalancersSockets[instanceFrom]) { loadBalancersSockets[instanceFrom].emit("mcu_reqSteam", content); }
+            }
         });
 
         socket.on("mcu_reqPeerConnectionToLB", function (content) {
             var instanceTo = content["instanceTo"];
             content["clientSocketId"] = socket.id;
-            if(loadBalancersSockets[instanceTo]) { loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content); }
+            if (loadBalancersSockets[instanceTo]) { loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content); }
         });
 
         socket.on("mcu_vid", function (content) {
@@ -217,9 +243,9 @@ var init = async function (io, newConfig) {
             var data = content["d"];
             var streamId = content["streamId"];
             content["clientSocketId"] = socket.id;
-            io.to(clientSocketId).emit("mcu_vid", { streamId : streamId, d: data });
+            io.to(clientSocketId).emit("mcu_vid", { streamId: streamId, d: data });
         });
-        
+
         //END - LOAD BALANCER STUFF
     })
 
@@ -236,9 +262,11 @@ var init = async function (io, newConfig) {
         for (var k in allStreamAttributes) {
             if (allStreamAttributes[k].roomname == roomname) { //Find the instance other people from this room are streaming to
                 instanceId = allStreamAttributes[k].instanceTo;
-                callback(null, instanceId); //Keep streams from the same room on the same server
-                console.log("SAME ROOM CALLBACK", instanceId)
-                return;
+                if (instanceId && instanceId != "") {
+                    callback(null, instanceId); //Keep streams from the same room on the same server
+                    console.log("SAME ROOM CALLBACK", instanceId)
+                    return;
+                }
             }
             streamCntPerlb[allStreamAttributes[k].instanceTo]++; //Inc stream count for this lb
         } //Finish!
@@ -309,7 +337,7 @@ var init = async function (io, newConfig) {
                     await page.goto(masterURL + '/ezMCU/mcuLb.html');
                     await page.waitFor('#loadMCUBtn');
                     await page.click('body');
-                    
+
                     await page.evaluate((config) => { setMCUConfig(config); }, mcuConfig);
                     await page.click('#loadMCUBtn');
                     setTimeout(function () { //Wait 10sec to spin it up and ensure no error
