@@ -76,7 +76,7 @@ var init = async function (io, newConfig) {
         socket.emit("mcu_onIceServers", getCurrentIceServers())
 
         socket.on("mcu_joinRoom", function (content, callback) { //call to join a room
-            var roomname = content["roomname"].trim() || "";
+            var roomname = content && content["roomname"] ? content["roomname"].trim() : "";
             myRooms[roomname] = roomname;
 
             if (roomname == "") {
@@ -93,7 +93,7 @@ var init = async function (io, newConfig) {
 
         //Handel signaling between client and server peers
         socket.on("mcu_signaling", function (content) {
-            var instanceTo = content["instanceTo"];
+            var instanceTo = content ? content["instanceTo"] : 0;
             if (loadBalancersSockets[instanceTo]) {
                 content["clientSocketId"] = socket.id;
                 loadBalancersSockets[instanceTo].emit("mcu_signaling", content);
@@ -108,8 +108,8 @@ var init = async function (io, newConfig) {
 
         socket.on("mcu_registerStream", function (streamAttributes, callback) {
             //console.log("mcu_registerStream", streamAttributes)
-            var streamId = streamAttributes["streamId"];
-            if (!allStreams[streamId]) { //if Stream is not there yet
+            var streamId = streamAttributes ? streamAttributes["streamId"] : 0;
+            if (streamId && !allStreams[streamId]) { //if Stream is not there yet
                 streamAttributes["socketId"] = socket.id;
                 streamAttributes["streamSocketId"] = socket.id;
                 allStreamAttributes[streamId] = streamAttributes;
@@ -137,7 +137,8 @@ var init = async function (io, newConfig) {
 
         socket.on("mcu_updateStreamAttributes", function (streamAttributes, callback) {
             //console.log("subStream", streamAttributes)
-            if (allStreams[streamAttributes["streamId"]] && myStreamIds.includes(streamAttributes["streamId"])) { //Check if stream is there and owned by this user
+
+            if (streamAttributes && allStreams[streamAttributes["streamId"]] && myStreamIds.includes(streamAttributes["streamId"])) { //Check if stream is there and owned by this user
                 streamAttributes["socketId"] = socket.id;
                 streamAttributes["streamSource"] = allStreamAttributes[streamAttributes["streamId"]]["streamSource"]; //Set the old streamSource back in
                 allStreamAttributes[streamAttributes["streamId"]] = streamAttributes;
@@ -175,14 +176,18 @@ var init = async function (io, newConfig) {
                     retArr.push(allStreamAttributes[lsid]);
                 }
             }
-            callback(retArr);
+            if (typeof (callback) === "function") {
+                callback(retArr);
+            }
         })
 
         socket.on("client_vid", function (content) {
-            var streamId = content["streamId"];
-            var d = content["d"];
-            for(var i in streamRecordSubs[streamId]) {
-                io.to(i).emit("mcu_vid", { streamId: streamId, d: d });
+            if (content) {
+                var streamId = content["streamId"];
+                var d = content["d"];
+                for (var i in streamRecordSubs[streamId]) {
+                    io.to(i).emit("mcu_vid", { streamId: streamId, d: d });
+                }
             }
         });
 
@@ -220,7 +225,7 @@ var init = async function (io, newConfig) {
         })
 
         socket.on("mcu_reqStreamFromLB", function (content) {
-            var streamId = content["streamId"];
+            var streamId = content && content["streamId"] ? content["streamId"].replace("{", "").replace("}", "") : 0;
             var streamAttributes = allStreamAttributes[streamId];
             if (streamAttributes && streamAttributes["clientProcessedStream"] && streamAttributes["hasVideo"]) {
                 if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
@@ -233,17 +238,18 @@ var init = async function (io, newConfig) {
         });
 
         socket.on("mcu_reqPeerConnectionToLB", function (content) {
-            var instanceTo = content["instanceTo"];
+            var instanceTo = content ? content["instanceTo"] : 0;
             content["clientSocketId"] = socket.id;
             if (loadBalancersSockets[instanceTo]) { loadBalancersSockets[instanceTo].emit("mcu_reqPeerConnectionToLB", content); }
         });
 
         socket.on("mcu_vid", function (content) {
-            var clientSocketId = content["cs"];
-            var data = content["d"];
-            var streamId = content["streamId"];
-            content["clientSocketId"] = socket.id;
-            io.to(clientSocketId).emit("mcu_vid", { streamId: streamId, d: data });
+            if (content) {
+                var clientSocketId = content["cs"];
+                var streamId = content["streamId"];
+                content["clientSocketId"] = socket.id;
+                io.to(clientSocketId).emit("mcu_vid", { streamId: streamId, d: content["d"] });
+            }
         });
 
         //END - LOAD BALANCER STUFF
