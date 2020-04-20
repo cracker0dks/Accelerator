@@ -222,7 +222,7 @@ var init = async function (io, newConfig) {
         socket.on("mcu_reqStreamFromLB", function (content) {
             var streamId = content["streamId"];
             var streamAttributes = allStreamAttributes[streamId];
-            if (streamAttributes["clientProcessedStream"] && streamAttributes["hasVideo"]) {
+            if (streamAttributes && streamAttributes["clientProcessedStream"] && streamAttributes["hasVideo"]) {
                 if (!streamRecordSubs[streamId]) { streamRecordSubs[streamId] = {} };
                 streamRecordSubs[streamId][socket.id] = true;
             } else {
