@@ -110,7 +110,8 @@ function ezMCU(socket, newConfig = {}) {
             })
 
             var knownStreams = {};
-            var encoderReady = {};
+            var workerBuffer = [new Worker(workerSrc)]
+
             socket.on("mcu_vid", function (content) {
                 var streamId = content["streamId"];
                 //console.log(content["d"])
@@ -123,8 +124,9 @@ function ezMCU(socket, newConfig = {}) {
                     steamAttr["canvasStream"] = true;
                     console.log(steamAttr);
 
-                    const vpxdec_ = new Worker(workerSrc);
 
+                    const vpxdec_ = workerBuffer[workerBuffer.length - 1];
+                    workerBuffer.push(new Worker(workerSrc))
                     const vpxconfig_ = {};
 
                     const width = steamAttr.videoWidth;
@@ -160,26 +162,21 @@ function ezMCU(socket, newConfig = {}) {
 
                     canvasEl.streamAttributes = steamAttr;
 
-                    setTimeout(function () {
-                        remoteContext.fillStyle = "#FFFFFF";
-                        remoteContext.fillRect(0, 0, width, height);
-                        remoteContext.font = "25px Arial";
-                        remoteContext.fillStyle = "#000000";
-                        remoteContext.fillText("Connecting Videostream...", 30, 50);
-                        encoderReady[streamId] = true;
-                        _this.emitEvent("streamAdded", canvasEl);
-                    }, 1000)
+                    remoteContext.fillStyle = "#FFFFFF";
+                    remoteContext.fillRect(0, 0, width, height);
+                    remoteContext.font = "25px Arial";
+                    remoteContext.fillStyle = "#000000";
+                    remoteContext.fillText("Connecting Videostream...", 30, 50);
+                    _this.emitEvent("streamAdded", canvasEl);
                 }
 
-                //const data = new Uint8Array(d);
-                if (encoderReady[streamId]) {
-                    allEncodeWorkers[streamId].postMessage({
-                        id: 'dec',
-                        type: 'call',
-                        name: 'decode',
-                        args: [d],
-                    }, [d]);
-                }
+                allEncodeWorkers[streamId].postMessage({
+                    id: 'dec',
+                    type: 'call',
+                    name: 'decode',
+                    args: [d],
+                }, [d]);
+
             })
 
             socket.on("mcu_onNewStreamPublished", function (content) {
@@ -229,7 +226,7 @@ function ezMCU(socket, newConfig = {}) {
         for (var i in stream.getVideoTracks()) {
             stream.getVideoTracks()[i].stop();
         }
-        if(allEncodeTimeouts[streamId]) {
+        if (allEncodeTimeouts[streamId]) {
             clearInterval(allEncodeTimeouts[streamId])
             allEncodeTimeouts[streamId] = null;
         }
@@ -289,7 +286,7 @@ function ezMCU(socket, newConfig = {}) {
         console.log("_this.allStreamAttributes", _this.allStreamAttributes[streamId])
 
         //if this is a clientProccesedStream we dont need to connect to LBs
-        if(_this.allStreamAttributes && _this.allStreamAttributes[streamId] && _this.allStreamAttributes[streamId]["clientProcessedStream"] && _this.allStreamAttributes[streamId]["hasVideo"]) {
+        if (_this.allStreamAttributes && _this.allStreamAttributes[streamId] && _this.allStreamAttributes[streamId]["clientProcessedStream"] && _this.allStreamAttributes[streamId]["hasVideo"]) {
             socket.emit("mcu_reqStreamFromLB", {
                 "instanceFrom": instanceTo,
                 "streamId": streamId,
@@ -345,7 +342,7 @@ function ezMCU(socket, newConfig = {}) {
                 streamAttributes["videoHeight"] = height;
                 streamAttributes["clientProcessedStream"] = accSettings["enableClientVideoProcessing"] ? "true" : null;
                 streamAttributes["active"] = true;
-                
+
                 socket.emit("mcu_registerStream", streamAttributes, function (err, setStreamAttributes) {
                     console.log("setStreamAttributes", setStreamAttributes, stream)
                     if (err) {
