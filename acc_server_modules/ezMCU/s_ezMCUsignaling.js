@@ -237,6 +237,11 @@ var init = async function (io, newConfig) {
             }
         });
 
+        socket.on("mcu_setStreamState", function (content) {
+            var instanceTo = content["instanceTo"] || "";
+            if (loadBalancersSockets[instanceTo]) { loadBalancersSockets[instanceTo].emit("mcu_setStreamState", content); }
+        });
+
         socket.on("mcu_reqPeerConnectionToLB", function (content) {
             var instanceTo = content ? content["instanceTo"] : 0;
             content["clientSocketId"] = socket.id;

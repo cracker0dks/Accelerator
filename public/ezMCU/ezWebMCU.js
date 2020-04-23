@@ -38,6 +38,8 @@ function start() {
 	var streamRecordSubs = {};
 	var allEncodeWorkers = {};
 	var allEncodeTimeouts = {};
+	var allAudioSubs = {};
+	var allAudioStreamsActiveState = {};
 
 	socket.on('connect', function () {
 		socket.emit("mcu_reqCurrentIceServers", mcuConfig.loadBalancerAuthKey);
@@ -71,13 +73,16 @@ function start() {
 				allEncodeWorkers[streamId].terminate();
 				allEncodeWorkers[streamId] = null;
 			}
+
+			delete allAudioSubs[streamId];
+			delete allAudioStreamsActiveState[streamId];
 			delete streamRecordSubs[streamId];
 			$("." + streamId).remove();
 		});
 
 		socket.on('mcu_reqSteam', function (content) {
 			//console.log("mcu_reqSteam", content)
-			var streamId = content.streamId;
+			var streamId = content && content.streamId ? content.streamId.replace("{", "").replace("}", "") : 0;
 			var clientSocketId = content.clientSocketId;
 			var sendPeerVideo = content.sendPeerVideo;
 			if (allStreams[streamId]) {
@@ -105,7 +110,11 @@ function start() {
 					}
 				} else if (audioTracks.length > 0) {
 					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
-						allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
+						if (!allAudioSubs[streamId]) { allAudioSubs[streamId] = [] };
+						allAudioSubs[streamId].push(clientSocketId);
+						if (allAudioStreamsActiveState[streamId]) {
+							allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
+						}
 					} else {
 						console.log("missing src or dest to connect audio!")
 					}
@@ -124,6 +133,22 @@ function start() {
 					//console.log("Created peer!", clientSocketId)
 				});
 			}
+		});
+
+		socket.on('mcu_setStreamState', function (content) {
+			var streamId = content["streamId"] || 0;
+			var mute = content["mute"];
+			allAudioStreamsActiveState[streamId] = !mute;
+			if (mute) {
+				for (var i in allAudioSubs[streamId]) {
+					allStreamSources[streamId].disconnect(allStreamDestinations[allAudioSubs[streamId][i]])
+				}
+			} else {
+				for (var i in allAudioSubs[streamId]) {
+					allStreamSources[streamId].connect(allStreamDestinations[allAudioSubs[streamId][i]])
+				}
+			}
+
 		});
 
 		socket.emit("mcu_registerLoadBalancer", mcuConfig.loadBalancerAuthKey, mcuConfig);
@@ -279,14 +304,10 @@ function start() {
 							}
 						};
 					});
-				} else {
+				} else { //Audio and video... should not be called on acc					
 					socket.emit("mcu_streamIsActive", mcuConfig.loadBalancerAuthKey, retObj) //to main instance
 				}
 			});
-		}
-
-		function typedArrayToBuffer(array) {
-			return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 		}
 
 		setInterval(function () { //Every 10h get current IceServers
