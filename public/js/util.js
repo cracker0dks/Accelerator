@@ -1,7 +1,7 @@
 function getRandomColor() {
     var letters = '0123456789ABCDEF'.split('');
     var color = '#';
-    for (var i = 0; i < 6; i++ ) {
+    for (var i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
@@ -19,25 +19,25 @@ function invertColor(hexTripletColor) {
 }
 
 //Function to convert hex format to a rgb color
-function rgb2hex(rgb){
+function rgb2hex(rgb) {
     rgb = rgb.match(/^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i);
     return (rgb && rgb.length === 4) ? "#" +
-    ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
-    ("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
-    ("0" + parseInt(rgb[3],10).toString(16)).slice(-2) : '';
+        ("0" + parseInt(rgb[1], 10).toString(16)).slice(-2) +
+        ("0" + parseInt(rgb[2], 10).toString(16)).slice(-2) +
+        ("0" + parseInt(rgb[3], 10).toString(16)).slice(-2) : '';
 }
 
 function isImageFileName(filename) {
-    var ending = filename.split(".")[filename.split(".").length-1];
-    if(ending.toLowerCase()=="png" || ending.toLowerCase()=="jpg" || ending.toLowerCase()=="jpeg" || ending.toLowerCase()=="gif" || ending.toLowerCase()=="tiff") {
+    var ending = filename.split(".")[filename.split(".").length - 1];
+    if (ending.toLowerCase() == "png" || ending.toLowerCase() == "jpg" || ending.toLowerCase() == "jpeg" || ending.toLowerCase() == "gif" || ending.toLowerCase() == "tiff") {
         return true;
     }
     return false;
 }
 
 function isPdfFileName(filename) {
-    var ending = filename.split(".")[filename.split(".").length-1];
-    if(ending.toLowerCase()=="pdf") {
+    var ending = filename.split(".")[filename.split(".").length - 1];
+    if (ending.toLowerCase() == "pdf") {
         return true;
     }
     return false;
@@ -61,8 +61,8 @@ function isValidImageUrl(url, callback) {
 }
 
 function isJsonFileName(filename) {
-    var ending = filename.split(".")[filename.split(".").length-1];
-    if(ending.toLowerCase()=="json") {
+    var ending = filename.split(".")[filename.split(".").length - 1];
+    if (ending.toLowerCase() == "json") {
         return true;
     }
     return false;
@@ -71,54 +71,54 @@ function isJsonFileName(filename) {
 
 function sendFormData(formData, successCallback, errorCallback, uploadProgressCallBack, downloadProgressCallBack, initCallback) {
     var xhr = $.ajax({
-        xhr: function() {
+        xhr: function () {
             var xhr = new window.XMLHttpRequest();
             //Upload progress
-            xhr.upload.addEventListener("progress", function(evt){
-              if (evt.lengthComputable) {
-                var percentComplete = Math.round((evt.loaded / evt.total)*100);
-                if(uploadProgressCallBack)
-                    uploadProgressCallBack(percentComplete); //upload
-              }
+            xhr.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    if (uploadProgressCallBack)
+                        uploadProgressCallBack(percentComplete); //upload
+                }
             }, false);
             //Download progress
-            xhr.addEventListener("progress", function(evt){
-              if (evt.lengthComputable) {
-                var percentComplete = Math.round((evt.loaded / evt.total)*100);
-                if(downloadProgressCallBack)
-                    downloadProgressCallBack(percentComplete); //download
-              }
+            xhr.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    if (downloadProgressCallBack)
+                        downloadProgressCallBack(percentComplete); //download
+                }
             }, false);
 
             return xhr;
         },
-        url : document.URL.substr(0,document.URL.lastIndexOf('/'))+'/upload',
+        url: document.URL.substr(0, document.URL.lastIndexOf('/')) + '/upload',
         type: 'POST',
         contentType: 'multipart/form-data',
         data: formData,
         success: function (msg) {
             successCallback(msg);
         },
-        error: function(err) {
+        error: function (err) {
             errorCallback(err);
         },
         contentType: false,
         processData: false
     });
-    if(initCallback)
+    if (initCallback)
         initCallback(xhr); //To cancle request with xhr.abort()
 }
 
 function cleanString(str) {
-    if(typeof(str)==="string")
+    if (typeof (str) === "string")
         return $.trim(DOMPurify.sanitize(str));
     else
         return "";
 }
 
 //Adds a link function to String Class. 
-if(!String.linkify) {
-    String.prototype.linkify = function() {
+if (!String.linkify) {
+    String.prototype.linkify = function () {
 
         // http://, https://, ftp://
         var urlPattern = /\b(?:https?|ftp):\/\/[a-z0-9-+&@#\/%?=~_|!:,.;]*[a-z0-9-+&@#\/%=~_|]/gim;
@@ -137,13 +137,13 @@ if(!String.linkify) {
 }
 
 function setLocalStorage(key, value) {
-    if(typeof(localStorage)!="undefined") {
+    if (typeof (localStorage) != "undefined") {
         localStorage.setItem(key, value);
     }
 }
 
 function getLocalStorage(key) {
-    if(typeof(localStorage)!="undefined") {
+    if (typeof (localStorage) != "undefined") {
         return localStorage[key];
     } else {
         return false;
@@ -151,7 +151,7 @@ function getLocalStorage(key) {
 }
 
 
-$.fn.focusEnd = function() {
+$.fn.focusEnd = function () {
     $(this).focus();
     var tmp = $('<span />').appendTo($(this)),
         node = tmp.get(0),
@@ -174,32 +174,32 @@ $.fn.focusEnd = function() {
 }
 
 function prepareNoteDl(text, name, type) {
-  var a = document.getElementById("saveNotesAsFile");
-  var file = new Blob([text], {type: type});
-  a.href = URL.createObjectURL(file);
-  a.download = name;
+    var a = document.getElementById("saveNotesAsFile");
+    var file = new Blob([text], { type: type });
+    a.href = URL.createObjectURL(file);
+    a.download = name;
 }
 
 function imgExists(url, callback) {
-    $.get(url).done(function() { 
+    $.get(url).done(function () {
         callback(true);
-    }).fail(function() { 
+    }).fail(function () {
         callback(false);
     })
 }
 
 //Toggle Better Workaround
-$.fn.clickToggle = function() {
+$.fn.clickToggle = function () {
     var stArgs = arguments;
-    $(this).click(function() {
+    $(this).click(function () {
         var ststate = $(this).attr("ctstate");
-        if(typeof(ststate) === "undefined") {
+        if (typeof (ststate) === "undefined") {
             $(this).attr("ctstate", 0);
             ststate = 0;
         }
 
         stArgs[ststate](this);
-        if(++ststate>=(stArgs.length)) {
+        if (++ststate >= (stArgs.length)) {
             ststate = 0;
         }
         $(this).attr("ctstate", ststate);
@@ -207,18 +207,18 @@ $.fn.clickToggle = function() {
 }
 
 function getQueryVariable(variable) {
-  var query = window.location.search.substring(1);
-  var vars = query.split("&");
-  for (var i=0;i<vars.length;i++) {
-    var pair = vars[i].split("=");
-    if (pair[0] == variable) {
-      return pair[1];
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] == variable) {
+            return pair[1];
+        }
     }
-  } 
-  console.log('Query Variable ' + variable + ' not found');
+    console.log('Query Variable ' + variable + ' not found');
 }
 
-String.prototype.replaceAll = function(search, replacement) {
+String.prototype.replaceAll = function (search, replacement) {
     var target = this;
     return target.split(search).join(replacement);
 };
@@ -229,36 +229,58 @@ function isValidEmailAddress(emailAddress) {
 };
 
 function getBrowser() {
-  var browser = 'none';
+    // Opera 8.0+
+    var isOpera = (!!window.opr && !!opr.addons) || !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
 
-  if ((typeof module !== 'undefined' && module.exports)) {
-    browser = 'fake';
-  } else if (window.navigator.userAgent.match('Firefox') !== null) {
-    // Firefox
-    browser = 'mozilla';
-  } else if (window.navigator.userAgent.match('Chrome') !== null) {
-    browser = 'chrome-stable';
-    if (window.navigator.userAgent.match('Electron') !== null) {
-      browser = 'electron';
+    // Firefox 1.0+
+    var isFirefox = typeof InstallTrigger !== 'undefined';
+
+    // Safari 3.0+ "[object HTMLElementConstructor]" 
+    var isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && safari.pushNotification));
+
+    // Internet Explorer 6-11
+    var isIE = /*@cc_on!@*/false || !!document.documentMode;
+
+    // Edge 20+
+    var isEdge = !isIE && !!window.StyleMedia;
+
+    // Chrome 1 - 79
+    var isChrome = !!window.chrome;
+
+    // Edge (based on chromium) detection
+    var isEdgeChromium = isChrome && (navigator.userAgent.indexOf("Edg") != -1);
+
+    // Blink engine detection
+    var isBlink = (isChrome || isOpera) && !!window.CSS;
+
+    var browser = 'none';
+
+    if(isFirefox) {
+        browser = "firefox";
+    } else if(isBlink) {
+        browser = "blinkEngin";
+    } else if(isSafari) {
+        browser = "safari";
     }
-  } else if (window.navigator.userAgent.match('Safari') !== null) {
-    browser = 'safari';
-  } else if (window.navigator.userAgent.match('AppleWebKit') !== null) {
-    browser = 'safari';
-  }
-  return browser;
+
+    return browser;
+}
+
+var browser = getBrowser();
+if(browser != "firefox" && browser != "blinkEngin" && browser != "safari") {
+    alert("Your browser is not supported! Please be sure to use a supported browser like Chrome, Firefox or Safari!");
 }
 
 function isSmallDevice() {
-   if(window.innerWidth <= 800 && window.innerHeight <= 600) {
-     return true;
-   } else {
-     return false;
-   }
+    if (window.innerWidth <= 800 && window.innerHeight <= 600) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function isMobileOrTablet() {
-  var check = false;
-  (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
-  return check;
+    var check = false;
+    (function (a) { if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) check = true; })(navigator.userAgent || navigator.vendor || window.opera);
+    return check;
 };

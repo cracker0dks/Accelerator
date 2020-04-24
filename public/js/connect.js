@@ -75,7 +75,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                     $("#mediaC").append('<div id="audio' + streamId + '" class="audiocontainer" style="width: 320px; height: 217px; display:none;"></div>');
                     myMCU.showMediaStream("audio" + streamId, stream);
 
-                    if (getBrowser() == "chrome-stable") {
+                    if (getBrowser() == "blinkEngin") {
                         if (prevOutputDevice && $('#audio' + streamId).find("audio")[0].setSinkId) {
                             $('#audio' + streamId).find("audio")[0].setSinkId(prevOutputDevice); //Set audio output chrome  
                         } else {

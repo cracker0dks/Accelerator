@@ -584,14 +584,9 @@ $(function () { //Document ready
 	}
 
 	$("#screenShareTabBtn").click(function () {
-		switch (getBrowser()) {
-			case "mozilla":
-				break;
-			case "chrome-stable":
-				break;
-			default:
-				$("#startScreenShareBtn").hide();
-				$("#installScreenShareDiv").html("Screenshare not supported for your Browser! Please use Chrome or Firefox!");
+		var browser = getBrowser();
+		if (browser != "firefox" && browser != "blinkEngin") {
+			writeToChat("Server", "Warning: Screenshare was not tested for your browser! Use a supported browser like chrome or Firefox to be sure!");
 		}
 	});
 
@@ -627,7 +622,7 @@ $(function () { //Document ready
 					max: maxHeight
 				}
 			}
-			
+
 			var config = {
 				screen: true,
 				attributes: { socketId: ownSocketId },
@@ -679,7 +674,7 @@ $(function () { //Document ready
 				})();
 			} else {
 				var camId = $("#screenshareCamSelect").val();
-				if(camId) {
+				if (camId) {
 					newVidConstrains["deviceId"] = { ideal: camId };
 				}
 				navigator.getUserMedia({ audio: false, video: newVidConstrains }, function (stream) {
@@ -1020,15 +1015,15 @@ $(function () { //Document ready
 		}
 	});
 
-	$("#screenshareSource").change(function() {
-		if($(this).val()==1) {
+	$("#screenshareSource").change(function () {
+		if ($(this).val() == 1) {
 			$("#screenshareCamSelectTR").hide();
 		} else {
 			$("#screenshareCamSelectTR").show();
 		}
 	});
 
-	$("#refreshScreenshareCamSelectBtn").click(function() {
+	$("#refreshScreenshareCamSelectBtn").click(function () {
 		appendCamDevices();
 	})
 
