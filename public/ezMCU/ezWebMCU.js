@@ -138,17 +138,18 @@ function start() {
 		socket.on('mcu_setStreamState', function (content) {
 			var streamId = content["streamId"] || 0;
 			var mute = content["mute"];
-			allAudioStreamsActiveState[streamId] = !mute;
-			if (mute) {
-				for (var i in allAudioSubs[streamId]) {
-					allStreamSources[streamId].disconnect(allStreamDestinations[allAudioSubs[streamId][i]])
-				}
-			} else {
-				for (var i in allAudioSubs[streamId]) {
-					allStreamSources[streamId].connect(allStreamDestinations[allAudioSubs[streamId][i]])
+			if (allAudioStreamsActiveState[streamId] != mute) { //Do not change if nothing to change
+				allAudioStreamsActiveState[streamId] = !mute;
+				if (mute) {
+					for (var i in allAudioSubs[streamId]) {
+						allStreamSources[streamId].disconnect(allStreamDestinations[allAudioSubs[streamId][i]])
+					}
+				} else {
+					for (var i in allAudioSubs[streamId]) {
+						allStreamSources[streamId].connect(allStreamDestinations[allAudioSubs[streamId][i]])
+					}
 				}
 			}
-
 		});
 
 		socket.emit("mcu_registerLoadBalancer", mcuConfig.loadBalancerAuthKey, mcuConfig);
@@ -231,6 +232,8 @@ function start() {
 
 				if (videoTracks == 0) { //Only audio so generate a streamSource
 					var scr = ac.createMediaStreamSource(stream);
+					var placeholderDest = ac.createMediaStreamDestination();
+					scr.connect(placeholderDest); //Just to keep it alive
 					allStreamSources[streamId] = scr;
 					peerAudioStreamSrcs[streamId] = streamId;
 
