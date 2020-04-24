@@ -109,15 +109,15 @@ function start() {
 						allPeers[clientSocketId].addStream(allStreams[streamId]); //Add stream to peer connection
 					}
 				} else if (audioTracks.length > 0) {
-					if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
-						if (!allAudioSubs[streamId]) { allAudioSubs[streamId] = [] };
-						allAudioSubs[streamId].push(clientSocketId);
-						if (allAudioStreamsActiveState[streamId]) {
+					if(allAudioStreamsActiveState[streamId]) {
+						if (allStreamSources[streamId] && allStreamDestinations[clientSocketId]) {
 							allStreamSources[streamId].connect(allStreamDestinations[clientSocketId])
+						} else {
+							console.log("missing src or dest to connect audio!")
 						}
-					} else {
-						console.log("missing src or dest to connect audio!")
 					}
+					if (!allAudioSubs[streamId]) { allAudioSubs[streamId] = [] };
+					allAudioSubs[streamId].push(clientSocketId);
 				} else {
 					console.log("no stream, say what ?!!")
 				}
@@ -142,11 +142,14 @@ function start() {
 				allAudioStreamsActiveState[streamId] = !mute;
 				if (mute) {
 					for (var i in allAudioSubs[streamId]) {
-						allStreamSources[streamId].disconnect(allStreamDestinations[allAudioSubs[streamId][i]])
+						allStreamSources[streamId].disconnect(allStreamDestinations[allAudioSubs[streamId][i]]) 
 					}
+					delete allStreamSources[streamId];
 				} else {
+					var scr = ac.createMediaStreamSource(allStreams[streamId]);
+					allStreamSources[streamId] = scr;
 					for (var i in allAudioSubs[streamId]) {
-						allStreamSources[streamId].connect(allStreamDestinations[allAudioSubs[streamId][i]])
+						scr.connect(allStreamDestinations[allAudioSubs[streamId][i]])
 					}
 				}
 			}
@@ -231,13 +234,9 @@ function start() {
 				}
 
 				if (videoTracks == 0) { //Only audio so generate a streamSource
-					var scr = ac.createMediaStreamSource(stream);
-					var placeholderDest = ac.createMediaStreamDestination();
-					scr.connect(placeholderDest); //Just to keep it alive
-					allStreamSources[streamId] = scr;
 					peerAudioStreamSrcs[streamId] = streamId;
 
-					var mediaEl = $('<audio autoplay="autoplay"></audio>'); //Stream is not active on chrome without this!
+					var mediaEl = $('<audio></audio>'); //Stream is not active on chrome without this!
 					mediaEl[0].srcObject = stream;
 
 					//console.log(retObj)
