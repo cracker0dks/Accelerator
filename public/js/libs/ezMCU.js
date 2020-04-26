@@ -133,7 +133,7 @@ function ezMCU(socket, newConfig = {}) {
                     const height = steamAttr.videoHeight;
 
                     var canvasEl = $('<canvas class="' + streamId + '"></canvas>');
-                    $("body").append(canvasEl);
+                    $("#mediaC").append(canvasEl);
                     //canvasEl.appendTo("body")
                     var remoteCanvas = canvasEl[0]
                     var remoteContext = remoteCanvas.getContext('2d');
