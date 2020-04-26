@@ -1083,7 +1083,13 @@ function addUserToPanel(id, username) {
 	}
 
 	newUser.find(".webcamfullscreen").click(function () {
-		var vidId = $(this).parents(".videoContainer").find("video").attr("id");
+		var vidId;
+		if($(this).parents(".videoContainer").find("video").length) {
+			vidId = $(this).parents(".videoContainer").find("video").attr("id");
+		} else {
+			vidId = $(this).parents(".videoContainer").find("canvas").attr("id");
+		}
+		
 		var elem = document.getElementById(vidId);
 		if (elem.requestFullscreen) {
 			elem.requestFullscreen();
@@ -1101,14 +1107,15 @@ function addUserToPanel(id, username) {
 			videoContainer.css({ "position": "relative", "top": "0px", "left": "0px", "cursor": "default" });
 			videoContainer.appendTo(newUser.find(".videoPlaceholder"));
 			videoContainer.find(".direktVideoContainer").css({ "width": "100%" });
-			videoContainer.find("video").get(0).play();
 			videoContainer.draggable({ disabled: true });
 		} else {
 			videoContainer.find(".direktVideoContainer").css({ "width": "310px" });
 			videoContainer.appendTo("body");
 			videoContainer.css({ "position": "absolute", "top": "100px", "left": "100px", "cursor": "move" });
-			videoContainer.find("video").get(0).play();
 			videoContainer.draggable({ disabled: false });
+		}
+		if(videoContainer.find("video").length) {
+			videoContainer.find("video").get(0).play();
 		}
 		$(this).attr("popedOut", !isPopedOut);
 	});
@@ -1286,7 +1293,13 @@ function apendScreenshareStream(stream, streamAttr) {
 
 			var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
 			fullScreenBtn.click(function () {
-				var video = $("#screenShareStream video")[0];
+				var video;
+				if($("#screenShareStream video").length) {
+					video = $("#screenShareStream video")[0];
+				} else {
+					video = $("#screenShareStream canvas")[0];
+				}
+				
 				if (video.requestFullscreen) {
 					video.requestFullscreen();
 				} else if (video.mozRequestFullScreen) {
