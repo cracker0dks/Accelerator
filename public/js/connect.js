@@ -193,10 +193,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         writeToChat("Server", "Local Audiostream Connected!");
                         writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
                         $("#" + ownSocketId).find(".UserRightTD").css({ "background": "rgba(3, 169, 244, 0)" });
-                        if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
-                            showTour("introBasicTour", false); //start intro tour
-                        }
-                        setLocalStorage("introBasicTourShown", true);
+                        
 
                         //Calc the current volume!
                         var audioAontext = window.AudioContext || window.webkitAudioContext;
@@ -242,6 +239,13 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         //localAudioStream = dest.stream;
                         //Calc the current volume END!
                         initOtherStreams();
+
+                        setTimeout(function() {
+                            if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
+                                showTour("introBasicTour", false); //start intro tour
+                            }
+                            setLocalStorage("introBasicTourShown", true);
+                        }, 1000)
                     }
                 });
             } else {
