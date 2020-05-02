@@ -6,7 +6,7 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 var ytplayer = null;
 var youtubeUrl = "";
 
-function loadYoutubeVideo(url, moderator) {
+function loadYoutubeVideo(url, moderator, time=0, status=1) {
 	$("#youtubeWaitContent").hide();
 	$("#ytapiplayer").empty();
 	$("#ytapiplayer").html('<div id="theytPlayer"></div>');
@@ -21,9 +21,14 @@ function loadYoutubeVideo(url, moderator) {
 	url = url.replace("watch?v=", "v/");
 	youtubeUrl = url;
 
+	var width = Math.floor($("#youtube").width() * 9 / 16);
+	if(width<500) {
+		width = Math.floor(($( window ).width()-700)* 9 / 16);
+	}
+	
 	ytplayer = new YT.Player('theytPlayer', {
 	width: "100%",
-	height: Math.floor($("#youtube").width() * 9 / 16),
+	height: width,
 	events: {
 		  'onReady': onPlayerReady,
 		  'onError': onYoutubeError,
@@ -33,8 +38,11 @@ function loadYoutubeVideo(url, moderator) {
 	});
 
 	function onPlayerReady() {
-		ytplayer.loadVideoByUrl(youtubeUrl, 0,"default");
+		ytplayer.loadVideoByUrl(youtubeUrl, time,"default");
 		ytplayer.setVolume($("#youtubeVolumeSlider").val());
+		if(status == 2) {
+			pauseYoutube();
+		}
 	}
 }
 

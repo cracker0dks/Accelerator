@@ -85,7 +85,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                     return;
                 }
 
-                
+
                 var streamSocketId = streamAttr.streamSocketId || streamAttr.socketId;
 
                 if (streamAttr && streamAttr.screenshare) {   //Screenshare
@@ -193,7 +193,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         writeToChat("Server", "Local Audiostream Connected!");
                         writeToChat("Server", "You can not communicate unless you get the microphone or press the horn!");
                         $("#" + ownSocketId).find(".UserRightTD").css({ "background": "rgba(3, 169, 244, 0)" });
-                        
+
 
                         //Calc the current volume!
                         var audioAontext = window.AudioContext || window.webkitAudioContext;
@@ -240,7 +240,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         //Calc the current volume END!
                         initOtherStreams();
 
-                        setTimeout(function() {
+                        setTimeout(function () {
                             if (typeof (getLocalStorage("introBasicTourShown")) == "undefined") {
                                 showTour("introBasicTour", false); //start intro tour
                             }
@@ -1033,15 +1033,26 @@ function initSocketIO() {
         });
 
         signaling_socket.on('youtubeCommand', function (content) {
-            if (content.key == "loadVideo") {
-                loadYoutubeVideo(content.data, roomImIn["moderator"] == ownSocketId);
-            } else if (content.key == "status" && roomImIn["moderator"] != ownSocketId) {
+            function checkYTReady() {
+                if ($("#youtube").is(":visible")) {
+                    execYtCommand()
+                } else {
+                    setTimeout(checkYTReady, 100)
+                }
+            }
+            checkYTReady();            
 
-                var status = content.data;
-                if (status == 1) {
-                    playYoutube(content.time);
-                } else if (status == 2) {
-                    pauseYoutube();
+            function execYtCommand() {
+                if (content.key == "loadVideo") {
+                    loadYoutubeVideo(content.data, roomImIn["moderator"] == ownSocketId, content.time || 0, content.status || 1);
+                } else if (content.key == "status" && roomImIn["moderator"] != ownSocketId) {
+
+                    var status = content.data;
+                    if (status == 1) {
+                        playYoutube(content.time);
+                    } else if (status == 2) {
+                        pauseYoutube();
+                    }
                 }
             }
         });

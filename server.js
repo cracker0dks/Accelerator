@@ -32,8 +32,8 @@ var server = http.createServer({
 }, app).listen(httpPort);
 
 var io = require('socket.io').listen(server, {
-    pingTimeout : 10000,
-    pingInterval : 25000
+    pingTimeout: 10000,
+    pingInterval: 25000
 });
 
 config["mcuConfig"]["masterPort"] = httpPort;
@@ -115,6 +115,7 @@ var allSingleFiles = {};
 var userPItems = {};
 var all3DObjs = {};
 var url3dObjs = {};
+var storedYoutubePlays = {};
 
 setTimeout(function () {
     console.log("--------------------------------------");
@@ -268,6 +269,17 @@ io.sockets.on('connection', function (socket) {
         if (currentLoadedTab[roomName]) {
             var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
             socket.emit('changeTab', { "tab": currentLoadedTab[roomName], "userPItems": items });
+
+            if (storedYoutubePlays[roomName]) {
+                socket.emit('youtubeCommand',
+                    {
+                        "key": "loadVideo",
+                        "data": storedYoutubePlays[roomName].url,
+                        "time": storedYoutubePlays[roomName].time,
+                        "status": storedYoutubePlays[roomName].status
+                    }
+                )
+            }
         }
 
         if (isUserPItemsLoaded[roomName]) {
@@ -311,6 +323,7 @@ io.sockets.on('connection', function (socket) {
             if (!allRoomAttr[roomName]["moderator"] || allRoomAttr[roomName]["moderator"] == "0" || (allRoomAttr[roomName]["moderator"] == socket.id && socket.id != socketIdToSet)) {
                 allRoomAttr[roomName]["moderator"] = socketIdToSet;
                 sendToHoleRoom(roomName, 'setModerator', socketIdToSet);
+                delete storedYoutubePlays[roomName];
             }
         });
 
@@ -419,7 +432,7 @@ io.sockets.on('connection', function (socket) {
 
         socket.on('fixPItemPosition', function (content) {
             if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
-                if(currentLoadedTab[roomName] && userPItems[roomName] && userPItems[roomName][currentLoadedTab[roomName]]) {
+                if (currentLoadedTab[roomName] && userPItems[roomName] && userPItems[roomName][currentLoadedTab[roomName]]) {
                     for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
                         if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
                             userPItems[roomName][currentLoadedTab[roomName]][i]["posX"] = content["posX"];
@@ -479,6 +492,28 @@ io.sockets.on('connection', function (socket) {
         socket.on('youtubeCommand', function (content) {
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'youtubeCommand', content);
+                if (content.key == "status" && storedYoutubePlays[roomName]) {
+                    var ytInterval = null;
+                    if (content.data == 1) { //play
+                        storedYoutubePlays[roomName].time = content.time;
+                        ytInterval = setInterval(function () {
+                            if (storedYoutubePlays[roomName]) {
+                                storedYoutubePlays[roomName].time++;
+                            } else {
+                                clearInterval(ytInterval)
+                            }
+                        }, 1000)
+                    } else { //pause
+                        clearInterval(ytInterval)
+                    }
+                    storedYoutubePlays[roomName].status = content.data;
+                } else if (content.key == "loadVideo") {
+                    storedYoutubePlays[roomName] = {
+                        url: content.data,
+                        status: 1,
+                        time: 0
+                    }
+                }
             }
         });
 
@@ -497,6 +532,7 @@ io.sockets.on('connection', function (socket) {
                 if (content != "#homeScreen") {
                     snake.stopGame(roomName);
                 }
+                delete storedYoutubePlays[roomName];
             }
         });
 
@@ -1171,7 +1207,7 @@ function loadAllRoomAttr() {
         }
         try {
             allRoomAttr = JSON.parse(data);
-            for(var i in allRoomAttr) {
+            for (var i in allRoomAttr) {
                 allRoomAttr[i]["users"] = {};
                 allRoomAttr[i]["moderator"] = null;
             }
