@@ -791,6 +791,7 @@ function setModerator(id) {
 		screen_publishing = false;
 	}
 
+	$("#youtubeWaitContent").show();
 	$("#ytapiplayer").empty();
 	showHideVideoOptions()
 }

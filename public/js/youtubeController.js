@@ -7,6 +7,7 @@ var ytplayer = null;
 var youtubeUrl = "";
 
 function loadYoutubeVideo(url, moderator) {
+	$("#youtubeWaitContent").hide();
 	$("#ytapiplayer").empty();
 	$("#ytapiplayer").html('<div id="theytPlayer"></div>');
 
@@ -21,8 +22,8 @@ function loadYoutubeVideo(url, moderator) {
 	youtubeUrl = url;
 
 	ytplayer = new YT.Player('theytPlayer', {
-	width: 1100,
-	height: 700,
+	width: "100%",
+	height: Math.floor($("#youtube").width() * 9 / 16),
 	events: {
 		  'onReady': onPlayerReady,
 		  'onError': onYoutubeError,
