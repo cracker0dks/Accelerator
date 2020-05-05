@@ -240,14 +240,6 @@ function ezMCU(socket, newConfig = {}) {
             stream.getAudioTracks()[i].enabled = !mute;
         }
         stream.audioMuted = mute;
-
-        var streamId = stream.id.replace("{", "").replace("}", "");
-        var instanceTo = _this.allStreamAttributes[streamId] ? _this.allStreamAttributes[streamId]["instanceTo"] : "";
-        socket.emit("mcu_setStreamState", {
-            "instanceTo": instanceTo,
-            "streamId": streamId,
-            "mute" : mute
-        });
     };
     this.showMediaStream = function (elmDomId, stream, css = "") {
         var streamAttr = stream.streamAttributes;
