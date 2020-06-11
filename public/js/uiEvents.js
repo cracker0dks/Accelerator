@@ -23,6 +23,8 @@ $(function () { //Document ready
 	$("#loginBtn").click(function () {
 		username = cleanString($("#inputUser").val());
 		username = username.replaceAll(" ", "_");
+		username = username.replaceAll(".", "_");
+		username = username.replaceAll("#", "_");
 		setLocalStorage("myUserName", username);
 		var password = cleanString($("#inputPassword").val());
 		if (username === "") {
@@ -399,6 +401,13 @@ $(function () { //Document ready
 
 	$("#createNewRoomBtn").click(function () {
 		var romname = cleanString($("#createNewRoomInput").val().trim());
+		romname = romname.replaceAll(".", "_");
+		romname = romname.replaceAll("#", "_");
+		for(var i in allRooms) {
+			if(allRooms[i].roomName.split("###")[0] == romname) {
+				return alert("Roomname already excits! Please use a different one!")
+			}
+		}
 		if (romname != "" && romname.length >= 3) {
 			var roomName = romname + "###" + (+new Date());
 			var roomPassword = cleanString($("#newRoomPassword").val());
@@ -408,6 +417,8 @@ $(function () { //Document ready
 			$("#createNewRoomInput").val("");
 			$("#newRoomPassword").val("");
 			$("#roomPwLockIcon").removeClass("fa-lock").addClass("fa-unlock-alt");
+		} else {
+			alert("Roomname must have more than 3 Chars!")
 		}
 	});
 

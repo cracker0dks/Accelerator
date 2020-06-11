@@ -1,4 +1,5 @@
 var pitemWebcamStreams = {};
+var allRooms = {};
 
 function addUserPItem(content) {
 	var userId = content.userId;
@@ -1552,6 +1553,7 @@ function changeUserInfos(id, name, color) {
 }
 
 function renderAllRooms(roomList) {
+	allRooms = roomList;
 	console.log(roomList);
 	$("#roomListContent tbody").empty();
 
