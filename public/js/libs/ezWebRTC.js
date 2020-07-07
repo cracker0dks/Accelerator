@@ -45,6 +45,14 @@ function initEzWebRTC(initiator, config) {
             _this.emitEvent('track', event.track, eventStream);
             if (!knownStreams[eventStream.id]) { //emit onStream event
                 _this.emitEvent("stream", eventStream);
+                eventStream.onremovetrack = (event) => {
+                    _this.emitEvent('trackremoved', event.track, eventStream);
+                    let tracks = eventStream.getTracks();
+                    if (tracks.length == 0) { //If no tracks left
+                        _this.emitEvent("streamremoved", eventStream, event.track.kind);
+                    }
+                    delete trackSenders[event.track.id]
+                };
             }
             knownStreams[eventStream.id] = true;
         });
@@ -126,15 +134,6 @@ function initEzWebRTC(initiator, config) {
         stream.getTracks().forEach(track => {
             trackSenders[track.id] = pc.addTrack(track, stream); //Add all tracks to pc
         })
-
-        stream.onremovetrack = function (event) {
-            _this.emitEvent('trackremoved', event.track, stream);
-            let tracks = stream.getTracks();
-            if (tracks.length == 0) { //If no tracks left
-                _this.emitEvent("streamremoved", stream);
-            }
-            delete trackSenders[event.track.id]
-        };
     }
 
     this.removeStream = function (stream) {
