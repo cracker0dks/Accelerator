@@ -114,6 +114,7 @@ function initEzWebRTC(initiator, config) {
             await pc.setLocalDescription(await pc.createAnswer(rtcConfig.offerOptions));
             var a_desc = pc.localDescription;
             a_desc.sdp = rtcConfig.preferH264Codec ? preferH264Codec(a_desc.sdp) : a_desc.sdp;
+            a_desc.sdp = removeDoubleSSRC(a_desc.sdp);
             _this.emitEvent("signaling", a_desc)
             if (!initiator)
                 requestMissingTransceivers()
@@ -256,4 +257,31 @@ function preferH264Codec(sdp) {
         }
     }
     return lineSplit.join("\n");
+}
+
+function removeDoubleSSRC(sdp) {
+    var lineSplit = sdp.split("\n");
+    var mediaWithSSRC = null;
+    var mediaCnt = 0;
+    var readyToRemove = false;
+    var res = [];
+    for (var i in lineSplit) {
+        if (lineSplit[i].startsWith("m=")) { //find the video line
+            mediaCnt++;
+        }
+        if (lineSplit[i].startsWith("a=ssrc")) { //find the video line
+            if(!mediaWithSSRC) {
+                mediaWithSSRC = mediaCnt;
+            }
+            if(mediaWithSSRC < mediaCnt) {
+                readyToRemove = true;
+            }
+        }
+        if(readyToRemove && lineSplit[i].startsWith("a=ssrc")) {
+            //Do nothing
+        } else {
+            res.push(lineSplit[i]);
+        }
+    }
+    return res.join("\n");
 }
