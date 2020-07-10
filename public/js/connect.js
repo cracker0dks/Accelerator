@@ -142,6 +142,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
                         $("#" + streamSocketId).find(".webcamfullscreen").show();
                         $("#" + streamSocketId).find(".popoutVideoBtn").show();
+                        updateConfGridView();
                     }
 
                 }
@@ -173,6 +174,7 @@ var loadMCUConnection = function (roomToConnect, connectionReadyCallback) {
                         if (!streamAttributes["itemId"]) { //Dont hide if it is a userPitem stream
                             $("#" + socketId).find(".webcamfullscreen").hide();
                             $("#" + socketId).find(".popoutVideoBtn").hide();
+                            updateConfGridView();
                         }
                     }
                 }
@@ -1058,7 +1060,14 @@ function initSocketIO() {
         });
 
         signaling_socket.on('changeTab', function (content) {
+            
+
             var tab = content["tab"];
+
+            if(currentTab == "#conf" && tab != currentTab) { //Coming from conf tab
+                updateConfGridView(true)
+            }
+
             currentTab = tab;
             userPItems = content["userPItems"] || [];
             $(".praesiMainContent").hide();
@@ -1094,6 +1103,11 @@ function initSocketIO() {
 
             $('.mainTab.alert-danger').removeClass("alert-danger");
             $('.mainTab[tabtarget="' + currentTab + '"]').addClass("alert-danger");
+
+            if(currentTab == "#conf") {
+                updateConfGridView()
+            }
+            
         });
 
         signaling_socket.on('audioVolume', function (content) {

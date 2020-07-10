@@ -268,7 +268,10 @@ io.sockets.on('connection', function (socket) {
 
         if (currentLoadedTab[roomName]) {
             var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
-            socket.emit('changeTab', { "tab": currentLoadedTab[roomName], "userPItems": items });
+
+            setTimeout(function() { //Change tab with delay to load everything in first
+                socket.emit('changeTab', { "tab": currentLoadedTab[roomName], "userPItems": items });
+            }, 1000) 
 
             if (storedYoutubePlays[roomName]) {
                 socket.emit('youtubeCommand',

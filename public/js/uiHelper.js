@@ -1086,12 +1086,12 @@ function addUserToPanel(id, username) {
 
 	newUser.find(".webcamfullscreen").click(function () {
 		var vidId;
-		if($(this).parents(".videoContainer").find("video").length) {
+		if ($(this).parents(".videoContainer").find("video").length) {
 			vidId = $(this).parents(".videoContainer").find("video").attr("id");
 		} else {
 			vidId = $(this).parents(".videoContainer").find("canvas").attr("id");
 		}
-		
+
 		var elem = document.getElementById(vidId);
 		if (elem.requestFullscreen) {
 			elem.requestFullscreen();
@@ -1116,7 +1116,7 @@ function addUserToPanel(id, username) {
 			videoContainer.css({ "position": "absolute", "top": "100px", "left": "100px", "cursor": "move" });
 			videoContainer.draggable({ disabled: false });
 		}
-		if(videoContainer.find("video").length) {
+		if (videoContainer.find("video").length) {
 			videoContainer.find("video").get(0).play();
 		}
 		$(this).attr("popedOut", !isPopedOut);
@@ -1253,6 +1253,7 @@ function startLocalVideo() {
 						myMCU.showMediaStream("video" + streamId, stream, 'width:300px; height:225px; position: absolute; top:0px;');
 						$("#" + ownSocketId).find(".webcamfullscreen").show();
 						$("#" + ownSocketId).find(".popoutVideoBtn").show();
+						updateConfGridView();
 					};
 				});
 			}
@@ -1296,12 +1297,12 @@ function apendScreenshareStream(stream, streamAttr) {
 			var fullScreenBtn = $('<button style="z-index:10; position:absolute; position: absolute; bottom: 0px; right: 0px;"><i class="fa fa-expand"></i></button>');
 			fullScreenBtn.click(function () {
 				var video;
-				if($("#screenShareStream video").length) {
+				if ($("#screenShareStream video").length) {
 					video = $("#screenShareStream video")[0];
 				} else {
 					video = $("#screenShareStream canvas")[0];
 				}
-				
+
 				if (video.requestFullscreen) {
 					video.requestFullscreen();
 				} else if (video.mozRequestFullScreen) {
@@ -1316,6 +1317,88 @@ function apendScreenshareStream(stream, streamAttr) {
 		}
 	}
 	showTheScreen();
+}
+
+function updateConfGridView(leavingConfTab) {
+
+	$.each($(".videoContainer"), function () { //Pop videos back in
+		if ($(this).find("video").length >= 1) {
+			$(this).find(".popoutVideoBtn").attr("popedOut", "true")
+			$(this).find(".popoutVideoBtn").click();
+		}
+	})
+
+	$.each($("video"), function () { //Put the videos back in place
+		console.log("IDDD", "#video" + $(this).attr("id"))
+		$("#video" + $(this).attr("id")).append($(this))
+		$("#video" + $(this).attr("id")).parents(".videoContainer ").show();
+		this.play();
+	});
+
+	$.each($(".direktVideoContainer"), function () {
+		if (!$(this).find("video").length) {
+			$(this).remove();
+		}
+	});
+
+	if (currentTab == "#conf" && !leavingConfTab) {
+		var videoCnt = 0;
+		$.each($(".videoContainer"), function () {
+			if ($(this).find("video").length >= 1) {
+				videoCnt++;
+			}
+		})
+		var lineCnt = Math.round(Math.sqrt(videoCnt));
+
+		$("#confContend").empty();
+		if (lineCnt == 0) {
+			$("#confContend").html("<div>VideoGrid: Waiting for video streams...</div>");
+			$("#confContend").css({ "background": "rgba(255, 255, 255, 0.19)" })
+		} else {
+			$("#confContend").css({ "background": "rgba(255, 255, 255,0)" })
+			for (var i = 0; i < lineCnt; i++) {
+				$("#confContend").append('<div class="row confline confline' + (i + 1) + '"></div>')
+			}
+			let userPerLine = Math.ceil(videoCnt / lineCnt);
+			let cucnt = 0;
+
+			$.each($(".videoContainer"), function () {
+				if ($(this).find("video").length >= 1) {
+					cucnt++;
+					var vidEl = $($(this).find("video")[0]);
+					vidEl.css({ "position": "relative", "height": "100%", "width": "unset" });
+					if (cucnt % 2 == 1) {
+						vidEl.css({ "float": "right" });
+					} else {
+						vidEl.css({ "float": "left" });
+					}
+					var gElm = $('<div style="margin-left: auto; margin-right: auto;" class="col-sm confVideoPlaceholder"></div>')
+					gElm.append(vidEl);
+					var cLineNr = Math.ceil(cucnt / userPerLine);
+					gElm.css({ width: 100 / userPerLine + '%', height: 750 / lineCnt + 'px', float: 'left' });
+					$(".confline" + cLineNr).append(gElm)
+
+					$(this).hide();
+				}
+			})
+
+			var lastLineElsCnt = $("#confContend").find(".confline" + lineCnt).find(".confVideoPlaceholder").length;
+			// console.log(lastLineElsCnt, userPerLine)
+			if (lastLineElsCnt != userPerLine) {
+				var p = (100 / userPerLine) / 2;
+				$("#confContend").find(".confline" + lineCnt).find(".confVideoPlaceholder").css({ "left": p + "%", "position": "absolute" })
+				$("#confContend").find(".confline" + lineCnt).find(".confVideoPlaceholder").find("video").css({ "float": "unset" });
+			}
+
+			$.each($(".confline"), function () {
+				if ($(this).find("video").length == 1) {
+					$(this).find("video").css({ "float": "unset" });
+				}
+			})
+		}
+
+		console.log("yoyoyo", lineCnt)
+	}
 }
 
 var gPraesi = null;
