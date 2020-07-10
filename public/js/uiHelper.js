@@ -1321,30 +1321,34 @@ function apendScreenshareStream(stream, streamAttr) {
 
 function updateConfGridView(leavingConfTab) {
 
-	$.each($(".videoContainer"), function () { //Pop videos back in
-		if ($(this).find("video").length >= 1) {
-			$(this).find(".popoutVideoBtn").attr("popedOut", "true")
-			$(this).find(".popoutVideoBtn").click();
-		}
-	})
+	if (currentTab == "#conf" || leavingConfTab) {
+		$.each($(".videoContainer"), function () { //Pop videos back in
+			if ($(this).find("video,canvas").length >= 1) {
+				$(this).find(".popoutVideoBtn").attr("popedOut", "true")
+				$(this).find(".popoutVideoBtn").click();
+			}
+		})
 
-	$.each($("video"), function () { //Put the videos back in place
-		console.log("IDDD", "#video" + $(this).attr("id"))
-		$("#video" + $(this).attr("id")).append($(this))
-		$("#video" + $(this).attr("id")).parents(".videoContainer ").show();
-		this.play();
-	});
+		$.each($("video,canvas"), function () { //Put the videos back in place
+			console.log("IDDD", "#video" + $(this).attr("id"))
+			$("#video" + $(this).attr("id")).append($(this))
+			$("#video" + $(this).attr("id")).parents(".videoContainer ").show();
+			if ($(this).is("video")) {
+				this.play();
+			}
+		});
 
-	$.each($(".direktVideoContainer"), function () {
-		if (!$(this).find("video").length) {
-			$(this).remove();
-		}
-	});
+		$.each($(".direktVideoContainer"), function () {
+			if (!$(this).find("video,canvas").length) {
+				$(this).remove();
+			}
+		});
+	}
 
 	if (currentTab == "#conf" && !leavingConfTab) {
 		var videoCnt = 0;
 		$.each($(".videoContainer"), function () {
-			if ($(this).find("video").length >= 1) {
+			if ($(this).find("video,canvas").length >= 1) {
 				videoCnt++;
 			}
 		})
@@ -1352,7 +1356,12 @@ function updateConfGridView(leavingConfTab) {
 
 		$("#confContend").empty();
 		if (lineCnt == 0) {
-			$("#confContend").html("<div>VideoGrid: Waiting for video streams...</div>");
+			$("#confContend").html('<div style="z-index:1; position: absolute; top: 0px; left: 0px; text-align: center; width: 100%; color:white;">' +
+				'<br><br>' +
+				'<h1 style="font-family: "Rock Salt", cursive !important;"><span>Conference Grid</span></h1>' +
+				'<i style="font-size: 22em; color: white;" class="fa fa-th"></i>' +
+				'<div>Waiting for camera shares...</div>' +
+			'</div>');
 			$("#confContend").css({ "background": "rgba(255, 255, 255, 0.19)" })
 		} else {
 			$("#confContend").css({ "background": "rgba(255, 255, 255,0)" })
@@ -1363,9 +1372,9 @@ function updateConfGridView(leavingConfTab) {
 			let cucnt = 0;
 
 			$.each($(".videoContainer"), function () {
-				if ($(this).find("video").length >= 1) {
+				if ($(this).find("video,canvas").length >= 1) {
 					cucnt++;
-					var vidEl = $($(this).find("video")[0]);
+					var vidEl = $($(this).find("video,canvas")[0]);
 					vidEl.css({ "position": "relative", "height": "100%", "width": "unset" });
 					if (cucnt % 2 == 1) {
 						vidEl.css({ "float": "right" });
@@ -1387,12 +1396,12 @@ function updateConfGridView(leavingConfTab) {
 			if (lastLineElsCnt != userPerLine) {
 				var p = (100 / userPerLine) / 2;
 				$("#confContend").find(".confline" + lineCnt).find(".confVideoPlaceholder").css({ "left": p + "%", "position": "absolute" })
-				$("#confContend").find(".confline" + lineCnt).find(".confVideoPlaceholder").find("video").css({ "float": "unset" });
+				$("#confContend").find(".confline" + lineCnt).find(".confVideoPlaceholder").find("video,canvas").css({ "float": "unset" });
 			}
 
 			$.each($(".confline"), function () {
-				if ($(this).find("video").length == 1) {
-					$(this).find("video").css({ "float": "unset" });
+				if ($(this).find("video,canvas").length == 1) {
+					$(this).find("video,canvas").css({ "float": "unset" });
 				}
 			})
 		}
