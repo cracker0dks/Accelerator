@@ -1626,14 +1626,27 @@ function onChangeSlide() {
 }
 
 function removeUserFromPage(id) {
+	$.each($("video,canvas"), function () { //Put the videos back in place from the gridview so we will remove them as well
+		console.log("IDDD", "#video" + $(this).attr("id"))
+		$("#video" + $(this).attr("id")).append($(this))
+		$("#video" + $(this).attr("id")).parents(".videoContainer ").show();
+		if ($(this).is("video")) {
+			this.play();
+		}
+	});
+
 	var username = getUserNameFromId(id);
 	whiteboard.userLeftWhiteboard(username);
+
+
 
 	$(".user-" + id).remove();
 	$("#userCnt").text($("#leftContainer").find(".userdiv").length);
 	$("#handsUpAlertDivContainer").find('.userCard-' + id).remove();
 	$("#handsUpAlertDivContainer").find('.userSubCard-' + id).remove();
 	$(".cameraUserPitem" + id).remove();
+
+	updateConfGridView();
 }
 
 function changeUserInfos(id, name, color) {
