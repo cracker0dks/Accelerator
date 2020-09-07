@@ -1405,8 +1405,6 @@ function updateConfGridView(leavingConfTab) {
 				}
 			})
 		}
-
-		console.log("yoyoyo", lineCnt)
 	}
 }
 
