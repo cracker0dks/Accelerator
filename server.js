@@ -15,6 +15,12 @@ var httpPort = config["http"]["port"] || 8080;
 var express = require('express');
 var fs = require("fs-extra");
 
+const createDOMPurify = require("dompurify"); //Prevent xss
+const { JSDOM } = require("jsdom");
+const window = new JSDOM("").window;
+// @ts-ignore
+const DOMPurify = createDOMPurify(window);
+
 var snake = require("./acc_server_modules/snake/snake.js");
 var s_whiteboard = require("./acc_server_modules/whiteboard/s_whiteboard.js");
 var app = express();
@@ -187,7 +193,11 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('createRoom', function (content, callback) {
+        content = escapeAllContentStrings(content);
         var roomName = content.roomName.trim();
+        if(roomName == "") {
+            return callback("Invaild Roomname!")
+        }
         var roomPassword = content.roomPassword;
         var creator = content.creator;
 
@@ -211,6 +221,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('setUserAttr', function (content, callback) {
+        content = escapeAllContentStrings(content);
         var username = content["username"];
         var password = content["passwort"];
         var userLang = content["userLang"];
@@ -222,6 +233,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('join', function (content, callback) {
+        content = escapeAllContentStrings(content);
         //console.log("[" + socket.id + "] join ", content);
         roomName = content.roomName.trim() || "";
         var roomPassword = content.roomPassword;
@@ -269,9 +281,9 @@ io.sockets.on('connection', function (socket) {
         if (currentLoadedTab[roomName]) {
             var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
 
-            setTimeout(function() { //Change tab with delay to load everything in first
+            setTimeout(function () { //Change tab with delay to load everything in first
                 socket.emit('changeTab', { "tab": currentLoadedTab[roomName], "userPItems": items });
-            }, 1000) 
+            }, 1000)
 
             if (storedYoutubePlays[roomName]) {
                 socket.emit('youtubeCommand',
@@ -295,6 +307,7 @@ io.sockets.on('connection', function (socket) {
 
         //For chat and mgs in the same room
         socket.on('message', function (msg) {
+            msg = escapeAllContentStrings(msg);
             if (typeof (msg) == "string") {
                 sendToHoleRoomButNotMe(roomName, socket.id, 'message', { "msg": msg, "id": socket.id, "username": userdata["username"] });
             } else if (isModerator()) {
@@ -310,6 +323,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('setStatus', function (status) {
+            status = escapeAllContentStrings(status);
             if (typeof (userdata["stadien"]) == "undefined") {
                 userdata["stadien"] = {};
             }
@@ -323,6 +337,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('setModerator', function (socketIdToSet) {
+            socketIdToSet = escapeAllContentStrings(socketIdToSet);
             if (!allRoomAttr[roomName]["moderator"] || allRoomAttr[roomName]["moderator"] == "0" || (allRoomAttr[roomName]["moderator"] == socket.id && socket.id != socketIdToSet)) {
                 allRoomAttr[roomName]["moderator"] = socketIdToSet;
                 sendToHoleRoom(roomName, 'setModerator', socketIdToSet);
@@ -331,6 +346,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('setGetMicToUser', function (data) {
+            data = escapeAllContentStrings(data);
             if (isModerator() || (data["userid"] == socket.id && data["mic"] == "not-mic")) { //Only allow moderator or removing own mic
                 sendToHoleRoom(roomName, 'setGetMicToUser', data);
 
@@ -397,6 +413,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('loadSlide', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 currentLoadedPraesis[roomName] = content;
                 sendToHoleRoom(roomName, 'loadSlide', content);
@@ -410,6 +427,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('cursorPosition', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'cursorPosition', content);
             }
@@ -1298,3 +1316,21 @@ process.on('uncaughtException', function (code) {
         process.exit();
     }, 1000)
 });
+
+//Prevent cross site scripting (xss)
+function escapeAllContentStrings(content, cnt) {
+    if (!cnt) cnt = 0;
+
+    if (typeof content === "string") {
+        return DOMPurify.sanitize(content);
+    }
+    for (var i in content) {
+        if (typeof content[i] === "string") {
+            content[i] = DOMPurify.sanitize(content[i]);
+        }
+        if (typeof content[i] === "object" && cnt < 10) {
+            content[i] = escapeAllContentStrings(content[i], ++cnt);
+        }
+    }
+    return content;
+}

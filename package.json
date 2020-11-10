@@ -18,10 +18,12 @@
     "accelerator"
   ],
   "dependencies": {
+    "dompurify": "^2.2.2",
     "express": "^4.17.1",
     "fluent-ffmpeg": "^2.1.2",
     "formidable": "^1.2.2",
     "fs-extra": "^8.1.0",
+    "jsdom": "^16.4.0",
     "puppeteer": "^2.1.1",
     "socket.io": "^2.3.0",
     "yauzl": "^2.10.0"
