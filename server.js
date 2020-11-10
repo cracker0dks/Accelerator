@@ -434,6 +434,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('addUserPItem', function (content) {
+            content = escapeAllContentStrings(content);
             content["userId"] = socket.id;
             if (!userPItems[roomName]) {
                 userPItems[roomName] = {};
@@ -446,12 +447,14 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('changeUserPItemPosition', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
                 sendToHoleRoom(roomName, 'changeUserPItemPosition', content);
             }
         });
 
         socket.on('fixPItemPosition', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
                 if (currentLoadedTab[roomName] && userPItems[roomName] && userPItems[roomName][currentLoadedTab[roomName]]) {
                     for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
@@ -467,6 +470,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('removeUserPItem', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator() || socket.id == content.userId || userdata.username == content.itemUsername) {
                 for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
                     if (userPItems[roomName][currentLoadedTab[roomName]][i]["itemId"] == content["itemId"]) {
@@ -479,6 +483,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('removeAllUserPItems', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'removeAllUserPItems', content);
                 if (userPItems[roomName]) {
@@ -504,6 +509,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('showHideUserPItems', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 isUserPItemsLoaded[roomName] = content;
                 sendToHoleRoom(roomName, 'showHideUserPItems', content);
@@ -511,6 +517,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('youtubeCommand', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'youtubeCommand', content);
                 if (content.key == "status" && storedYoutubePlays[roomName]) {
@@ -539,6 +546,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('secondHandUp', function (content) {
+            content = escapeAllContentStrings(content);
             if (!isModerator()) {
                 content["senderId"] = socket.id;
             }
@@ -546,6 +554,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('changeTab', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 currentLoadedTab[roomName] = content;
                 var items = userPItems[roomName] ? userPItems[roomName][currentLoadedTab[roomName]] : null;
@@ -558,6 +567,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('setUserPItemsText', function (content) {
+            content = escapeAllContentStrings(content);
             content["userId"] = socket.id;
             if (content.image) {
                 sendToHoleRoom(roomName, "setUserPItemsText", content);
@@ -574,11 +584,13 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('setUserColor', function (color) {
+            content = escapeAllContentStrings(content);
             userdata["color"] = color;
             sendToHoleRoom(roomName, 'setUserColor', { "userId": socket.id, "color": color });
         });
 
         socket.on('shareNotes', function (content) {
+            content = escapeAllContentStrings(content);
             var text = content["text"];
             var noteType = content["noteType"];
             if (typeof (allSingleFiles[roomName]) == "undefined") {
@@ -600,6 +612,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('changeElementSize', function (content) {
+            content = escapeAllContentStrings(content);
             content["userId"] = socket.id;
             sendToHoleRoomButNotMe(roomName, socket.id, "changeElementSize", content);
             for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
@@ -612,16 +625,19 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('3dPos', function (pos) {
+            pos = escapeAllContentStrings(pos);
             if (isModerator()) {
                 sendToHoleRoomButNotMe(roomName, socket.id, "3dPos", pos);
             }
         });
 
         socket.on('drawSomething', function (content) {
+            content = escapeAllContentStrings(content);
             sendToHoleRoomButNotMe(roomName, socket.id, "drawSomething", content);
         });
 
         socket.on('sendEndDraw', function (content) {
+            content = escapeAllContentStrings(content);
             var itemId = content["itemId"];
             var drawBuffer = content["drawBuffer"];
             for (var i = 0; i < userPItems[roomName][currentLoadedTab[roomName]].length; i++) {
@@ -636,12 +652,14 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('drawWhiteboard', function (content) {
+            content = escapeAllContentStrings(content);
             s_whiteboard.handleEventsAndData(content);
             delete content["wid"];
             sendToHoleRoomButNotMe(roomName, socket.id, "drawWhiteboard", content);
         });
 
         socket.on('lockUnLockCanvas', function (content) {
+            content = escapeAllContentStrings(content);
             var itemId = content.itemId;
             var lockUnlock = content.lockUnlock;
             sendToHoleRoomButNotMe(roomName, socket.id, "lockUnLockCanvas", content);
@@ -655,6 +673,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('makeTransparent', function (content) {
+            content = escapeAllContentStrings(content);
             var itemId = content.itemId;
             var transparent = content.transparent;
             sendToHoleRoom(roomName, "makeTransparent", content);
@@ -668,6 +687,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('removeSingleFileEX', function (fileName) {
+            fileName = escapeAllContentStrings(fileName);
             fs.unlink("./public/singlefiles/" + fileName, function (err) {
                 if (err) {
                     console.error(err)
@@ -685,14 +705,17 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('startStopSnake', function (trueFalse) {
+            trueFalse = escapeAllContentStrings(trueFalse);
             snake.startStopSnake(socket.id, roomName, trueFalse);
         });
 
         socket.on('snakeKeyPressed', function (key) {
+            key = escapeAllContentStrings(key);
             snake.snakeKeyPressed(socket.id, roomName, key);
         });
 
         socket.on('sendZoom', function (content) {
+            content = escapeAllContentStrings(content);
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'sendZoom', content);
             }
@@ -700,6 +723,7 @@ io.sockets.on('connection', function (socket) {
 
 
         socket.on('getUserInfos', function (id) {
+            id = escapeAllContentStrings(id);
             var infos = allUserAttr[id];
             if (infos)
                 socket.emit('getUserInfos', infos);
@@ -710,12 +734,14 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('putRemoteHandDown', function (id) {
+            id = escapeAllContentStrings(id);
             if (isModerator()) {
                 sendToHoleRoom(roomName, 'putRemoteHandDown', id);
             }
         });
 
         socket.on('delete3DObj', function (name) {
+            name = escapeAllContentStrings(name);
             if (isModerator()) {
                 if (all3DObjs[roomName]) {
                     for (var i = 0; i < all3DObjs[roomName].length; i++) {
@@ -734,6 +760,7 @@ io.sockets.on('connection', function (socket) {
         });
 
         socket.on('show3DObj', function (url) {
+            url = escapeAllContentStrings(url);
             if (isModerator()) {
                 url3dObjs[roomName] = url;
                 sendToHoleRoom(roomName, 'show3DObj', url);
@@ -750,6 +777,7 @@ io.sockets.on('connection', function (socket) {
         }, 60000);
 
         socket.on('audioVolume', function (vol) {
+            vol = escapeAllContentStrings(vol);
             sendToHoleRoom(roomName, 'audioVolume', { "userId": socket.id, "vol": vol });
         });
 
@@ -765,6 +793,8 @@ io.sockets.on('connection', function (socket) {
 });
 
 function removePraesi(name, roomName) {
+    name = escapeAllContentStrings(name);
+    roomName = escapeAllContentStrings(roomName);
     delete allPraesis[roomName][name];
     fs.remove('public/praesis/' + roomName.split("###")[0] + '/' + name, function (err) {
         if (err)
@@ -773,6 +803,7 @@ function removePraesi(name, roomName) {
 }
 
 function progressUploadFormData(formData) {
+    formData = escapeAllContentStrings(formData);
     var fields = formData.fields;
     var files = formData.files;
     var uploadType = fields["uploadType"];
@@ -1127,14 +1158,24 @@ snake.addGameCallbacks(function (theRoomName, players) {
 });
 
 function sendToHoleRoom(roomName, key, content) {
+    content = escapeAllContentStrings(content);
+    key = escapeAllContentStrings(key);
+    roomName = escapeAllContentStrings(roomName);
     io.in(roomName).emit(key, content)
 }
 
 function sendToHoleRoomButNotMe(roomName, mySocketId, key, content) {
+    content = escapeAllContentStrings(content);
+    key = escapeAllContentStrings(key);
+    roomName = escapeAllContentStrings(roomName);
+    mySocketId = escapeAllContentStrings(mySocketId);
     allSockets[mySocketId].to(roomName).emit(key, content);
 }
 
 function sendToUserById(userId, key, content) {
+    key = escapeAllContentStrings(key);
+    content = escapeAllContentStrings(content);
+    userId = escapeAllContentStrings(userId);
     allSockets[userId].emit(key, content);
 }
 
