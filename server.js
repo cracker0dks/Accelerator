@@ -235,7 +235,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('join', function (content, callback) {
         content = escapeAllContentStrings(content);
         //console.log("[" + socket.id + "] join ", content);
-        roomName = content.roomName.trim() || "";
+        roomName = content.roomName ? content.roomName.trim() : "";
         var roomPassword = content.roomPassword;
 
         if (!allRoomAttr[roomName]) {
