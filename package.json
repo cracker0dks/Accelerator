@@ -23,7 +23,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "formidable": "^1.2.2",
     "fs-extra": "^8.1.0",
-    "jsdom": "^16.5.0",
+    "jsdom": "^16.7.0",
     "puppeteer": "^2.1.1",
     "socket.io": "^2.5.0",
     "yauzl": "^2.10.0"
